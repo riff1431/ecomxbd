@@ -2,8 +2,54 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { deleteCloudinaryAsset } from "@/lib/cloudinary";
+import { deleteCloudinaryAsset, uploadToCloudinaryStream } from "@/lib/cloudinary";
 import { logActivity } from "@/services/activity-log";
+
+export async function uploadMediaDirectly(formData: FormData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Unauthorized" };
+  }
+
+  const file = formData.get("file") as File | null;
+  const folder = (formData.get("folder") as string) || "ecommerce";
+
+  if (!file) {
+    return { error: "No file provided" };
+  }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const resourceType = file.type.startsWith("video") ? "video" : "image";
+
+    const uploadResult = await uploadToCloudinaryStream(buffer, {
+      folder,
+      resource_type: resourceType,
+    });
+
+    const altText = file.name.replace(/\.[^/.]+$/, "");
+
+    const saveResult = await saveMediaRecord({
+      public_id: uploadResult.public_id,
+      secure_url: uploadResult.secure_url,
+      resource_type: uploadResult.resource_type || resourceType,
+      format: uploadResult.format || file.name.split(".").pop() || "",
+      width: uploadResult.width,
+      height: uploadResult.height,
+      bytes: uploadResult.bytes || file.size,
+      folder,
+      alt_text: altText,
+    });
+
+    return saveResult;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Failed to upload file";
+    return { error: message };
+  }
+}
 
 export async function getMedia(filters?: {
   folder?: string;

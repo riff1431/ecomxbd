@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Image as ImageIcon,
   Upload,
@@ -11,17 +11,16 @@ import {
   X,
   Loader2,
   ExternalLink,
-  Info,
 } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
 import {
   getMedia,
-  saveMediaRecord,
   updateMediaMetadata,
   deleteMediaRecord,
 } from "@/features/media/actions";
+import MediaDropzone from "@/features/media/components/media-dropzone";
 
 interface MediaItem {
   id: string;
@@ -43,11 +42,7 @@ export default function MediaListClient() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedFolder, setSelectedFolder] = useState<string>("all");
-
-  // Uploading state
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showDropzone, setShowDropzone] = useState(true);
 
   // Detail Modal state
   const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
@@ -72,80 +67,6 @@ export default function MediaListClient() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchData();
-  };
-
-  // Upload to Cloudinary using signed signature
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setUploading(true);
-    setUploadProgress("Preparing upload...");
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      setUploadProgress(`Uploading ${i + 1} of ${files.length}: ${file.name}...`);
-
-      try {
-        // 1. Get signature from our server route
-        const signRes = await fetch("/api/media/sign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ folder: selectedFolder === "all" ? "products" : selectedFolder }),
-        });
-
-        if (!signRes.ok) {
-          throw new Error("Failed to get upload signature");
-        }
-
-        const signData = await signRes.json();
-
-        // 2. Upload file directly to Cloudinary
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("api_key", signData.apiKey);
-        formData.append("timestamp", signData.timestamp.toString());
-        formData.append("signature", signData.signature);
-        formData.append("folder", signData.folder);
-
-        const cloudRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-        if (!cloudRes.ok) {
-          const errText = await cloudRes.text();
-          throw new Error(`Cloudinary upload failed: ${errText}`);
-        }
-
-        const cloudAsset = await cloudRes.json();
-
-        // 3. Save record in Supabase
-        await saveMediaRecord({
-          public_id: cloudAsset.public_id,
-          secure_url: cloudAsset.secure_url,
-          resource_type: cloudAsset.resource_type || "image",
-          format: cloudAsset.format || file.name.split(".").pop() || "",
-          width: cloudAsset.width,
-          height: cloudAsset.height,
-          bytes: cloudAsset.bytes,
-          folder: signData.folder,
-          alt_text: file.name.replace(/\.[^/.]+$/, ""),
-        });
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Upload error";
-        console.error("Upload error:", err);
-        alert(message);
-      }
-    }
-
-    setUploading(false);
-    setUploadProgress("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
     fetchData();
   };
 
@@ -198,20 +119,15 @@ export default function MediaListClient() {
           </p>
         </div>
 
-        <div>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileUpload}
-            multiple
-            accept="image/*,video/*"
-            className="hidden"
-          />
-          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-            {uploading ? (
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => setShowDropzone((prev) => !prev)}
+            variant={showDropzone ? "secondary" : "default"}
+          >
+            {showDropzone ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Uploading...
+                <X className="h-4 w-4" />
+                Close Uploader
               </>
             ) : (
               <>
@@ -223,11 +139,15 @@ export default function MediaListClient() {
         </div>
       </div>
 
-      {uploadProgress && (
-        <div className="rounded-lg bg-primary-50 p-3 text-xs text-primary-700 font-medium border border-primary-200">
-          {uploadProgress}
-        </div>
-      )}
+      {/* Drag & Drop Media Upload System */}
+      <MediaDropzone
+        currentFolder={selectedFolder}
+        isOpen={showDropzone}
+        onClose={() => setShowDropzone(false)}
+        onUploadSuccess={() => {
+          fetchData();
+        }}
+      />
 
       {/* Toolbar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-border bg-white p-4 shadow-card">
@@ -265,14 +185,20 @@ export default function MediaListClient() {
           <p className="mt-2 text-sm text-text-muted">Loading media assets...</p>
         </div>
       ) : mediaItems.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-white p-16 text-center">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!showDropzone) setShowDropzone(true);
+          }}
+          className="rounded-xl border border-dashed border-border bg-white p-16 text-center transition-all hover:border-primary-400"
+        >
           <ImageIcon className="mx-auto h-12 w-12 text-text-muted" />
           <h3 className="mt-3 text-base font-semibold text-text">No media assets found</h3>
           <p className="mt-1 text-sm text-text-secondary">
-            Upload images or videos directly to Cloudinary to see them here.
+            Drag & drop images or videos anywhere, or upload directly to see them here.
           </p>
           <Button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setShowDropzone(true)}
             variant="outline"
             className="mt-4"
           >

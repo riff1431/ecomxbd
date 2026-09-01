@@ -78,9 +78,9 @@ test.describe("Authentication Suite (A01 - A15)", () => {
   test("TEST A06: Nonexistent user email is rejected safely without leaking details", async ({ page }) => {
     await page.goto("/login");
     await page.waitForLoadState("domcontentloaded");
-    await page.locator("#login-email").fill("nonexistent.user.99988@fakeemail.com");
-    await page.locator("#login-password").fill("RandomPassword123!");
-    await page.locator("#login-submit-btn").click();
+    await page.locator("#login-email").first().fill("nonexistent.user.99988@fakeemail.com");
+    await page.locator("#login-password").first().fill("RandomPassword123!");
+    await page.locator("#login-submit-btn").first().click();
 
     await expect(page).toHaveURL(/\/login/);
     await expect(page.locator(".bg-red-50")).toBeVisible();

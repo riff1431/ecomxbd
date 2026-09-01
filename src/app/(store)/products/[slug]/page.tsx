@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { formatPrice } from "@/lib/utils";
 import { ProductDetailClient } from "./product-detail-client";
 
 export async function generateMetadata({
@@ -21,8 +21,10 @@ export async function generateMetadata({
   if (!product) return { title: "Product Not Found" };
 
   return {
-    title: product.seo_title || `${product.name} — ecomXbangladesh`,
-    description: product.seo_description || `Buy ${product.name} authentic products online in Bangladesh.`,
+    title: product.seo_title || `${product.name} — 100% Authentic Online Bangladesh`,
+    description:
+      product.seo_description ||
+      `Buy genuine ${product.name} with fast delivery and Cash on Delivery in Bangladesh from ecomXbangladesh.`,
     openGraph: {
       images: product.og_image_url ? [product.og_image_url] : [],
     },
@@ -59,7 +61,7 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  // Fetch related products from the same brand or general active products
+  // Fetch related products
   const { data: related } = await supabase
     .from("products")
     .select("id, name, slug, regular_price, sale_price, og_image_url, brands(name)")
@@ -68,29 +70,35 @@ export default async function ProductDetailPage({
     .limit(4);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Breadcrumbs */}
-      <nav className="flex items-center gap-2 text-xs text-text-muted mb-6">
-        <Link href="/" className="hover:text-text">Home</Link>
-        <span>/</span>
-        <Link href="/products" className="hover:text-text">Products</Link>
-        <span>/</span>
+    <div className="container-main py-4 sm:py-6 space-y-4">
+      {/* Clean Compact Breadcrumbs */}
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted overflow-x-auto no-scrollbar">
+        <Link href="/" className="hover:text-text shrink-0 transition-colors">
+          Home
+        </Link>
+        <ChevronRight className="h-3 w-3 shrink-0 text-zinc-400" />
+        <Link href="/products" className="hover:text-text shrink-0 transition-colors">
+          Products
+        </Link>
         {product.brands && (
           <>
-            <Link href={`/products?brand=${product.brands.slug}`} className="hover:text-text">
+            <ChevronRight className="h-3 w-3 shrink-0 text-zinc-400" />
+            <Link
+              href={`/products?brand=${product.brands.slug}`}
+              className="hover:text-text shrink-0 transition-colors"
+            >
               {product.brands.name}
             </Link>
-            <span>/</span>
           </>
         )}
-        <span className="text-text font-medium truncate max-w-xs">{product.name}</span>
+        <ChevronRight className="h-3 w-3 shrink-0 text-zinc-400" />
+        <span className="text-text font-bold truncate max-w-[200px] sm:max-w-md">
+          {product.name}
+        </span>
       </nav>
 
       {/* Product Interactive Client Section */}
-      <ProductDetailClient
-        product={product}
-        relatedProducts={related || []}
-      />
+      <ProductDetailClient product={product} relatedProducts={related || []} />
     </div>
   );
 }
