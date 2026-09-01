@@ -37,8 +37,7 @@ export default function LoginForm() {
         return;
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      window.location.href = redirectTo;
     } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
@@ -64,7 +63,7 @@ export default function LoginForm() {
 
         {/* Card */}
         <div className="rounded-2xl border border-border bg-white p-8 shadow-modal">
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form id="login-form" onSubmit={handleLogin} className="space-y-5">
             {error && (
               <div className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 border border-red-200">
                 {error}
@@ -72,11 +71,11 @@ export default function LoginForm() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="login-email">Email Address</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
                 <Input
-                  id="email"
+                  id="login-email"
                   type="email"
                   placeholder="you@example.com"
                   className="pl-10"
@@ -90,7 +89,7 @@ export default function LoginForm() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="login-password">Password</Label>
                 <Link
                   href="/forgot-password"
                   className="text-xs text-primary-600 hover:underline"
@@ -101,7 +100,7 @@ export default function LoginForm() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
                 <Input
-                  id="password"
+                  id="login-password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   className="pl-10 pr-10"
@@ -124,7 +123,7 @@ export default function LoginForm() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+            <Button id="login-submit-btn" type="submit" className="w-full" size="lg" disabled={loading}>
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               Sign In
             </Button>

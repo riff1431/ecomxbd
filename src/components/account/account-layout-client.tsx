@@ -2,13 +2,14 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingBag, MapPin, Heart, Star,
   RotateCcw, Award, Ticket, Bell, User, Lock, LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { customerNavItems } from "@/config/site";
+import { createClient } from "@/lib/supabase/client";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, ShoppingBag, MapPin, Heart, Star,
@@ -20,7 +21,14 @@ export default function AccountLayoutClient({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const pathname = usePathname();
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  };
 
   const isActive = (href: string) => {
     if (href === "/account") return pathname === "/account";
@@ -57,7 +65,11 @@ export default function AccountLayoutClient({
                 );
               })}
               <li>
-                <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600">
+                <button
+                  id="customer-logout-btn"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600"
+                >
                   <LogOut className="h-4 w-4 shrink-0" />
                   <span>Logout</span>
                 </button>

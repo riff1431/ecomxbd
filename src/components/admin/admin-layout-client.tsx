@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard, ShoppingBag, Package, Warehouse, Users,
   Megaphone, Truck, DollarSign, Image, FileText, Palette,
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminNavItems } from "@/config/site";
+import { createClient } from "@/lib/supabase/client";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, ShoppingBag, Package, Warehouse, Users,
@@ -24,8 +25,16 @@ interface AdminSidebarProps {
 }
 
 function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   const toggleExpand = (title: string) => {
     setExpandedItems((prev) =>
@@ -103,9 +112,10 @@ function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                             <Link
                               href={child.href}
                               className={cn(
-                                "block rounded-lg px-3 py-1.5 text-sm transition-colors hover:bg-admin-sidebar-hover hover:text-white",
-                                isActive(child.href) &&
-                                  "bg-admin-sidebar-active text-admin-sidebar-text-active font-medium"
+                                "block rounded-lg px-3 py-1.5 text-xs transition-colors hover:bg-admin-sidebar-hover hover:text-white",
+                                isActive(child.href)
+                                  ? "bg-primary-600 text-white font-medium"
+                                  : "text-admin-sidebar-text"
                               )}
                             >
                               {child.title}
@@ -124,8 +134,9 @@ function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                     href={"href" in item ? item.href : "#"}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-admin-sidebar-hover hover:text-white",
-                      "href" in item && isActive(item.href) &&
-                        "bg-admin-sidebar-active text-admin-sidebar-text-active font-medium"
+                      "href" in item && isActive(item.href)
+                        ? "bg-primary-600 text-white font-medium"
+                        : "text-admin-sidebar-text"
                     )}
                   >
                     <Icon className="h-4 w-4 shrink-0" />
@@ -139,7 +150,10 @@ function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
 
         {/* Footer */}
         <div className="border-t border-white/10 p-3">
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-admin-sidebar-text transition-colors hover:bg-admin-sidebar-hover hover:text-white">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-admin-sidebar-text transition-colors hover:bg-admin-sidebar-hover hover:text-white"
+          >
             <LogOut className="h-4 w-4" />
             <span>Logout</span>
           </button>
