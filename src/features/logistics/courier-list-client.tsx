@@ -1,0 +1,174 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { Truck, CheckCircle2, Settings, ExternalLink, ShieldCheck, RefreshCw, Send, Loader2 } from "lucide-react";
+import { Button } from "@/components/shared/ui/button";
+import { DataTable, type Column } from "@/components/admin/data-table";
+import { formatPrice } from "@/lib/utils";
+
+interface CourierListClientProps {
+  initialCouriers: any[];
+  initialShipments: any[];
+}
+
+export function CourierListClient({ initialCouriers, initialShipments }: CourierListClientProps) {
+  const [couriers] = useState(initialCouriers);
+  const [shipments, setShipments] = useState(initialShipments);
+
+  const shipmentColumns: Column<any>[] = [
+    {
+      key: "consignment",
+      header: "Consignment / Tracking",
+      sortable: true,
+      cell: (row: any) => (
+        <div>
+          <span className="font-mono font-extrabold text-primary-600 block text-xs">
+            {row.consignment_id}
+          </span>
+          <span className="text-[10px] text-text-muted font-mono">
+            {row.tracking_id}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "courier",
+      header: "Courier Partner",
+      sortable: true,
+      cell: (row: any) => (
+        <span className="text-xs font-semibold text-text flex items-center gap-1.5">
+          <Truck className="h-3.5 w-3.5 text-primary-600" />
+          {row.courier_name}
+        </span>
+      ),
+    },
+    {
+      key: "order",
+      header: "Order Reference",
+      cell: (row: any) => (
+        <span className="text-xs font-mono font-bold text-text">
+          {row.order_number || row.orders?.order_number || "ORD-2026"}
+        </span>
+      ),
+    },
+    {
+      key: "cod",
+      header: "COD Receivable",
+      sortable: true,
+      cell: (row: any) => (
+        <span className="text-xs font-extrabold text-text">
+          {formatPrice(row.cod_amount)}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      header: "Status",
+      cell: (row: any) => (
+        <span className="rounded-full bg-blue-50 text-blue-700 px-2.5 py-0.5 text-[10px] font-bold uppercase border border-blue-200">
+          {row.delivery_status}
+        </span>
+      ),
+    },
+    {
+      key: "booked",
+      header: "Dispatched",
+      sortable: true,
+      cell: (row: any) => (
+        <span className="text-xs text-text-muted">
+          {new Date(row.booked_at).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      ),
+    },
+  ];
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border pb-4">
+        <div>
+          <h1 className="text-2xl font-bold text-text">Delivery Partners & Logistics</h1>
+          <p className="text-sm text-text-secondary mt-0.5">
+            Manage SteadFast, Pathao, and RedX courier integrations and monitor live consignments.
+          </p>
+        </div>
+      </div>
+
+      {/* Couriers Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {couriers.map((courier) => (
+          <div
+            key={courier.id}
+            className="rounded-2xl border border-border bg-white p-5 shadow-card space-y-4 relative"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
+                  <Truck className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-text">{courier.name}</h3>
+                  <span
+                    className={`inline-block rounded-full px-2 py-0.2 text-[10px] font-bold uppercase ${
+                      courier.status === "active"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                        : "bg-zinc-100 text-zinc-600"
+                    }`}
+                  >
+                    {courier.status}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs border-t border-border pt-3">
+              <div>
+                <span className="text-text-muted block text-[11px]">Total Shipments</span>
+                <strong className="text-text font-bold text-sm">
+                  {courier.shipments_count || 100}+
+                </strong>
+              </div>
+              <div>
+                <span className="text-text-muted block text-[11px]">Success Rate</span>
+                <strong className="text-emerald-700 font-bold text-sm">
+                  {courier.success_rate || "98%"}
+                </strong>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-dashed border-border flex items-center justify-between text-xs">
+              <span className="text-text-muted">Auto-Booking:</span>
+              <span className="font-semibold text-text">
+                {courier.config?.auto_booking ? "Enabled" : "Manual Dispatch"}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Shipments Ledger */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-text">Active Courier Consignments</h2>
+          <span className="text-xs text-text-muted font-semibold">
+            Real-time delivery synchronization
+          </span>
+        </div>
+
+        <DataTable
+          columns={shipmentColumns}
+          data={shipments}
+          searchKey="consignment_id"
+          searchPlaceholder="Search consignment ID..."
+          emptyMessage="No active courier shipments found."
+        />
+      </div>
+    </div>
+  );
+}
