@@ -265,7 +265,7 @@ export function StorefrontHeader() {
               <span>{config.trackOrderText || "Track Order"}</span>
             </Link>
             <span className="hidden md:inline text-zinc-700">|</span>
-            <span className="hidden sm:inline text-emerald-400 font-semibold flex items-center gap-1">
+            <span className="hidden sm:inline-flex text-emerald-400 font-semibold items-center gap-1">
               <ShieldCheck className="h-3.5 w-3.5" /> {config.authenticGuaranteeText || "100% Authentic Guarantee"}
             </span>
           </div>
@@ -394,7 +394,7 @@ export function StorefrontHeader() {
           {/* Center: Signature Pink-Border Pill Search Bar */}
           <div ref={searchContainerRef} className="relative flex-1 max-w-xl mx-2">
             <form onSubmit={handleSearchSubmit} className="relative">
-              <div className="relative flex items-center rounded-full border-2 border-[#e91e63] bg-[#f8f9fa] focus-within:bg-white shadow-xs transition-all">
+              <div className="relative flex items-center rounded-full border-2 border-sg-pink bg-sg-gray focus-within:bg-white shadow-xs transition-all">
                 <Search className="h-4 w-4 ml-4 text-gray-400 shrink-0" />
                 <input
                   type="search"
@@ -402,7 +402,7 @@ export function StorefrontHeader() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setShowSearchDropdown(true)}
                   placeholder={searchPlaceholders[placeholderIndex] || "Search products..."}
-                  className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none rounded-full"
+                  className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none rounded-full"
                 />
                 {searchQuery && (
                   <button
@@ -542,7 +542,7 @@ export function StorefrontHeader() {
         {/* Mobile Full-Width Pink-Bordered Pill Search Input */}
         <div ref={searchContainerRef} className="lg:hidden mt-1">
           <form onSubmit={handleSearchSubmit} className="relative">
-            <div className="relative flex items-center rounded-full border-2 border-sg-pink bg-[#f8f9fa] shadow-xs px-3.5 py-2">
+            <div className="relative flex items-center rounded-full border-2 border-sg-pink bg-sg-gray shadow-xs px-3.5 py-2">
               <Search className="h-4 w-4 mr-2 text-gray-700 shrink-0" />
               <input
                 type="search"
@@ -550,7 +550,7 @@ export function StorefrontHeader() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setShowSearchDropdown(true)}
                 placeholder={searchPlaceholders[placeholderIndex] || "Search products..."}
-                className="w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
+                className="w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
               />
               {searchQuery && (
                 <button
@@ -689,7 +689,7 @@ export function StorefrontHeader() {
                 <div className="col-span-3 border-l border-gray-100 pl-6">
                   <Link
                     href={activeMegaCategory.promoBanner?.href || activeMegaCategory.href || "/products"}
-                    className="group relative block overflow-hidden rounded-2xl bg-linear-to-br from-pink-500 to-rose-600 text-white p-4 shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between"
+                    className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-pink-500 to-rose-600 text-white p-4 shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between"
                   >
                     {activeMegaCategory.promoBanner?.image && (
                       <img
