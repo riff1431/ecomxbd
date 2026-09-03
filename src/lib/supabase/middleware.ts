@@ -99,13 +99,15 @@ export async function updateSession(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/account";
+    const redirectParam = request.nextUrl.searchParams.get("redirect");
+    url.pathname = redirectParam ? validateSafeRedirect(redirectParam, "/account") : "/account";
+    url.search = "";
     const redirectRes = NextResponse.redirect(url);
     Object.entries(securityHeaders).forEach(([k, v]) => redirectRes.headers.set(k, v));
     return redirectRes;
   }
 
-  // Admin route protection — check role via profile strictly
+  // Admin route protection — check role via profile and auth metadata strictly
   if (user && isAdminRoute) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -113,7 +115,9 @@ export async function updateSession(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (!profile || (profile.role !== "admin" && profile.role !== "moderator")) {
+    const role = profile?.role || user.app_metadata?.role || user.user_metadata?.role;
+
+    if (role !== "admin" && role !== "moderator") {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       const redirectRes = NextResponse.redirect(url);

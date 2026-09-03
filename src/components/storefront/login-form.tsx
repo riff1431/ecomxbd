@@ -41,7 +41,7 @@ export default function LoginForm() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
       });
@@ -56,10 +56,28 @@ export default function LoginForm() {
         return;
       }
 
-      setSuccessMsg("Signed in successfully! Redirecting to your account...");
+      // Check role to route intelligently
+      let destination = redirectTo;
+      if (redirectTo === "/account" && authData.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", authData.user.id)
+          .single();
+
+        if (profile?.role === "admin" || profile?.role === "moderator") {
+          destination = "/admin";
+        }
+      }
+
+      setSuccessMsg(
+        destination === "/admin"
+          ? "Signed in as Administrator! Opening Admin Dashboard..."
+          : "Signed in successfully! Redirecting to your account..."
+      );
       setTimeout(() => {
-        window.location.href = redirectTo;
-      }, 1000);
+        window.location.href = destination;
+      }, 700);
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);

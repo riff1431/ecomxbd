@@ -28,8 +28,18 @@ export async function getCustomerDashboardData() {
   const deliveredOrders = orderList.filter((o) => o.status === "delivered").length;
   const latestOrder = orderList[0] || null;
 
+  // Fetch Profile Role
+  const { data: profile } = await adminClient
+    .from("profiles")
+    .select("role, full_name")
+    .eq("id", user.id)
+    .single();
+
+  const role = profile?.role || "customer";
+
   return {
     user,
+    role,
     totalOrders,
     pendingOrders,
     deliveredOrders,

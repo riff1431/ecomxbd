@@ -35,7 +35,8 @@ export default async function AccountOverviewPage() {
     );
   }
 
-  const { totalOrders, pendingOrders, deliveredOrders, latestOrder, user } = data;
+  const { totalOrders, pendingOrders, deliveredOrders, latestOrder, user, role } = data;
+  const isAdmin = role === "admin" || role === "moderator";
 
   const stats = [
     { label: "Total Orders", value: String(totalOrders), icon: ShoppingBag, color: "bg-pink-50 text-[#e91e63]" },
@@ -46,11 +47,35 @@ export default async function AccountOverviewPage() {
 
   return (
     <div className="space-y-6">
+      {/* Admin Quick Launch Banner */}
+      {isAdmin && (
+        <div className="rounded-3xl border border-pink-300 bg-pink-50/80 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm">
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e91e63] px-3 py-0.5 text-[10px] font-black uppercase text-white tracking-wider">
+              <Sparkles className="h-3 w-3" />
+              Administrator Access
+            </span>
+            <h2 className="text-base sm:text-lg font-black text-gray-900">
+              Admin &amp; Store Management Portal
+            </h2>
+            <p className="text-xs text-gray-600">
+              You are logged in with full administrative privileges. Manage orders, products, inventory, invoices, and site settings.
+            </p>
+          </div>
+          <Link href="/admin">
+            <Button className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-black text-xs px-6 py-2.5 rounded-2xl shadow-md shrink-0">
+              Open Admin Dashboard
+              <ArrowRight className="h-4 w-4 ml-1.5" />
+            </Button>
+          </Link>
+        </div>
+      )}
+
       {/* Welcome banner */}
-      <div className="rounded-3xl border border-gray-200 bg-gradient-to-r from-gray-950 via-zinc-900 to-pink-950 p-6 sm:p-8 text-white shadow-lg">
+      <div className="rounded-3xl border border-gray-200 bg-linear-to-r from-gray-950 via-zinc-900 to-pink-950 p-6 sm:p-8 text-white shadow-lg">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold text-emerald-400 backdrop-blur-xs">
           <ShieldCheck className="h-3.5 w-3.5" />
-          Verified Member
+          {isAdmin ? "Super Administrator" : "Verified Member"}
         </span>
         <h1 className="mt-2 text-xl sm:text-2xl font-black">
           Welcome back, {user.user_metadata?.full_name || user.email?.split("@")[0]}!

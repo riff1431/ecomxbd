@@ -66,6 +66,7 @@ export function StorefrontHeader() {
   const { wishlistCount } = useWishlist();
   const { itemCount, openCart } = useCart();
   const [user, setUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMobileCategories, setExpandedMobileCategories] = useState<string[]>([]);
 
@@ -137,14 +138,28 @@ export function StorefrontHeader() {
   // Check auth user and listen to auth state changes
   useEffect(() => {
     const supabase = createClient();
+    const checkRole = async (currentUser: any) => {
+      setUser(currentUser);
+      if (currentUser) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", currentUser.id)
+          .single();
+        setIsAdmin(profile?.role === "admin" || profile?.role === "moderator");
+      } else {
+        setIsAdmin(false);
+      }
+    };
+
     supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user || null);
+      checkRole(data?.user || null);
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user || null);
+      checkRole(session?.user || null);
     });
 
     return () => {
@@ -517,8 +532,19 @@ export function StorefrontHeader() {
               )}
             </Link>
 
+            {/* Admin Portal Button for Staff */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="bg-gray-900 text-pink-300 hover:text-white hover:bg-black flex items-center gap-1.5 text-xs font-black uppercase transition-all px-3 py-1.5 rounded-full shadow-xs border border-pink-500/30"
+              >
+                <ShieldCheck className="h-3.5 w-3.5 text-pink-400" />
+                <span>ADMIN</span>
+              </Link>
+            )}
+
             <Link
-              href={user ? "/account" : "/auth/login"}
+              href={user ? "/account" : "/login"}
               className="text-gray-700 hover:text-[#e91e63] flex items-center gap-1.5 text-xs font-bold uppercase transition-colors px-2 py-2"
             >
               <User className="h-4 w-4" />
@@ -872,8 +898,27 @@ export function StorefrontHeader() {
 
             {/* Drawer Footer Actions */}
             <div className="border-t border-gray-100 p-4 bg-gray-50 space-y-2">
+              {isAdmin && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-gray-900 py-2.5 text-center text-xs font-black text-pink-300 border border-pink-500/30 shadow-md"
+                >
+                  <ShieldCheck className="h-4 w-4 text-pink-400" />
+                  <span>Admin Dashboard</span>
+                </Link>
+              )}
+              <Link
+                href={user ? "/account" : "/login"}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-white border border-gray-300 py-2.5 text-center text-xs font-bold text-gray-800 shadow-2xs"
+              >
+                <User className="h-4 w-4 text-gray-600" />
+                <span>{user ? "My Account" : "Sign In / Register"}</span>
+              </Link>
               <Link
                 href="/products"
+                onClick={() => setMobileMenuOpen(false)}
                 className="block w-full rounded-xl bg-[#e91e63] py-2.5 text-center text-xs font-bold text-white shadow-md"
               >
                 Browse All Products
