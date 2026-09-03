@@ -100,7 +100,7 @@ export default function InvoicePrintClient({
     window.print();
   };
 
-  // 1-Click PDF Download Handler
+  // 1-Click PDF Download Handler (Robust HTML2Canvas + jsPDF with onclone dimensions)
   const handleDownloadPdf = async () => {
     if (!printRef.current) return;
     setDownloadingPdf(true);
@@ -108,13 +108,39 @@ export default function InvoicePrintClient({
     try {
       const element = printRef.current;
       const canvas = await html2canvas(element, {
-        scale: 2.5,
+        scale: 2,
         useCORS: true,
+        allowTaint: true,
         logging: false,
         backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          const target = clonedDoc.querySelector(
+            printMode === "thermal" ? ".print-area-thermal" : ".print-area-invoice"
+          ) as HTMLElement;
+          if (target) {
+            target.style.position = "static";
+            target.style.transform = "none";
+            target.style.margin = "0";
+            if (printMode === "invoice") {
+              target.style.width = "794px";
+              target.style.minWidth = "794px";
+              target.style.maxWidth = "794px";
+              target.style.minHeight = "1123px";
+              target.style.padding = "38px 45px";
+            } else {
+              target.style.width = "378px";
+              target.style.minWidth = "378px";
+              target.style.maxWidth = "378px";
+              target.style.minHeight = "567px";
+              target.style.padding = "16px";
+            }
+          }
+        },
       });
 
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg", 0.98);
 
       if (printMode === "thermal") {
         // Exact 4x6 inch (100mm x 150mm) POS Thermal PDF
@@ -123,20 +149,21 @@ export default function InvoicePrintClient({
           unit: "mm",
           format: [100, 150],
         });
-        pdf.addImage(imgData, "PNG", 0, 0, 100, 150);
+        pdf.addImage(imgData, "JPEG", 0, 0, 100, 150);
         pdf.save(`${order.order_number}_Thermal_Label.pdf`);
       } else {
         // Exact A4 PDF (210mm x 297mm)
         const pdf = new jsPDF("p", "mm", "a4");
-        pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
+        pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
         pdf.save(`${order.order_number}_Tax_Invoice.pdf`);
       }
     } catch (err) {
       console.error("PDF Download error:", err);
-      alert("Failed to generate PDF. Please use Print -> Save as PDF.");
+      // Fallback seamlessly to native print dialog
+      window.print();
+    } finally {
+      setDownloadingPdf(false);
     }
-
-    setDownloadingPdf(false);
   };
 
   // Translations dictionary for full Bangla / English
@@ -230,7 +257,7 @@ export default function InvoicePrintClient({
   }[lang];
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-8 print:p-0 print:m-0 print:bg-white text-gray-900 font-sans">
+    <div className="min-h-screen bg-gray-100 p-2 sm:p-6 lg:p-8 print:p-0 print:m-0 print:bg-white text-gray-900 font-sans">
       {/* Global Print Isolation CSS */}
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -293,39 +320,38 @@ export default function InvoicePrintClient({
         }
       `}</style>
 
-      {/* Top Floating Action Toolbar (Hidden in Print & PDF) */}
-      <div className="no-print mx-auto max-w-4xl mb-6 bg-white rounded-2xl p-4 shadow-lg border border-gray-200 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
+      {/* Top Floating Action Toolbar (Fully Responsive on Mobile, Tablet & Desktop) */}
+      <div className="no-print mx-auto max-w-4xl mb-4 sm:mb-6 bg-white rounded-2xl p-3 sm:p-4 shadow-lg border border-gray-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
             onClick={() => window.history.back()}
-            className="p-2 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+            className="p-2 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors shrink-0"
             title={t.closeWindow}
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <div>
-            <h2 className="text-sm font-black text-gray-900 flex items-center gap-2">
-              <span>{order.order_number}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-pink-100 text-sg-pink font-bold">
+          <div className="min-w-0">
+            <h2 className="text-xs sm:text-sm font-black text-gray-900 flex items-center gap-1.5 flex-wrap">
+              <span className="truncate">{order.order_number}</span>
+              <span className="text-[10px] sm:text-xs px-2 py-0.5 rounded-full bg-pink-100 text-sg-pink font-bold whitespace-nowrap">
                 {isCod ? "Cash on Delivery" : "Online Paid"}
               </span>
             </h2>
-            <p className="text-xs text-gray-500">
-              Customer: <strong className="text-gray-700">{address.name || order.guest_name}</strong> • Phone:{" "}
-              <strong className="text-gray-700">{address.phone || order.guest_phone}</strong>
+            <p className="text-[11px] text-gray-500 truncate">
+              {address.name || order.guest_name} • {address.phone || order.guest_phone}
             </p>
           </div>
         </div>
 
         {/* Action Controls: Format Switcher, Lang Toggle, Download & Print */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
           {/* Format Toggle Pill */}
-          <div className="bg-gray-100 p-1 rounded-xl flex items-center gap-1 border border-gray-200">
+          <div className="col-span-2 sm:col-auto bg-gray-100 p-1 rounded-xl flex items-center justify-center gap-1 border border-gray-200">
             <button
               type="button"
               onClick={() => setPrintMode("invoice")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 printMode === "invoice"
                   ? "bg-white text-sg-pink shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
@@ -337,7 +363,7 @@ export default function InvoicePrintClient({
             <button
               type="button"
               onClick={() => setPrintMode("thermal")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 printMode === "thermal"
                   ? "bg-white text-sg-pink shadow-xs"
                   : "text-gray-600 hover:text-gray-900"
@@ -352,7 +378,7 @@ export default function InvoicePrintClient({
           <button
             type="button"
             onClick={() => setLang(lang === "en" ? "bn" : "en")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors shadow-2xs"
             title="Toggle Bangla / English"
           >
             <Languages className="h-3.5 w-3.5 text-sg-pink" />
@@ -364,7 +390,7 @@ export default function InvoicePrintClient({
             onClick={handleDownloadPdf}
             disabled={downloadingPdf}
             variant="outline"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50 font-bold text-xs px-4 py-2 rounded-xl shadow-2xs"
+            className="border-gray-300 text-gray-700 hover:bg-gray-50 font-bold text-xs px-3.5 py-2 rounded-xl shadow-2xs justify-center"
           >
             {downloadingPdf ? (
               <Loader2 className="h-4 w-4 mr-1.5 animate-spin text-sg-pink" />
@@ -377,7 +403,7 @@ export default function InvoicePrintClient({
           <Button
             onClick={handlePrint}
             style={{ backgroundColor: accentColor }}
-            className="text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md transition-all hover:opacity-95"
+            className="col-span-2 sm:col-auto text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md transition-all hover:opacity-95 justify-center"
           >
             <Printer className="h-4 w-4 mr-1.5" />
             {printMode === "invoice" ? t.printA4Btn : t.printThermalBtn}
@@ -389,51 +415,54 @@ export default function InvoicePrintClient({
       {/* 1. CORPORATE PINK A4 TAX INVOICE (Exact A4 210mm × 297mm)     */}
       {/* ============================================================ */}
       {printMode === "invoice" && (
-        <div className="flex justify-center">
+        <div className="flex justify-center w-full overflow-x-auto pb-8">
           <div
             ref={printRef}
-            className="print-area-invoice w-[210mm] min-h-[297mm] max-w-[210mm] bg-white p-[12mm_15mm] border border-gray-200 shadow-xl print:shadow-none print:border-none text-gray-900 relative overflow-hidden flex flex-col justify-between"
+            className="print-area-invoice w-full max-w-[210mm] sm:w-[210mm] sm:min-h-[297mm] bg-white p-4 sm:p-[10mm_14mm] border border-gray-200 shadow-xl print:shadow-none print:border-none text-gray-900 relative overflow-hidden flex flex-col justify-between"
           >
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Top Brand & Title Bar */}
-              <div className="flex items-center justify-between gap-4 border-b border-gray-100 pb-4">
-                <div className="space-y-1">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-gray-100 pb-3 sm:pb-4">
+                <div className="space-y-0.5 sm:space-y-1">
                   {/* Brand Logo */}
                   {logoSrc ? (
                     <img
                       src={logoSrc}
                       alt={brandName}
-                      className="h-14 w-auto object-contain mb-0.5"
+                      crossOrigin="anonymous"
+                      className="h-10 sm:h-14 w-auto object-contain mb-0.5"
                     />
                   ) : (
-                    <span className="text-2xl font-black text-gray-900 uppercase tracking-wider block">
+                    <span className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-wider block">
                       {brandName}
                     </span>
                   )}
-                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider">
                     {t.tagline}
                   </p>
-                  <p className="text-[10px] text-gray-500">{t.addressText}</p>
+                  <p className="text-[9px] sm:text-[10px] text-gray-500">{t.addressText}</p>
                   {invoiceSettings?.invoice_tax_id_or_bin && (
-                    <p className="text-[9.5px] font-bold text-gray-600 font-mono">
+                    <p className="text-[9px] sm:text-[9.5px] font-bold text-gray-600 font-mono">
                       {invoiceSettings.invoice_tax_id_or_bin}
                     </p>
                   )}
                 </div>
 
-                <div className="text-right">
-                  <h1
-                    className="text-3xl font-black uppercase tracking-wider"
-                    style={{ color: accentColor }}
-                  >
-                    {t.invoiceTitle}
-                  </h1>
-                  <p className="text-xs font-mono font-bold text-gray-600 mt-0.5">
-                    {order.order_number}
-                  </p>
+                <div className="text-left sm:text-right w-full sm:w-auto flex sm:block items-center justify-between">
+                  <div>
+                    <h1
+                      className="text-2xl sm:text-3xl font-black uppercase tracking-wider"
+                      style={{ color: accentColor }}
+                    >
+                      {t.invoiceTitle}
+                    </h1>
+                    <p className="text-xs font-mono font-bold text-gray-600 mt-0.5">
+                      {order.order_number}
+                    </p>
+                  </div>
                   {invoiceSettings?.invoice_show_barcode !== false && (
                     <div className="pt-1 flex justify-end">
-                      <svg className="w-36 h-6" viewBox="0 0 140 22">
+                      <svg className="w-28 sm:w-36 h-5 sm:h-6" viewBox="0 0 140 22">
                         <rect x="0" y="0" width="140" height="22" fill="#ffffff" />
                         {[3, 7, 10, 15, 19, 23, 27, 32, 36, 40, 46, 50, 54, 59, 64, 69, 74, 79, 84, 89, 94, 98, 103, 108, 113, 118, 123, 128, 133].map((x, i) => (
                           <rect key={i} x={x} y="1" width={i % 2 === 0 ? 2 : 1.2} height="20" fill="#000000" />
@@ -445,27 +474,27 @@ export default function InvoicePrintClient({
               </div>
 
               {/* Full-Width Tinted Grey Metadata Banner */}
-              <div className="bg-gray-100/90 rounded-xl p-4 flex items-center justify-between gap-4 text-xs border border-gray-200">
+              <div className="bg-gray-100/90 rounded-xl p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs border border-gray-200">
                 {/* INVOICE TO (Customer) */}
-                <div className="space-y-1 max-w-65">
-                  <span className="font-bold text-[10px] uppercase text-gray-500 tracking-wider block">
+                <div className="space-y-0.5">
+                  <span className="font-bold text-[9px] sm:text-[10px] uppercase text-gray-500 tracking-wider block">
                     {t.invoiceTo}
                   </span>
-                  <p className="font-black text-sm text-gray-900 uppercase">
+                  <p className="font-black text-xs sm:text-sm text-gray-900 uppercase">
                     {address.name || order.guest_name || "VALUED CUSTOMER"}
                   </p>
-                  <p className="text-gray-600 font-medium text-[11px] leading-tight">
+                  <p className="text-gray-600 font-medium text-[10px] sm:text-[11px] leading-tight">
                     {address.address || "Address on record"}
                     {address.thana ? `, ${address.thana}` : ""}
                     {address.district ? `, ${address.district}` : ""}
                   </p>
-                  <p className="font-mono font-bold text-gray-800 text-[11px]">
+                  <p className="font-mono font-bold text-gray-800 text-[10px] sm:text-[11px]">
                     {toBn(address.phone || order.guest_phone || "")}
                   </p>
                 </div>
 
                 {/* Date & Invoice No */}
-                <div className="space-y-1 text-center text-[11px]">
+                <div className="space-y-1 sm:text-center text-[10px] sm:text-[11px] border-t sm:border-t-0 sm:border-x border-gray-200 pt-2 sm:pt-0 sm:px-2">
                   <div>
                     <span className="text-gray-500 font-medium">{t.date} </span>
                     <span className="font-bold text-gray-900 font-mono">
@@ -489,13 +518,13 @@ export default function InvoicePrintClient({
                 </div>
 
                 {/* TOTAL DUE Box with Offline Vector QR Code */}
-                <div className="flex items-center gap-3 text-right">
-                  <div>
-                    <span className="font-bold text-[10px] uppercase text-gray-500 tracking-wider block">
+                <div className="flex items-center justify-between sm:justify-end gap-3 text-right border-t sm:border-t-0 border-gray-200 pt-2 sm:pt-0">
+                  <div className="text-left sm:text-right">
+                    <span className="font-bold text-[9px] sm:text-[10px] uppercase text-gray-500 tracking-wider block">
                       {t.totalDue}
                     </span>
                     <span
-                      className="text-xl font-black font-mono"
+                      className="text-lg sm:text-xl font-black font-mono"
                       style={{ color: accentColor }}
                     >
                       {formatCurrency(order.total)}
@@ -505,7 +534,8 @@ export default function InvoicePrintClient({
                     <img
                       src={qrCodeDataUrl}
                       alt="Order QR Code"
-                      className="h-13 w-13 rounded-lg border border-gray-300 bg-white p-0.5 shrink-0"
+                      crossOrigin="anonymous"
+                      className="h-11 w-11 sm:h-13 sm:w-13 rounded-lg border border-gray-300 bg-white p-0.5 shrink-0"
                       title={t.scanToTrack}
                     />
                   ) : null}
@@ -513,42 +543,42 @@ export default function InvoicePrintClient({
               </div>
 
               {/* Line Items Table with Custom Accent Header */}
-              <div className="rounded-xl border border-gray-200 overflow-hidden">
-                <table className="w-full text-left text-xs">
+              <div className="rounded-xl border border-gray-200 overflow-x-auto">
+                <table className="w-full text-left text-xs min-w-[420px] sm:min-w-full">
                   <thead
-                    className="text-white uppercase font-black text-[10px] tracking-wider"
+                    className="text-white uppercase font-black text-[9px] sm:text-[10px] tracking-wider"
                     style={{ backgroundColor: accentColor }}
                   >
                     <tr>
-                      <th className="px-4 py-2.5">{t.description}</th>
-                      <th className="px-4 py-2.5 text-center w-16">{t.qty}</th>
-                      <th className="px-4 py-2.5 text-right w-24">{t.price}</th>
-                      <th className="px-4 py-2.5 text-right w-28">{t.total}</th>
+                      <th className="px-3 sm:px-4 py-2 sm:py-2.5">{t.description}</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-2.5 text-center w-14 sm:w-16">{t.qty}</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-2.5 text-right w-20 sm:w-24">{t.price}</th>
+                      <th className="px-3 sm:px-4 py-2 sm:py-2.5 text-right w-24 sm:w-28">{t.total}</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 text-[11px]">
+                  <tbody className="divide-y divide-gray-200 text-[10px] sm:text-[11px]">
                     {items.map((item: any, idx: number) => (
                       <tr
                         key={item.id || idx}
                         className={idx % 2 === 1 ? "bg-gray-50/70" : "bg-white"}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-3 sm:px-4 py-2.5 sm:py-3">
                           <span className="font-bold text-gray-900 block">
                             {item.product_name_snapshot}
                           </span>
                           {item.sku_snapshot && (
-                            <span className="font-mono text-[9px] text-gray-400">
+                            <span className="font-mono text-[8.5px] sm:text-[9px] text-gray-400">
                               SKU: {item.sku_snapshot}
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-center font-black text-gray-800">
+                        <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-center font-black text-gray-800">
                           {toBn(item.quantity)}
                         </td>
-                        <td className="px-4 py-3 text-right font-medium text-gray-700 font-mono">
+                        <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-right font-medium text-gray-700 font-mono">
                           {formatCurrency(item.unit_price)}
                         </td>
-                        <td className="px-4 py-3 text-right font-black text-gray-900 font-mono">
+                        <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-black text-gray-900 font-mono">
                           {formatCurrency(item.total)}
                         </td>
                       </tr>
@@ -559,10 +589,10 @@ export default function InvoicePrintClient({
             </div>
 
             {/* Subtotal, Discount & Grand Total & Signature Block */}
-            <div className="pt-4 border-t border-gray-200 space-y-4">
-              <div className="flex justify-between items-start gap-6">
+            <div className="pt-3 sm:pt-4 border-t border-gray-200 space-y-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-6">
                 {/* Payment Method & Contact */}
-                <div className="space-y-3 text-[11px] max-w-sm">
+                <div className="space-y-2.5 sm:space-y-3 text-[10px] sm:text-[11px] w-full sm:max-w-sm">
                   <div className="space-y-0.5">
                     <span className="font-black text-gray-900 text-xs block uppercase tracking-wider">
                       {t.paymentMethod}
@@ -577,13 +607,13 @@ export default function InvoicePrintClient({
                           : order.payment_method}
                       </span>
                     </p>
-                    <p className="text-gray-500 text-[10px]">
+                    <p className="text-gray-500 text-[9.5px] sm:text-[10px]">
                       {t.status} <strong className="uppercase text-gray-800">{order.payment_status}</strong>
                     </p>
-                    <p className="text-gray-400 text-[10px] italic leading-tight">{t.doorstepNotice}</p>
+                    <p className="text-gray-400 text-[9.5px] sm:text-[10px] italic leading-tight">{t.doorstepNotice}</p>
                   </div>
 
-                  <div className="space-y-0.5 pt-2 border-t border-gray-200 text-[10px] text-gray-600">
+                  <div className="space-y-0.5 pt-2 border-t border-gray-200 text-[9.5px] sm:text-[10px] text-gray-600">
                     <span className="font-black text-gray-900 block uppercase tracking-wider">
                       {t.contactSupport}
                     </span>
@@ -593,7 +623,7 @@ export default function InvoicePrintClient({
                 </div>
 
                 {/* Financial Totals */}
-                <div className="w-64 space-y-1.5 text-xs">
+                <div className="w-full sm:w-64 space-y-1.5 text-xs">
                   <div className="flex justify-between py-1 border-b border-gray-100 text-gray-600 font-medium">
                     <span>{t.subtotal}</span>
                     <span className="font-bold text-gray-900 font-mono">
@@ -627,15 +657,16 @@ export default function InvoicePrintClient({
                   </div>
 
                   {/* Authorised Signature Line */}
-                  <div className="pt-5 text-right space-y-0.5">
+                  <div className="pt-4 sm:pt-5 text-right space-y-0.5">
                     {invoiceSettings?.invoice_signature_image_url ? (
                       <img
                         src={invoiceSettings.invoice_signature_image_url}
                         alt="Signature"
+                        crossOrigin="anonymous"
                         className="h-8 w-auto ml-auto object-contain mb-0.5"
                       />
                     ) : (
-                      <p className="font-serif italic text-base text-gray-800">{brandName}</p>
+                      <p className="font-serif italic text-sm sm:text-base text-gray-800">{brandName}</p>
                     )}
                     <div className="w-36 ml-auto border-t border-gray-400 pt-0.5 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">
                       {t.authSignature}
@@ -665,6 +696,7 @@ export default function InvoicePrintClient({
                     <img
                       src={invoiceSettings?.thermal_logo_url || logoSrc}
                       alt={brandName}
+                      crossOrigin="anonymous"
                       className="h-9 w-auto object-contain"
                     />
                   ) : (
@@ -685,6 +717,7 @@ export default function InvoicePrintClient({
                     <img
                       src={qrCodeDataUrl}
                       alt="QR Code"
+                      crossOrigin="anonymous"
                       className="h-11 w-11 border border-black p-0.5 ml-auto bg-white"
                     />
                   ) : null}
