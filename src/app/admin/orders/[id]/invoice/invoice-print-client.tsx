@@ -145,7 +145,7 @@ export default function InvoicePrintClient({
     window.print();
   };
 
-  // Infallible Direct Vector jsPDF Fallback Generator
+  // Infallible Direct Vector jsPDF Fallback Generator (with QR code and Logo)
   const generateVectorPdfFallback = () => {
     const isThermal = printMode === "thermal";
 
@@ -156,61 +156,84 @@ export default function InvoicePrintClient({
         format: [100, 150],
       });
 
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(13);
-      doc.text(brandName.toUpperCase(), 8, 12);
-      doc.setFontSize(8);
+      // Top Logo & QR code
+      if (logoDataUrl) {
+        try {
+          doc.addImage(logoDataUrl, "PNG", 8, 7, 26, 8);
+        } catch {
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(12);
+          doc.text(brandName.toUpperCase(), 8, 12);
+        }
+      } else {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text(brandName.toUpperCase(), 8, 12);
+      }
+
+      doc.setFontSize(7.5);
       doc.setFont("helvetica", "normal");
       doc.text(courier.toUpperCase() + " EXPRESS", 8, 17);
-      doc.text(`DATE: ${new Date(order.created_at).toLocaleDateString("en-GB")}`, 92, 12, { align: "right" });
+
+      doc.setFontSize(7);
+      doc.text(`DATE: ${new Date(order.created_at).toLocaleDateString("en-GB")}`, 72, 18);
+
+      // Thermal QR Code
+      if (qrCodeDataUrl) {
+        try {
+          doc.addImage(qrCodeDataUrl, "PNG", 75, 5, 17, 17);
+        } catch (e) {
+          console.error("QR embed error:", e);
+        }
+      }
 
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.6);
-      doc.line(8, 20, 92, 20);
+      doc.line(8, 22, 92, 22);
 
       // Tracking No & Code
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
-      doc.text("TRACKING NUMBER:", 50, 26, { align: "center" });
+      doc.text("TRACKING NUMBER:", 50, 27, { align: "center" });
       doc.setFontSize(12);
-      doc.text(consignmentCode, 50, 32, { align: "center" });
+      doc.text(consignmentCode, 50, 33, { align: "center" });
 
       // COD Box
-      doc.rect(25, 36, 50, 8);
+      doc.rect(25, 37, 50, 8);
       doc.setFontSize(10);
-      doc.text(isCod ? `COD : BDT ${order.total}` : "PAID (BDT 0)", 50, 41.5, { align: "center" });
+      doc.text(isCod ? `COD : BDT ${order.total}` : "PAID (BDT 0)", 50, 42.5, { align: "center" });
 
-      doc.line(8, 48, 92, 48);
+      doc.line(8, 49, 92, 49);
 
       // Deliver To
       doc.setFontSize(8);
-      doc.text("DELIVER TO:", 8, 54);
+      doc.text("DELIVER TO:", 8, 55);
       doc.setFontSize(9);
-      doc.text(address.name || order.guest_name || "Customer", 8, 59);
-      doc.text(address.phone || order.guest_phone || "", 8, 64);
+      doc.text(address.name || order.guest_name || "Customer", 8, 60);
+      doc.text(address.phone || order.guest_phone || "", 8, 65);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
-      doc.text(`${address.address || ""}`, 8, 69);
-      doc.text(`${address.thana ? address.thana + ", " : ""}${address.district || "Dhaka"}`, 8, 74);
+      doc.text(`${address.address || ""}`, 8, 70);
+      doc.text(`${address.thana ? address.thana + ", " : ""}${address.district || "Dhaka"}`, 8, 75);
 
       // Sender
       doc.setFont("helvetica", "bold");
-      doc.text("SENDER (HUB):", 54, 54);
+      doc.text("SENDER (HUB):", 54, 55);
       doc.setFontSize(9);
-      doc.text(brandName, 54, 59);
+      doc.text(brandName, 54, 60);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
-      doc.text(invoiceSettings?.thermal_return_address || "House 42, Road 11, Banani", 54, 64);
-      doc.text("Dhaka, Bangladesh", 54, 69);
+      doc.text(invoiceSettings?.thermal_return_address || "House 42, Road 11, Banani", 54, 65);
+      doc.text("Dhaka, Bangladesh", 54, 70);
 
-      doc.line(8, 78, 92, 78);
+      doc.line(8, 79, 92, 79);
 
       // Items summary
       doc.setFont("helvetica", "bold");
-      doc.text(`TOTAL ITEMS: ${totalQuantity}`, 8, 84);
-      doc.text(`WEIGHT: 0.5 KG`, 92, 84, { align: "right" });
+      doc.text(`TOTAL ITEMS: ${totalQuantity}`, 8, 85);
+      doc.text(`WEIGHT: 0.5 KG`, 92, 85, { align: "right" });
 
-      let itemY = 90;
+      let itemY = 91;
       doc.setFont("helvetica", "normal");
       items.slice(0, 4).forEach((it: any) => {
         doc.text(`• ${it.product_name_snapshot?.substring(0, 35)}`, 8, itemY);
@@ -235,16 +258,28 @@ export default function InvoicePrintClient({
       format: "a4",
     });
 
-    // Top Brand Header
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.setTextColor(20, 20, 20);
-    doc.text(brandName, 15, 20);
+    // Top Brand Logo / Header
+    if (logoDataUrl) {
+      try {
+        doc.addImage(logoDataUrl, "PNG", 15, 12, 36, 12);
+      } catch {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(18);
+        doc.setTextColor(20, 20, 20);
+        doc.text(brandName, 15, 20);
+      }
+    } else {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(20, 20, 20);
+      doc.text(brandName, 15, 20);
+    }
+
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(8.5);
     doc.setTextColor(100, 100, 100);
-    doc.text(invoiceSettings?.invoice_tagline || "Authentic Skincare & Beauty Imports", 15, 26);
-    doc.text(invoiceSettings?.invoice_address || "House 42, Road 11, Banani, Dhaka-1213", 15, 31);
+    doc.text(invoiceSettings?.invoice_tagline || "Authentic Skincare & Beauty Imports", 15, 27);
+    doc.text(invoiceSettings?.invoice_address || "House 42, Road 11, Banani, Dhaka-1213", 15, 32);
 
     // Right Title & Order No
     doc.setFont("helvetica", "bold");
@@ -258,13 +293,13 @@ export default function InvoicePrintClient({
 
     // Metadata Gray Box
     doc.setFillColor(243, 244, 246);
-    doc.roundedRect(15, 38, 180, 26, 3, 3, "F");
+    doc.roundedRect(15, 38, 180, 28, 3, 3, "F");
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(120, 120, 120);
     doc.text("INVOICE TO:", 20, 44);
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(20, 20, 20);
     doc.text(address.name || order.guest_name || "Valued Customer", 20, 50);
     doc.setFont("helvetica", "normal");
@@ -275,18 +310,27 @@ export default function InvoicePrintClient({
 
     // Date & Courier
     doc.setFont("helvetica", "normal");
-    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString("en-GB")}`, 105, 47, { align: "center" });
-    doc.text(`Invoice No: ${order.order_number}`, 105, 53, { align: "center" });
-    doc.text(`Courier: ${courier}`, 105, 59, { align: "center" });
+    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString("en-GB")}`, 100, 47, { align: "center" });
+    doc.text(`Invoice No: ${order.order_number}`, 100, 53, { align: "center" });
+    doc.text(`Courier: ${courier}`, 100, 59, { align: "center" });
 
-    // Total Due Box
+    // Total Due Box & Vector QR Code
     doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
     doc.setTextColor(120, 120, 120);
-    doc.text("TOTAL DUE:", 190, 47, { align: "right" });
-    doc.setFontSize(13);
+    doc.text("TOTAL DUE:", 166, 47, { align: "right" });
+    doc.setFontSize(12);
     doc.setTextColor(233, 30, 99);
-    doc.text(`BDT ${order.total}`, 190, 56, { align: "right" });
+    doc.text(`BDT ${order.total}`, 166, 56, { align: "right" });
+
+    // A4 QR Code
+    if (qrCodeDataUrl) {
+      try {
+        doc.addImage(qrCodeDataUrl, "PNG", 170, 42, 20, 20);
+      } catch (e) {
+        console.error("A4 QR embed error:", e);
+      }
+    }
 
     // Table Header
     doc.setFillColor(233, 30, 99);
