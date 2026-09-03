@@ -532,24 +532,24 @@ export function StorefrontHeader() {
               )}
             </Link>
 
-            {/* Admin Portal Button for Staff */}
-            {isAdmin && (
+            {/* If Admin: Direct Admin Dashboard Button only. If Customer: Account / Login */}
+            {isAdmin ? (
               <Link
                 href="/admin"
-                className="bg-gray-900 text-pink-300 hover:text-white hover:bg-black flex items-center gap-1.5 text-xs font-black uppercase transition-all px-3 py-1.5 rounded-full shadow-xs border border-pink-500/30"
+                className="bg-[#e91e63] hover:bg-[#d81b60] text-white flex items-center gap-1.5 text-xs font-black uppercase transition-all px-3.5 py-1.5 rounded-full shadow-xs"
               >
-                <ShieldCheck className="h-3.5 w-3.5 text-pink-400" />
+                <ShieldCheck className="h-4 w-4" />
                 <span>ADMIN</span>
               </Link>
+            ) : (
+              <Link
+                href={user ? "/account" : "/login"}
+                className="text-gray-700 hover:text-[#e91e63] flex items-center gap-1.5 text-xs font-bold uppercase transition-colors px-2 py-2"
+              >
+                <User className="h-4 w-4" />
+                <span>{user ? "ACCOUNT" : "LOGIN"}</span>
+              </Link>
             )}
-
-            <Link
-              href={user ? "/account" : "/login"}
-              className="text-gray-700 hover:text-[#e91e63] flex items-center gap-1.5 text-xs font-bold uppercase transition-colors px-2 py-2"
-            >
-              <User className="h-4 w-4" />
-              <span>{user ? "ACCOUNT" : "LOGIN"}</span>
-            </Link>
 
             <button
               type="button"
@@ -898,28 +898,29 @@ export function StorefrontHeader() {
 
             {/* Drawer Footer Actions */}
             <div className="border-t border-gray-100 p-4 bg-gray-50 space-y-2">
-              {isAdmin && (
+              {isAdmin ? (
                 <Link
                   href="/admin"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-gray-900 py-2.5 text-center text-xs font-black text-pink-300 border border-pink-500/30 shadow-md"
+                  className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-[#e91e63] py-2.5 text-center text-xs font-black text-white shadow-md"
                 >
-                  <ShieldCheck className="h-4 w-4 text-pink-400" />
+                  <ShieldCheck className="h-4 w-4" />
                   <span>Admin Dashboard</span>
+                </Link>
+              ) : (
+                <Link
+                  href={user ? "/account" : "/login"}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-white border border-gray-300 py-2.5 text-center text-xs font-bold text-gray-800 shadow-2xs"
+                >
+                  <User className="h-4 w-4 text-gray-600" />
+                  <span>{user ? "My Account" : "Sign In / Register"}</span>
                 </Link>
               )}
               <Link
-                href={user ? "/account" : "/login"}
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-1.5 w-full rounded-xl bg-white border border-gray-300 py-2.5 text-center text-xs font-bold text-gray-800 shadow-2xs"
-              >
-                <User className="h-4 w-4 text-gray-600" />
-                <span>{user ? "My Account" : "Sign In / Register"}</span>
-              </Link>
-              <Link
                 href="/products"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block w-full rounded-xl bg-[#e91e63] py-2.5 text-center text-xs font-bold text-white shadow-md"
+                className="block w-full rounded-xl bg-gray-900 py-2.5 text-center text-xs font-bold text-white shadow-md"
               >
                 Browse All Products
               </Link>

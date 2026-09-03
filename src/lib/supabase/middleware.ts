@@ -96,28 +96,46 @@ export async function updateSession(request: NextRequest) {
     return redirectRes;
   }
 
+  // Fetch role if user exists
+  let userRole: string | null = null;
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    userRole = profile?.role || user.app_metadata?.role || user.user_metadata?.role || "customer";
+  }
+
+  const isAdmin = userRole === "admin" || userRole === "moderator";
+
   // Redirect authenticated users away from auth pages
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
     const redirectParam = request.nextUrl.searchParams.get("redirect");
-    url.pathname = redirectParam ? validateSafeRedirect(redirectParam, "/account") : "/account";
+    url.pathname = redirectParam
+      ? validateSafeRedirect(redirectParam, isAdmin ? "/admin" : "/account")
+      : isAdmin
+      ? "/admin"
+      : "/account";
     url.search = "";
     const redirectRes = NextResponse.redirect(url);
     Object.entries(securityHeaders).forEach(([k, v]) => redirectRes.headers.set(k, v));
     return redirectRes;
   }
 
-  // Admin route protection — check role via profile and auth metadata strictly
+  // Master Admin has NO customer account — redirect directly to Admin Dashboard
+  if (user && isAdmin && isAccountRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/admin";
+    const redirectRes = NextResponse.redirect(url);
+    Object.entries(securityHeaders).forEach(([k, v]) => redirectRes.headers.set(k, v));
+    return redirectRes;
+  }
+
+  // Admin route protection — check role strictly
   if (user && isAdminRoute) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
-
-    const role = profile?.role || user.app_metadata?.role || user.user_metadata?.role;
-
-    if (role !== "admin" && role !== "moderator") {
+    if (!isAdmin) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
       const redirectRes = NextResponse.redirect(url);
