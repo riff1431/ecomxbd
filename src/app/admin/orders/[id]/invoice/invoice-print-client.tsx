@@ -41,6 +41,7 @@ export default function InvoicePrintClient({
     invoiceSettings?.default_language || "en"
   );
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+  const [logoDataUrl, setLogoDataUrl] = useState<string>("");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -67,11 +68,11 @@ export default function InvoicePrintClient({
   const baseUrl = typeof window !== "undefined" && window.location.origin ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
   const trackingUrl = `${baseUrl}/account/track?order=${order.order_number}`;
 
-  // Bengali Digits Helper
+  // Bengali Numeral Converter helper
   const toBn = (val: string | number) => {
-    if (lang !== "bn") return String(val);
-    const bnDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
-    return String(val).replace(/[0-9]/g, (d) => bnDigits[+d]);
+    if (lang === "en") return String(val);
+    const bnNums = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+    return String(val).replace(/[0-9]/g, (w) => bnNums[+w]);
   };
 
   const formatCurrency = (amount: number) => {
@@ -80,6 +81,33 @@ export default function InvoicePrintClient({
     }
     return formatPrice(amount);
   };
+
+  // Pre-convert remote logo to Base64 to eliminate any CORS canvas taint during PDF generation
+  useEffect(() => {
+    if (!logoSrc) return;
+    if (logoSrc.startsWith("data:")) {
+      setLogoDataUrl(logoSrc);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth || img.width || 200;
+        canvas.height = img.naturalHeight || img.height || 60;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          setLogoDataUrl(canvas.toDataURL("image/png"));
+        }
+      } catch {
+        setLogoDataUrl(logoSrc);
+      }
+    };
+    img.onerror = () => setLogoDataUrl(logoSrc);
+    img.src = logoSrc;
+  }, [logoSrc]);
 
   // Generate Real Vector QR Code DataURL on mount
   useEffect(() => {
@@ -100,13 +128,15 @@ export default function InvoicePrintClient({
     window.print();
   };
 
-  // 1-Click PDF Download Handler (Robust HTML2Canvas + jsPDF with onclone dimensions)
+  // Infallible 1-Click PDF Download Handler (Exact A4 210mm x 297mm / 4x6 Thermal 100mm x 150mm)
   const handleDownloadPdf = async () => {
     if (!printRef.current) return;
     setDownloadingPdf(true);
 
     try {
       const element = printRef.current;
+      const isThermal = printMode === "thermal";
+
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
@@ -115,20 +145,21 @@ export default function InvoicePrintClient({
         backgroundColor: "#ffffff",
         scrollX: 0,
         scrollY: 0,
+        windowWidth: isThermal ? 400 : 800,
         onclone: (clonedDoc) => {
           const target = clonedDoc.querySelector(
-            printMode === "thermal" ? ".print-area-thermal" : ".print-area-invoice"
+            isThermal ? ".print-area-thermal" : ".print-area-invoice"
           ) as HTMLElement;
           if (target) {
             target.style.position = "static";
             target.style.transform = "none";
-            target.style.margin = "0";
-            if (printMode === "invoice") {
+            target.style.margin = "0 auto";
+            if (!isThermal) {
               target.style.width = "794px";
               target.style.minWidth = "794px";
               target.style.maxWidth = "794px";
               target.style.minHeight = "1123px";
-              target.style.padding = "38px 45px";
+              target.style.padding = "36px 44px";
             } else {
               target.style.width = "378px";
               target.style.minWidth = "378px";
@@ -142,24 +173,30 @@ export default function InvoicePrintClient({
 
       const imgData = canvas.toDataURL("image/jpeg", 0.98);
 
-      if (printMode === "thermal") {
-        // Exact 4x6 inch (100mm x 150mm) POS Thermal PDF
+      if (isThermal) {
+        // Exact 4x6 inch (100mm x 150mm) POS Thermal Label PDF
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "mm",
           format: [100, 150],
+          compress: true,
         });
-        pdf.addImage(imgData, "JPEG", 0, 0, 100, 150);
+        pdf.addImage(imgData, "JPEG", 0, 0, 100, 150, undefined, "FAST");
         pdf.save(`${order.order_number}_Thermal_Label.pdf`);
       } else {
         // Exact A4 PDF (210mm x 297mm)
-        const pdf = new jsPDF("p", "mm", "a4");
-        pdf.addImage(imgData, "JPEG", 0, 0, 210, 297);
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: "a4",
+          compress: true,
+        });
+        pdf.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
         pdf.save(`${order.order_number}_Tax_Invoice.pdf`);
       }
     } catch (err) {
       console.error("PDF Download error:", err);
-      // Fallback seamlessly to native print dialog
+      // Seamless browser print fallback
       window.print();
     } finally {
       setDownloadingPdf(false);
@@ -427,7 +464,7 @@ export default function InvoicePrintClient({
                   {/* Brand Logo */}
                   {logoSrc ? (
                     <img
-                      src={logoSrc}
+                      src={logoDataUrl || logoSrc}
                       alt={brandName}
                       crossOrigin="anonymous"
                       className="h-10 sm:h-14 w-auto object-contain mb-0.5"
@@ -694,7 +731,7 @@ export default function InvoicePrintClient({
                 <div className="space-y-0.5">
                   {invoiceSettings?.thermal_logo_url || logoSrc ? (
                     <img
-                      src={invoiceSettings?.thermal_logo_url || logoSrc}
+                      src={logoDataUrl || invoiceSettings?.thermal_logo_url || logoSrc}
                       alt={brandName}
                       crossOrigin="anonymous"
                       className="h-9 w-auto object-contain"
