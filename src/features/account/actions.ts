@@ -217,3 +217,71 @@ export async function deleteCustomerAddress(addressId: string) {
   revalidatePath("/account/addresses");
   return { success: true };
 }
+
+export async function registerUserAccount(input: {
+  email: string;
+  password: string;
+  fullName: string;
+  phone?: string;
+}) {
+  const email = input.email.trim().toLowerCase();
+  const password = input.password;
+  const fullName = input.fullName.trim();
+  const phone = input.phone?.trim() || null;
+
+  if (!email || !password || !fullName) {
+    return { error: "Please fill in all required fields." };
+  }
+
+  if (password.length < 8) {
+    return { error: "Password must be at least 8 characters long." };
+  }
+
+  try {
+    const adminClient = createAdminClient();
+
+    // Create user via Admin API - auto confirms email and bypasses public email rate limits
+    const { data: userData, error: createError } = await adminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: {
+        full_name: fullName,
+        phone,
+      },
+    });
+
+    if (createError) {
+      if (
+        createError.message.toLowerCase().includes("already registered") ||
+        createError.message.toLowerCase().includes("unique constraint") ||
+        createError.message.toLowerCase().includes("user already exists")
+      ) {
+        return { error: "An account with this email address already exists. Please sign in instead." };
+      }
+      return { error: createError.message };
+    }
+
+    const userId = userData.user.id;
+
+    // Upsert into profiles table
+    await adminClient.from("profiles").upsert(
+      {
+        id: userId,
+        email,
+        full_name: fullName,
+        phone,
+        role: "customer",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+
+    return { success: true, userId };
+  } catch (err: any) {
+    console.error("Registration server action error:", err);
+    return { error: err?.message || "An unexpected error occurred during account creation." };
+  }
+}
+
+

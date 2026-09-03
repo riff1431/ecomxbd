@@ -212,6 +212,12 @@ export default function AdminLayoutClient({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  // If on a dedicated invoice/print page, render full clean view without admin sidebar or topbar
+  if (pathname?.includes("/invoice")) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-surface-secondary">
@@ -230,3 +236,4 @@ export default function AdminLayoutClient({
     </div>
   );
 }
+

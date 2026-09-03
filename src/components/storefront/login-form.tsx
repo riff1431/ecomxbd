@@ -42,12 +42,16 @@ export default function LoginForm() {
     try {
       const supabase = createClient();
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password,
       });
 
       if (authError) {
-        setError(authError.message);
+        setError(
+          authError.message === "Invalid login credentials"
+            ? "Invalid email address or password. Please check your credentials and try again."
+            : authError.message
+        );
         setLoading(false);
         return;
       }
@@ -72,7 +76,7 @@ export default function LoginForm() {
               <img
                 src={logoImg}
                 alt={brandName}
-                className="h-9 sm:h-10 max-h-10 w-auto max-w-[180px] object-contain"
+                className="h-9 sm:h-10 max-h-10 w-auto max-w-45 object-contain"
               />
             ) : (
               <span className="text-2xl font-black text-gray-900 tracking-[0.15em] uppercase font-sans">
@@ -118,7 +122,7 @@ export default function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="pl-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                className="pl-10 h-11 rounded-xl text-sm border-gray-200"
               />
             </div>
           </div>
@@ -130,7 +134,7 @@ export default function LoginForm() {
               </Label>
               <Link
                 href="/forgot-password"
-                className="text-xs font-bold text-[#e91e63] hover:underline"
+                className="text-xs font-bold text-sg-pink hover:underline"
               >
                 Forgot password?
               </Link>
@@ -144,7 +148,7 @@ export default function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="pl-10 pr-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                className="pl-10 pr-10 h-11 rounded-xl text-sm border-gray-200"
               />
               <button
                 type="button"
@@ -161,7 +165,7 @@ export default function LoginForm() {
             id="login-submit-btn"
             type="submit"
             disabled={loading}
-            className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
+            className="w-full h-11 rounded-xl bg-sg-pink hover:bg-sg-pink-hover text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
           >
             {loading ? (
               <>

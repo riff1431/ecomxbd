@@ -218,45 +218,55 @@ export default function InvoicePrintClient({
         }
 
         @media print {
+          @page {
+            size: ${printMode === "thermal" ? "100mm 150mm" : "A4 portrait"};
+            margin: 0mm !important;
+          }
+
           body, html {
             background: #ffffff !important;
             margin: 0 !important;
             padding: 0 !important;
+            width: 100% !important;
+            height: auto !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          .no-print {
+
+          header, footer, nav, aside, .no-print, [role="navigation"] {
             display: none !important;
           }
+
           .print-area-invoice {
             width: 210mm !important;
             height: 297mm !important;
             max-width: 210mm !important;
             max-height: 297mm !important;
-            margin: 0 auto !important;
-            padding: 12mm 15mm !important;
+            margin: 0 !important;
+            padding: 10mm 12mm !important;
             box-shadow: none !important;
             border: none !important;
             border-radius: 0 !important;
             page-break-after: avoid !important;
             page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            overflow: hidden !important;
           }
+
           .print-area-thermal {
             width: 100mm !important;
             height: 150mm !important;
             max-width: 100mm !important;
             max-height: 150mm !important;
-            margin: 0 auto !important;
-            padding: 4mm !important;
+            margin: 0 !important;
+            padding: 3mm !important;
             box-shadow: none !important;
             border: none !important;
             border-radius: 0 !important;
             page-break-after: avoid !important;
             page-break-inside: avoid !important;
-          }
-          @page {
-            size: ${printMode === "thermal" ? "100mm 150mm" : "A4 portrait"};
-            margin: 0;
+            break-inside: avoid !important;
+            overflow: hidden !important;
           }
         }
       `}</style>
@@ -332,7 +342,7 @@ export default function InvoicePrintClient({
 
           <Button
             onClick={handlePrint}
-            className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md"
+            className="bg-sg-pink hover:bg-sg-pink-hover text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md"
           >
             <Printer className="h-4 w-4 mr-1.5" />
             {printMode === "invoice" ? t.printA4Btn : t.printThermalBtn}
@@ -366,7 +376,7 @@ export default function InvoicePrintClient({
                 </div>
 
                 <div className="text-right">
-                  <h1 className="text-3xl font-black uppercase tracking-wider text-[#e91e63]">
+                  <h1 className="text-3xl font-black uppercase tracking-wider text-sg-pink">
                     {t.invoiceTitle}
                   </h1>
                   <p className="text-xs font-mono font-bold text-gray-600 mt-0.5">
@@ -378,7 +388,7 @@ export default function InvoicePrintClient({
               {/* Full-Width Tinted Grey Metadata Banner */}
               <div className="bg-gray-100/90 rounded-xl p-4 flex items-center justify-between gap-4 text-xs border border-gray-200">
                 {/* INVOICE TO (Customer) */}
-                <div className="space-y-1 max-w-[260px]">
+                <div className="space-y-1 max-w-65">
                   <span className="font-bold text-[10px] uppercase text-gray-500 tracking-wider block">
                     {t.invoiceTo}
                   </span>
@@ -678,7 +688,7 @@ export default function InvoicePrintClient({
                 <div className="space-y-1">
                   {items.map((it: any) => (
                     <div key={it.id} className="flex justify-between items-start text-gray-900 font-medium gap-2">
-                      <span className="leading-tight break-words flex-1">• {it.product_name_snapshot}</span>
+                      <span className="leading-tight wrap-break-word flex-1">• {it.product_name_snapshot}</span>
                       <span className="font-mono font-bold shrink-0">x{toBn(it.quantity)}</span>
                     </div>
                   ))}

@@ -134,12 +134,22 @@ export function StorefrontHeader() {
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Check auth user
+  // Check auth user and listen to auth state changes
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
       setUser(data?.user || null);
     });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Close mobile drawer and dropdowns on route change
@@ -207,12 +217,12 @@ export function StorefrontHeader() {
   return (
     <header className="sticky top-0 z-40 w-full bg-white shadow-xs border-b border-gray-100">
       {/* 1. Top Utility Announcement Bar (Fully Responsive on All Devices) */}
-      <div className="bg-[#111827] px-3 sm:px-4 py-1.5 text-white text-[11px] sm:text-xs">
+      <div className="bg-sg-black px-3 sm:px-4 py-1.5 text-white text-[11px] sm:text-xs">
         <div className="container-main flex items-center justify-between gap-2 overflow-hidden">
           {/* Mobile Single-Line Compact View (< 640px) */}
           <div className="flex items-center justify-between gap-2 sm:hidden w-full">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <span className="shrink-0 rounded-full bg-[#e91e63] px-2 py-0.5 text-[8.5px] font-black text-white uppercase tracking-wider">
+              <span className="shrink-0 rounded-full bg-sg-pink px-2 py-0.5 text-[8.5px] font-black text-white uppercase tracking-wider">
                 {config.announcementBadgeText || "FREE DELIVERY"}
               </span>
               <span className="truncate text-zinc-300 font-medium text-[10.5px]">
@@ -230,7 +240,7 @@ export function StorefrontHeader() {
 
           {/* Desktop & Tablet View (>= 640px) */}
           <div className="hidden sm:flex items-center gap-2 flex-1">
-            <span className="rounded-full bg-[#e91e63] px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-wider">
+            <span className="rounded-full bg-sg-pink px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-wider">
               {config.announcementBadgeText || "Free Delivery"}
             </span>
             <span className="text-zinc-300 font-medium text-[11px] sm:text-xs">
@@ -269,7 +279,7 @@ export function StorefrontHeader() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="p-1.5 text-gray-700 hover:text-[#e91e63] focus:outline-none transition-colors"
+            className="p-1.5 text-gray-700 hover:text-sg-pink focus:outline-none transition-colors"
             aria-label="Open menu"
           >
             <Menu className="h-6 w-6 stroke-[2.2]" />
@@ -280,7 +290,7 @@ export function StorefrontHeader() {
               <img
                 src={headerConfig.mobileLogoImageUrl || headerConfig.logoImageUrl}
                 alt={headerConfig.mobileLogoText || headerConfig.logoText || "Blush & Budget"}
-                className="h-8 sm:h-9 max-h-9 w-auto max-w-[150px] sm:max-w-[180px] object-contain shrink-0"
+                className="h-8 sm:h-9 max-h-9 w-auto max-w-37.5 sm:max-w-45 object-contain shrink-0"
               />
             ) : (
               <span className="text-xl sm:text-2xl font-black text-black tracking-[0.15em] uppercase font-sans">
@@ -292,12 +302,12 @@ export function StorefrontHeader() {
           <div className="flex items-center gap-1">
             <Link
               href="/account/wishlist"
-              className="relative p-1.5 text-gray-700 hover:text-[#e91e63] focus:outline-none"
+              className="relative p-1.5 text-gray-700 hover:text-sg-pink focus:outline-none"
               aria-label="Wishlist"
             >
-              <Heart className="h-6 w-6 stroke-[2]" />
+              <Heart className="h-6 w-6 stroke-2" />
               {wishlistCount > 0 && (
-                <span className="absolute 0 top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[9px] font-black text-white">
+                <span className="absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-sg-pink px-1 text-[9px] font-black text-white">
                   {wishlistCount}
                 </span>
               )}
@@ -306,12 +316,12 @@ export function StorefrontHeader() {
             <button
               type="button"
               onClick={openCart}
-              className="relative p-1.5 text-gray-700 hover:text-[#e91e63] focus:outline-none"
+              className="relative p-1.5 text-gray-700 hover:text-sg-pink focus:outline-none"
               aria-label="View Cart"
             >
-              <ShoppingBag className="h-6 w-6 stroke-[2]" />
+              <ShoppingBag className="h-6 w-6 stroke-2" />
               {itemCount > 0 && (
-                <span className="absolute 0 top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[9px] font-black text-white">
+                <span className="absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-sg-pink px-1 text-[9px] font-black text-white">
                   {itemCount}
                 </span>
               )}
@@ -328,7 +338,7 @@ export function StorefrontHeader() {
                 <img
                   src={headerConfig.logoImageUrl}
                   alt={headerConfig.logoText || "Blush & Budget"}
-                  className="h-10 xl:h-11 max-h-12 w-auto max-w-[200px] xl:max-w-[240px] object-contain shrink-0"
+                  className="h-10 xl:h-11 max-h-12 w-auto max-w-50 xl:max-w-60 object-contain shrink-0"
                 />
               ) : (
                 <span className="text-2xl xl:text-3xl font-black text-black tracking-[0.15em] uppercase font-sans">
@@ -518,11 +528,11 @@ export function StorefrontHeader() {
             <button
               type="button"
               onClick={openCart}
-              className="bg-[#e91e63] text-white font-bold text-xs uppercase px-4 py-2.5 rounded-full hover:bg-[#d81b60] transition-colors flex items-center gap-1.5 shadow-xs"
+              className="bg-sg-pink text-white font-bold text-xs uppercase px-4 py-2.5 rounded-full hover:bg-sg-pink-hover transition-colors flex items-center gap-1.5 shadow-xs"
             >
               <ShoppingBag className="h-3.5 w-3.5" />
               <span>BAG</span>
-              <span className="ml-1 inline-flex items-center justify-center h-4.5 w-4.5 rounded-full bg-white text-[#e91e63] text-[10px] font-black">
+              <span className="ml-1 inline-flex items-center justify-center h-4.5 w-4.5 rounded-full bg-white text-sg-pink text-[10px] font-black">
                 {itemCount}
               </span>
             </button>
@@ -532,7 +542,7 @@ export function StorefrontHeader() {
         {/* Mobile Full-Width Pink-Bordered Pill Search Input */}
         <div ref={searchContainerRef} className="lg:hidden mt-1">
           <form onSubmit={handleSearchSubmit} className="relative">
-            <div className="relative flex items-center rounded-full border-2 border-[#e91e63] bg-[#f8f9fa] shadow-xs px-3.5 py-2">
+            <div className="relative flex items-center rounded-full border-2 border-sg-pink bg-[#f8f9fa] shadow-xs px-3.5 py-2">
               <Search className="h-4 w-4 mr-2 text-gray-700 shrink-0" />
               <input
                 type="search"
@@ -576,8 +586,8 @@ export function StorefrontHeader() {
                     <Link
                       href={cat.href || `/products?category=${cat.slug}`}
                       className={cn(
-                        "hover:text-[#e91e63] transition-colors whitespace-nowrap flex items-center gap-1",
-                        isHovered ? "text-[#e91e63]" : ""
+                        "hover:text-sg-pink transition-colors whitespace-nowrap flex items-center gap-1",
+                        isHovered ? "text-sg-pink" : ""
                       )}
                     >
                       <span>{cat.name}</span>
@@ -585,7 +595,7 @@ export function StorefrontHeader() {
                         <ChevronDown
                           className={cn(
                             "h-3 w-3 transition-transform duration-200",
-                            isHovered ? "rotate-180 text-[#e91e63]" : "text-gray-400"
+                            isHovered ? "rotate-180 text-sg-pink" : "text-gray-400"
                           )}
                         />
                       )}
@@ -603,7 +613,7 @@ export function StorefrontHeader() {
                   href={pill.href}
                   className={cn(
                     "rounded-full text-white font-black text-[10px] sm:text-[11px] uppercase px-3 py-1 shadow-2xs tracking-wider transition-transform hover:scale-105",
-                    pill.bgClass || "bg-[#e91e63]"
+                    pill.bgClass || "bg-sg-pink"
                   )}
                 >
                   {pill.label}
@@ -630,12 +640,12 @@ export function StorefrontHeader() {
                 <div className="col-span-6 space-y-3">
                   <div className="flex items-center justify-between border-b border-gray-100 pb-2">
                     <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-[#e91e63]" />
+                      <span className="h-2 w-2 rounded-full bg-sg-pink" />
                       {activeMegaCategory.name} Essentials
                     </h3>
                     <Link
                       href={activeMegaCategory.href || `/products?category=${activeMegaCategory.slug}`}
-                      className="text-xs font-bold text-[#e91e63] hover:underline flex items-center gap-0.5"
+                      className="text-xs font-bold text-sg-pink hover:underline flex items-center gap-0.5"
                     >
                       View All {activeMegaCategory.name} &rarr;
                     </Link>
@@ -646,10 +656,10 @@ export function StorefrontHeader() {
                       <Link
                         key={idx}
                         href={sub.href}
-                        className="group flex items-center justify-between rounded-xl p-2.5 text-xs font-semibold text-gray-700 hover:bg-pink-50 hover:text-[#e91e63] transition-colors"
+                        className="group flex items-center justify-between rounded-xl p-2.5 text-xs font-semibold text-gray-700 hover:bg-pink-50 hover:text-sg-pink transition-colors"
                       >
                         <span className="truncate">{sub.name}</span>
-                        <ChevronRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#e91e63] group-hover:translate-x-0.5 transition-all shrink-0" />
+                        <ChevronRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-sg-pink group-hover:translate-x-0.5 transition-all shrink-0" />
                       </Link>
                     ))}
                   </div>
@@ -666,7 +676,7 @@ export function StorefrontHeader() {
                         <Link
                           key={idx}
                           href={`/products?search=${encodeURIComponent(brand)}`}
-                          className="rounded-full bg-gray-50 border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 hover:border-[#e91e63] hover:bg-pink-50 hover:text-[#e91e63] transition-colors"
+                          className="rounded-full bg-gray-50 border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 hover:border-sg-pink hover:bg-pink-50 hover:text-sg-pink transition-colors"
                         >
                           {brand}
                         </Link>
@@ -679,7 +689,7 @@ export function StorefrontHeader() {
                 <div className="col-span-3 border-l border-gray-100 pl-6">
                   <Link
                     href={activeMegaCategory.promoBanner?.href || activeMegaCategory.href || "/products"}
-                    className="group relative block overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 text-white p-4 shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between"
+                    className="group relative block overflow-hidden rounded-2xl bg-linear-to-br from-pink-500 to-rose-600 text-white p-4 shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between"
                   >
                     {activeMegaCategory.promoBanner?.image && (
                       <img
@@ -729,7 +739,7 @@ export function StorefrontHeader() {
                   <img
                     src={headerConfig.drawerLogoImageUrl || headerConfig.mobileLogoImageUrl || headerConfig.logoImageUrl}
                     alt={headerConfig.drawerLogoText || headerConfig.mobileLogoText || headerConfig.logoText || "Blush & Budget"}
-                    className="h-7 sm:h-8 max-h-8 w-auto max-w-[160px] object-contain shrink-0"
+                    className="h-7 sm:h-8 max-h-8 w-auto max-w-40 object-contain shrink-0"
                   />
                 ) : (
                   <span className="text-base font-black text-gray-900 tracking-wider">
@@ -740,7 +750,7 @@ export function StorefrontHeader() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 text-[#e91e63] hover:text-[#d81b60] focus:outline-none"
+                className="p-1.5 text-sg-pink hover:text-sg-pink-hover focus:outline-none"
                 aria-label="Close Menu"
               >
                 <X className="h-5 w-5 stroke-[2.5]" />

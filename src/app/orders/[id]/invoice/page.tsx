@@ -2,8 +2,14 @@ import { notFound } from "next/navigation";
 import { getOrderById } from "@/features/orders/actions";
 import { getHomepageConfig } from "@/features/marketing/homepage-actions";
 import InvoicePrintClient from "@/app/admin/orders/[id]/invoice/invoice-print-client";
+import type { Metadata } from "next";
 
-export default async function CustomerOrderInvoicePage({
+export const metadata: Metadata = {
+  title: "Tax Invoice & Thermal Label",
+  robots: { index: false, follow: false },
+};
+
+export default async function DedicatedOrderInvoicePage({
   params,
 }: {
   params: Promise<{ id: string }>;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -21,9 +21,10 @@ import { Button } from "@/components/shared/ui/button";
 import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
 import { getHomepageConfig } from "@/features/marketing/homepage-actions";
+import { registerUserAccount } from "@/features/account/actions";
 import { type HomepageFullConfig, DEFAULT_HOMEPAGE_CONFIG } from "@/features/marketing/homepage-types";
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/account";
@@ -73,53 +74,47 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const { data: signUpData, error: authError } = await supabase.auth.signUp({
+      // 1. Create account via robust server action (bypasses public SMTP email rate limit & syncs profile)
+      const res = await registerUserAccount({
         email: formData.email.trim(),
         password: formData.password,
-        options: {
-          data: {
-            full_name: formData.fullName.trim(),
-            phone: formData.phone.trim(),
-          },
-        },
+        fullName: formData.fullName.trim(),
+        phone: formData.phone.trim(),
       });
 
-      if (authError) {
-        setError(authError.message);
+      if (res.error) {
+        setError(res.error);
         setLoading(false);
         return;
       }
 
-      // Check if session was automatically granted
-      if (signUpData?.session) {
-        setSuccessMsg("Account created successfully! Redirecting to your dashboard...");
-        setTimeout(() => {
-          window.location.href = redirectTo;
-        }, 1200);
-        return;
-      }
-
-      // If no session, attempt immediate sign-in with password
+      // 2. Establish active client session immediately
+      const supabase = createClient();
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email.trim(),
         password: formData.password,
       });
 
-      if (signInData?.session) {
-        setSuccessMsg("Account created and logged in! Redirecting...");
-        setTimeout(() => {
-          window.location.href = redirectTo;
-        }, 1200);
+      if (signInError) {
+        // In case immediate sign-in needs manual step
+        setSuccessMsg("Account created successfully! Please sign in with your credentials.");
+        setNeedsVerification(true);
+        setLoading(false);
         return;
       }
 
-      // If email confirmation is required by Supabase configuration
-      setNeedsVerification(true);
-      setSuccessMsg(
-        "Account created successfully! If email confirmation is enabled, please verify your email or sign in below."
-      );
-      setLoading(false);
+      if (signInData?.session) {
+        setSuccessMsg("Account created and logged in! Redirecting to your account...");
+        setTimeout(() => {
+          window.location.href = redirectTo;
+        }, 1000);
+        return;
+      }
+
+      setSuccessMsg("Account created successfully! Redirecting...");
+      setTimeout(() => {
+        window.location.href = redirectTo;
+      }, 1000);
     } catch {
       setError("An unexpected error occurred. Please try again.");
       setLoading(false);
@@ -133,10 +128,10 @@ export default function RegisterPage() {
         <div className="text-center space-y-3">
           <Link href="/" className="inline-flex items-center justify-center">
             {logoImg ? (
-              <img
+                <img
                 src={logoImg}
                 alt={brandName}
-                className="h-9 sm:h-10 max-h-10 w-auto max-w-[180px] object-contain"
+                className="h-9 sm:h-10 max-h-10 w-auto max-w-45 object-contain"
               />
             ) : (
               <span className="text-2xl font-black text-gray-900 tracking-[0.15em] uppercase font-sans">
@@ -163,7 +158,7 @@ export default function RegisterPage() {
               <div className="pt-2 border-t border-emerald-200/60 flex justify-end">
                 <Link
                   href={`/login?redirect=${encodeURIComponent(redirectTo)}`}
-                  className="inline-flex items-center gap-1 font-black text-[#e91e63] hover:underline"
+                  className="inline-flex items-center gap-1 font-black text-sg-pink hover:underline"
                 >
                   Proceed to Sign In &rarr;
                 </Link>
@@ -196,7 +191,7 @@ export default function RegisterPage() {
                   onChange={(e) => updateField("fullName", e.target.value)}
                   required
                   disabled={loading || !!successMsg}
-                  className="pl-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                  className="pl-10 h-11 rounded-xl text-sm border-gray-200"
                 />
               </div>
             </div>
@@ -215,7 +210,7 @@ export default function RegisterPage() {
                   onChange={(e) => updateField("email", e.target.value)}
                   required
                   disabled={loading || !!successMsg}
-                  className="pl-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                  className="pl-10 h-11 rounded-xl text-sm border-gray-200"
                 />
               </div>
             </div>
@@ -233,7 +228,7 @@ export default function RegisterPage() {
                   value={formData.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
                   disabled={loading || !!successMsg}
-                  className="pl-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                  className="pl-10 h-11 rounded-xl text-sm border-gray-200"
                 />
               </div>
             </div>
@@ -253,7 +248,7 @@ export default function RegisterPage() {
                   required
                   minLength={8}
                   disabled={loading || !!successMsg}
-                  className="pl-10 pr-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                  className="pl-10 pr-10 h-11 rounded-xl text-sm border-gray-200"
                 />
                 <button
                   type="button"
@@ -280,7 +275,7 @@ export default function RegisterPage() {
                   onChange={(e) => updateField("confirmPassword", e.target.value)}
                   required
                   disabled={loading || !!successMsg}
-                  className="pl-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                  className="pl-10 h-11 rounded-xl text-sm border-gray-200"
                 />
               </div>
             </div>
@@ -289,7 +284,7 @@ export default function RegisterPage() {
               id="register-submit-btn"
               type="submit"
               disabled={loading || !!successMsg}
-              className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
+              className="w-full h-11 rounded-xl bg-sg-pink hover:bg-sg-pink-hover text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
             >
               {loading ? (
                 <>
@@ -322,3 +317,12 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
+  );
+}
+
