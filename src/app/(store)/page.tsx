@@ -1,33 +1,37 @@
 import { createClient } from "@/lib/supabase/server";
 import { type ProductCardData } from "@/components/storefront/product-card";
+import { getHomepageConfig } from "@/features/marketing/homepage-actions";
 import { HomepageInteractive } from "./homepage-interactive";
 
 export const metadata = {
-  title: "ecomXbangladesh — 100% Authentic Skincare, K-Beauty & Cosmetics",
+  title: "Blush & Budget — Buy Authentic Cosmetic and Beauty Products Online in Bangladesh",
   description:
-    "Shop certified authentic Korean skincare, clinical serums, sunscreen SPF 50+, and luxury cosmetics online with Cash on Delivery nationwide.",
+    "Shop 100% authentic beauty products online in Bangladesh at Blush & Budget: makeup, skincare, and haircare from 450+ brands, at the best BDT prices with fast nationwide delivery.",
 };
 
 export default async function HomePage() {
   const supabase = await createClient();
 
-  // Fetch active products
-  const { data: products } = await supabase
-    .from("products")
-    .select(`
-      id,
-      name,
-      slug,
-      regular_price,
-      sale_price,
-      og_image_url,
-      brands (name),
-      inventory (available)
-    `)
-    .eq("status", "active")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(16);
+  // Parallel fetch: active products & admin dynamic layout configuration
+  const [{ data: products }, homepageConfig] = await Promise.all([
+    supabase
+      .from("products")
+      .select(`
+        id,
+        name,
+        slug,
+        regular_price,
+        sale_price,
+        og_image_url,
+        brands (name),
+        inventory (available)
+      `)
+      .eq("status", "active")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(16),
+    getHomepageConfig(),
+  ]);
 
   // Map to ProductCardData
   const productCardItems: ProductCardData[] = (products || []).map((p) => {
@@ -49,5 +53,10 @@ export default async function HomePage() {
     };
   });
 
-  return <HomepageInteractive products={productCardItems} />;
+  return (
+    <HomepageInteractive
+      products={productCardItems}
+      config={homepageConfig}
+    />
+  );
 }

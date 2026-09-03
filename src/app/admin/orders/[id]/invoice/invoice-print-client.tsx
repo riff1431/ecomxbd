@@ -1,0 +1,723 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { formatPrice } from "@/lib/utils";
+import {
+  Printer,
+  ArrowLeft,
+  Truck,
+  Package,
+  CheckCircle2,
+  FileText,
+  Tag,
+  Copy,
+  Check,
+  Download,
+  Languages,
+  Loader2,
+  Phone,
+  Mail,
+  Globe,
+} from "lucide-react";
+import { Button } from "@/components/shared/ui/button";
+import QRCode from "qrcode";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
+export default function InvoicePrintClient({
+  order,
+  config,
+}: {
+  order: any;
+  config: any;
+}) {
+  const [printMode, setPrintMode] = useState<"invoice" | "thermal">("invoice");
+  const [lang, setLang] = useState<"en" | "bn">("en");
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const address = order.shipping_address_snapshot || {};
+  const items = order.order_items || [];
+  const brandName = config?.headerConfig?.logoText || "Blush & Budget";
+  const logoSrc = "/images/blush-logo.png";
+
+  const totalQuantity = items.reduce((sum: number, it: any) => sum + (it.quantity || 1), 0);
+  const courier = order.courier_name || "SteadFast Courier";
+  const consignmentCode = order.consignment_id || `SF-${order.order_number.replace(/\D/g, "")}`;
+  const isCod = order.payment_method === "cod" || !order.payment_method;
+  const baseUrl = typeof window !== "undefined" && window.location.origin ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
+  const trackingUrl = `${baseUrl}/account/track?order=${order.order_number}`;
+
+  // Bengali Digits Helper
+  const toBn = (val: string | number) => {
+    if (lang !== "bn") return String(val);
+    const bnDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+    return String(val).replace(/[0-9]/g, (d) => bnDigits[+d]);
+  };
+
+  const formatCurrency = (amount: number) => {
+    if (lang === "bn") {
+      return `৳${toBn(amount.toLocaleString("en-IN"))}`;
+    }
+    return formatPrice(amount);
+  };
+
+  // Generate Real Vector QR Code DataURL on mount
+  useEffect(() => {
+    QRCode.toDataURL(trackingUrl, {
+      margin: 1,
+      width: 256,
+      color: {
+        dark: "#000000",
+        light: "#ffffff",
+      },
+    })
+      .then((url) => setQrCodeDataUrl(url))
+      .catch((err) => console.error("QR Code Generation Error:", err));
+  }, [trackingUrl]);
+
+  // Direct Print Handler
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // 1-Click PDF Download Handler
+  const handleDownloadPdf = async () => {
+    if (!printRef.current) return;
+    setDownloadingPdf(true);
+
+    try {
+      const element = printRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2.5,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      if (printMode === "thermal") {
+        // Exact 4x6 inch (100mm x 150mm) POS Thermal PDF
+        const pdf = new jsPDF({
+          orientation: "portrait",
+          unit: "mm",
+          format: [100, 150],
+        });
+        pdf.addImage(imgData, "PNG", 0, 0, 100, 150);
+        pdf.save(`${order.order_number}_Thermal_Label.pdf`);
+      } else {
+        // Exact A4 PDF (210mm x 297mm)
+        const pdf = new jsPDF("p", "mm", "a4");
+        pdf.addImage(imgData, "PNG", 0, 0, 210, 297);
+        pdf.save(`${order.order_number}_Tax_Invoice.pdf`);
+      }
+    } catch (err) {
+      console.error("PDF Download error:", err);
+      alert("Failed to generate PDF. Please use Print -> Save as PDF.");
+    }
+
+    setDownloadingPdf(false);
+  };
+
+  // Translations dictionary for full Bangla / English
+  const t = {
+    en: {
+      invoiceTitle: "INVOICE",
+      invoiceTo: "INVOICE TO:",
+      date: "Date:",
+      invoiceNo: "Invoice No:",
+      courier: "Courier:",
+      totalDue: "TOTAL DUE :",
+      description: "Description",
+      qty: "Qty",
+      price: "Price",
+      total: "Total",
+      subtotal: "Sub Total",
+      discount: "Discount",
+      deliveryCharge: "Delivery Charge",
+      grandTotal: "Grand Total",
+      paymentMethod: "Payment Method:",
+      mode: "Mode:",
+      status: "Status:",
+      doorstepNotice: "* Please inspect items at doorstep before completing COD payment.",
+      contactSupport: "Contact Support:",
+      authSignature: "Authorised Signature",
+      tagline: "Authentic Skincare & Beauty Imports",
+      addressText: "House 14, Road 27, Dhanmondi, Dhaka, Bangladesh",
+      free: "FREE",
+      thermalTrackingNo: "Tracking Number:",
+      thermalDeliverTo: "DELIVER TO:",
+      thermalSender: "SENDER (HUB):",
+      weight: "WEIGHT:",
+      totalItems: "TOTAL ITEMS:",
+      routing: "ROUTING & SORTING",
+      doNotShip: "DO NOT SHIP IF DAMAGED • RETURN TO HUB",
+      scanToTrack: "Scan to track parcel",
+      orderDate: "ORDER DATE:",
+      tabA4: "A4 Tax Invoice",
+      tabThermal: "4×6 Thermal Label",
+      downloadPdf: "Download PDF",
+      printA4Btn: "Print A4 Invoice",
+      printThermalBtn: "Print 4×6 Label",
+      closeWindow: "Close Window",
+    },
+    bn: {
+      invoiceTitle: "ইনভয়েস",
+      invoiceTo: "প্রাপক / কাস্টমার:",
+      date: "তারিখ:",
+      invoiceNo: "ইনভয়েস নং:",
+      courier: "কুরিয়ার:",
+      totalDue: "সর্বমোট প্রদেয় :",
+      description: "পণ্যের বিবরণ",
+      qty: "পরিমাণ",
+      price: "একক মূল্য",
+      total: "মোট",
+      subtotal: "সাবটোটাল",
+      discount: "ডিসকাউন্ট",
+      deliveryCharge: "ডেলিভারি চার্জ",
+      grandTotal: "সর্বমোট বিল",
+      paymentMethod: "পেমেন্ট মাধ্যম:",
+      mode: "মাধ্যম:",
+      status: "স্ট্যাটাস:",
+      doorstepNotice: "* অনুগ্রহ করে ডেলিভারি রাইডারের সামনে পার্সেলটি চেক করে মূল্য পরিশোধ করুন।",
+      contactSupport: "কাস্টমার সাপোর্ট:",
+      authSignature: "কর্তৃপক্ষের স্বাক্ষর",
+      tagline: "১০০% অথেনটিক স্কিনকেয়ার ও বিউটি ইম্পোর্টস",
+      addressText: "হাউজ ১৪, রোড ২৭, ধানমন্ডি, ঢাকা, বাংলাদেশ",
+      free: "ফ্রি (০৳)",
+      thermalTrackingNo: "ট্র্যাকিং নম্বর:",
+      thermalDeliverTo: "ডেলিভারি ঠিকানা (প্রাপক):",
+      thermalSender: "প্রেরক (রিটার্ন হাব):",
+      weight: "ওজন:",
+      totalItems: "মোট পণ্য:",
+      routing: "কুরিয়ার রাউটিং ও শর্টিং",
+      doNotShip: "ক্ষতিগ্রস্ত হলে ডেলিভারি করবেন না • হাবে ফেরত পাঠান",
+      scanToTrack: "পার্সেল ট্র্যাক করতে স্ক্যান করুন",
+      orderDate: "অর্ডার তারিখ:",
+      tabA4: "A4 ট্যাক্স ইনভয়েস",
+      tabThermal: "৪×৬ থার্মাল লেবেল",
+      downloadPdf: "পিডিএফ ডাউনলোড",
+      printA4Btn: "ইনভয়েস প্রিন্ট",
+      printThermalBtn: "লেবেল প্রিন্ট",
+      closeWindow: "উইন্ডো বন্ধ করুন",
+    },
+  }[lang];
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-4 sm:p-8 print:p-0 print:m-0 print:bg-white text-gray-900 font-sans">
+      {/* Global Print Isolation CSS */}
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+        body {
+          font-family: 'Inter', 'Hind Siliguri', sans-serif;
+        }
+
+        @media print {
+          body, html {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          .print-area-invoice {
+            width: 210mm !important;
+            height: 297mm !important;
+            max-width: 210mm !important;
+            max-height: 297mm !important;
+            margin: 0 auto !important;
+            padding: 12mm 15mm !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          .print-area-thermal {
+            width: 100mm !important;
+            height: 150mm !important;
+            max-width: 100mm !important;
+            max-height: 150mm !important;
+            margin: 0 auto !important;
+            padding: 4mm !important;
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            page-break-after: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          @page {
+            size: ${printMode === "thermal" ? "100mm 150mm" : "A4 portrait"};
+            margin: 0;
+          }
+        }
+      `}</style>
+
+      {/* Top Action Bar (Hidden during Print & PDF) */}
+      <div className="no-print max-w-4xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <button
+          onClick={() => window.close()}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-600 hover:text-gray-900"
+        >
+          <ArrowLeft className="h-4 w-4" /> {t.closeWindow}
+        </button>
+
+        {/* Format Selector: A4 Invoice vs 4x6 Thermal Label */}
+        <div className="flex items-center gap-1.5 bg-gray-100 p-1 rounded-xl border border-gray-200">
+          <button
+            onClick={() => setPrintMode("invoice")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              printMode === "invoice"
+                ? "bg-white text-gray-900 shadow-xs"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            <FileText className="h-3.5 w-3.5 text-[#e91e63]" /> {t.tabA4}
+          </button>
+          <button
+            onClick={() => setPrintMode("thermal")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+              printMode === "thermal"
+                ? "bg-white text-gray-900 shadow-xs"
+                : "text-gray-500 hover:text-gray-800"
+            }`}
+          >
+            <Tag className="h-3.5 w-3.5 text-[#e91e63]" /> {t.tabThermal}
+          </button>
+        </div>
+
+        {/* Language Toggle: English vs বাংলা */}
+        <div className="flex items-center gap-1 bg-pink-50 p-1 rounded-xl border border-pink-200">
+          <button
+            onClick={() => setLang("en")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              lang === "en" ? "bg-[#e91e63] text-white shadow-xs" : "text-gray-700 hover:text-black"
+            }`}
+          >
+            English
+          </button>
+          <button
+            onClick={() => setLang("bn")}
+            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+              lang === "bn" ? "bg-[#e91e63] text-white shadow-xs" : "text-gray-700 hover:text-black"
+            }`}
+          >
+            বাংলা
+          </button>
+        </div>
+
+        {/* Action Buttons: PDF Download & Print */}
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleDownloadPdf}
+            disabled={downloadingPdf}
+            variant="outline"
+            className="text-xs font-black rounded-xl border-gray-300 hover:bg-gray-50"
+          >
+            {downloadingPdf ? (
+              <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-1.5 text-[#e91e63]" />
+            )}
+            {t.downloadPdf}
+          </Button>
+
+          <Button
+            onClick={handlePrint}
+            className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-md"
+          >
+            <Printer className="h-4 w-4 mr-1.5" />
+            {printMode === "invoice" ? t.printA4Btn : t.printThermalBtn}
+          </Button>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* 1. CORPORATE PINK A4 TAX INVOICE (Exact A4 210mm × 297mm)     */}
+      {/* ============================================================ */}
+      {printMode === "invoice" && (
+        <div className="flex justify-center">
+          <div
+            ref={printRef}
+            className="print-area-invoice w-[210mm] min-h-[297mm] max-w-[210mm] bg-white p-[12mm_15mm] border border-gray-200 shadow-xl print:shadow-none print:border-none text-gray-900 relative overflow-hidden flex flex-col justify-between"
+          >
+            <div className="space-y-6">
+              {/* Top Brand & Title Bar */}
+              <div className="flex items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                <div className="space-y-1">
+                  {/* Brand Logo */}
+                  <img
+                    src={logoSrc}
+                    alt={brandName}
+                    className="h-14 w-auto object-contain mb-0.5"
+                  />
+                  <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                    {t.tagline}
+                  </p>
+                  <p className="text-[10px] text-gray-500">{t.addressText}</p>
+                </div>
+
+                <div className="text-right">
+                  <h1 className="text-3xl font-black uppercase tracking-wider text-[#e91e63]">
+                    {t.invoiceTitle}
+                  </h1>
+                  <p className="text-xs font-mono font-bold text-gray-600 mt-0.5">
+                    {order.order_number}
+                  </p>
+                </div>
+              </div>
+
+              {/* Full-Width Tinted Grey Metadata Banner */}
+              <div className="bg-gray-100/90 rounded-xl p-4 flex items-center justify-between gap-4 text-xs border border-gray-200">
+                {/* INVOICE TO (Customer) */}
+                <div className="space-y-1 max-w-[260px]">
+                  <span className="font-bold text-[10px] uppercase text-gray-500 tracking-wider block">
+                    {t.invoiceTo}
+                  </span>
+                  <p className="font-black text-sm text-gray-900 uppercase">
+                    {address.name || order.guest_name || "VALUED CUSTOMER"}
+                  </p>
+                  <p className="text-gray-600 font-medium text-[11px] leading-tight">
+                    {address.address || "Address on record"}
+                    {address.thana ? `, ${address.thana}` : ""}
+                    {address.district ? `, ${address.district}` : ""}
+                  </p>
+                  <p className="font-mono font-bold text-gray-800 text-[11px]">
+                    {toBn(address.phone || order.guest_phone || "")}
+                  </p>
+                </div>
+
+                {/* Date & Invoice No */}
+                <div className="space-y-1 text-center text-[11px]">
+                  <div>
+                    <span className="text-gray-500 font-medium">{t.date} </span>
+                    <span className="font-bold text-gray-900 font-mono">
+                      {toBn(
+                        new Date(order.created_at).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })
+                      )}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-medium">{t.invoiceNo} </span>
+                    <span className="font-bold text-gray-900 font-mono">{order.order_number}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 font-medium">{t.courier} </span>
+                    <span className="font-bold text-emerald-700">{courier}</span>
+                  </div>
+                </div>
+
+                {/* TOTAL DUE Box with Offline Vector QR Code */}
+                <div className="flex items-center gap-3 text-right">
+                  <div>
+                    <span className="font-bold text-[10px] uppercase text-gray-500 tracking-wider block">
+                      {t.totalDue}
+                    </span>
+                    <span className="text-xl font-black text-[#e91e63] font-mono">
+                      {formatCurrency(order.total)}
+                    </span>
+                  </div>
+                  {qrCodeDataUrl ? (
+                    <img
+                      src={qrCodeDataUrl}
+                      alt="Order QR Code"
+                      className="h-13 w-13 rounded-lg border border-gray-300 bg-white p-0.5 shrink-0"
+                      title={t.scanToTrack}
+                    />
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Line Items Table with Solid Pink Header */}
+              <div className="rounded-xl border border-gray-200 overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-[#e91e63] text-white uppercase font-black text-[10px] tracking-wider">
+                    <tr>
+                      <th className="px-4 py-2.5">{t.description}</th>
+                      <th className="px-4 py-2.5 text-center w-16">{t.qty}</th>
+                      <th className="px-4 py-2.5 text-right w-24">{t.price}</th>
+                      <th className="px-4 py-2.5 text-right w-28">{t.total}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 text-[11px]">
+                    {items.map((item: any, idx: number) => (
+                      <tr
+                        key={item.id || idx}
+                        className={idx % 2 === 1 ? "bg-gray-50/70" : "bg-white"}
+                      >
+                        <td className="px-4 py-3">
+                          <span className="font-bold text-gray-900 block">
+                            {item.product_name_snapshot}
+                          </span>
+                          {item.sku_snapshot && (
+                            <span className="font-mono text-[9px] text-gray-400">
+                              SKU: {item.sku_snapshot}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center font-black text-gray-800">
+                          {toBn(item.quantity)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-medium text-gray-700 font-mono">
+                          {formatCurrency(item.unit_price)}
+                        </td>
+                        <td className="px-4 py-3 text-right font-black text-gray-900 font-mono">
+                          {formatCurrency(item.total)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Subtotal, Discount & Grand Total & Signature Block */}
+            <div className="pt-4 border-t border-gray-200 space-y-4">
+              <div className="flex justify-between items-start gap-6">
+                {/* Payment Method & Contact */}
+                <div className="space-y-3 text-[11px] max-w-sm">
+                  <div className="space-y-0.5">
+                    <span className="font-black text-gray-900 text-xs block uppercase tracking-wider">
+                      {t.paymentMethod}
+                    </span>
+                    <p className="text-gray-700 font-bold">
+                      {t.mode}{" "}
+                      <span className="uppercase text-[#e91e63]">
+                        {isCod
+                          ? lang === "bn"
+                            ? "ক্যাশ অন ডেলিভারি (COD)"
+                            : "Cash on Delivery (COD)"
+                          : order.payment_method}
+                      </span>
+                    </p>
+                    <p className="text-gray-500 text-[10px]">
+                      {t.status} <strong className="uppercase text-gray-800">{order.payment_status}</strong>
+                    </p>
+                    <p className="text-gray-400 text-[10px] italic">{t.doorstepNotice}</p>
+                  </div>
+
+                  <div className="space-y-0.5 pt-2 border-t border-gray-200 text-[10px] text-gray-600">
+                    <span className="font-black text-gray-900 block uppercase tracking-wider">
+                      {t.contactSupport}
+                    </span>
+                    <p>support@blushandbudget.com • +880 1700-000000</p>
+                    <p>www.blushandbudget.com</p>
+                  </div>
+                </div>
+
+                {/* Financial Totals */}
+                <div className="w-64 space-y-1.5 text-xs">
+                  <div className="flex justify-between py-1 border-b border-gray-100 text-gray-600 font-medium">
+                    <span>{t.subtotal}</span>
+                    <span className="font-bold text-gray-900 font-mono">
+                      {formatCurrency(order.subtotal || order.total)}
+                    </span>
+                  </div>
+
+                  {order.discount_amount > 0 && (
+                    <div className="flex justify-between py-1 border-b border-gray-100 text-emerald-600 font-bold">
+                      <span>{t.discount}</span>
+                      <span className="font-mono">-{formatCurrency(order.discount_amount)}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between py-1 border-b border-gray-100 text-gray-600 font-medium">
+                    <span>{t.deliveryCharge}</span>
+                    <span className="font-bold text-gray-900 font-mono">
+                      {order.shipping_amount === 0 ? t.free : formatCurrency(order.shipping_amount)}
+                    </span>
+                  </div>
+
+                  {/* Grand Total Solid Pink Box */}
+                  <div className="bg-[#e91e63] text-white p-2.5 rounded-xl flex justify-between items-center text-sm font-black shadow-xs mt-1">
+                    <span className="uppercase tracking-wider">{t.grandTotal}</span>
+                    <span className="text-base font-mono font-black">
+                      {formatCurrency(order.total)}
+                    </span>
+                  </div>
+
+                  {/* Authorised Signature Line */}
+                  <div className="pt-6 text-right space-y-0.5">
+                    <p className="font-serif italic text-base text-gray-800">Blush &amp; Budget</p>
+                    <div className="w-36 ml-auto border-t border-gray-400 pt-0.5 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">
+                      {t.authSignature}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================ */}
+      {/* 2. DARAZ-STYLE 4×6 POS THERMAL LABEL (Exact 100mm × 150mm)   */}
+      {/* ============================================================ */}
+      {printMode === "thermal" && (
+        <div className="flex justify-center">
+          <div
+            ref={printRef}
+            className="print-area-thermal w-[100mm] h-[150mm] max-w-[100mm] max-h-[150mm] bg-white p-4 border-2 border-dashed border-gray-400 shadow-xl print:shadow-none print:border-none text-gray-900 space-y-2.5 font-sans relative overflow-hidden flex flex-col justify-between"
+          >
+            <div className="space-y-2">
+              {/* Header Row with Logo, Hub & Offline Vector QR Code */}
+              <div className="border-b-2 border-black pb-2 flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <img
+                    src={logoSrc}
+                    alt={brandName}
+                    className="h-9 w-auto object-contain"
+                  />
+                  <span className="text-[9px] font-bold text-gray-700 block uppercase font-mono">
+                    {courier} Express
+                  </span>
+                </div>
+
+                <div className="text-right space-y-0.5">
+                  <span className="text-[8px] font-black uppercase text-gray-600 block">
+                    {t.orderDate} {toBn(new Date(order.created_at).toLocaleDateString("en-GB"))}
+                  </span>
+                  {qrCodeDataUrl ? (
+                    <img
+                      src={qrCodeDataUrl}
+                      alt="QR Code"
+                      className="h-11 w-11 border border-black p-0.5 ml-auto bg-white"
+                    />
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Primary Tracking Barcode Block */}
+              <div className="text-center py-0.5 border-b-2 border-black space-y-0.5">
+                <span className="text-[9px] font-bold text-gray-600 uppercase block font-mono">
+                  {t.thermalTrackingNo}
+                </span>
+                <p className="font-mono text-sm font-black tracking-wider text-black">
+                  {consignmentCode}
+                </p>
+                {/* High-Contrast Thermal SVG Barcode */}
+                <div className="py-0.5 flex justify-center">
+                  <svg className="w-56 h-9" viewBox="0 0 200 36">
+                    <rect x="0" y="0" width="200" height="36" fill="#ffffff" />
+                    {[
+                      2, 6, 9, 14, 18, 22, 26, 31, 35, 38, 44, 48, 52, 57, 62, 66, 70, 75, 80, 84,
+                      88, 93, 98, 102, 106, 111, 116, 120, 125, 130, 134, 139, 144, 148, 153, 158,
+                      162, 167, 172, 176, 181, 186, 190, 195,
+                    ].map((x, i) => (
+                      <rect
+                        key={i}
+                        x={x}
+                        y="1"
+                        width={i % 3 === 0 ? 3 : i % 2 === 0 ? 2 : 1.2}
+                        height="34"
+                        fill="#000000"
+                      />
+                    ))}
+                  </svg>
+                </div>
+                {/* Prominent COD Badge */}
+                <div>
+                  <span className="inline-block border-2 border-black px-2.5 py-0.5 font-black text-xs uppercase font-mono rounded bg-white text-black">
+                    {isCod
+                      ? `COD : ${formatCurrency(order.total)}`
+                      : lang === "bn"
+                      ? "পেইড (৳০)"
+                      : "Non-COD (PAID ৳0)"}
+                  </span>
+                </div>
+              </div>
+
+              {/* 2-Column Delivery & Shipper Address Grid */}
+              <div className="grid grid-cols-2 gap-2 text-[9px] border-b-2 border-black pb-2">
+                {/* Receiver (Deliver To) */}
+                <div className="border-r-2 border-black pr-1.5 space-y-0.5">
+                  <span className="font-black uppercase tracking-wider block bg-black text-white px-1 py-0.2 rounded text-[7px] w-fit">
+                    {t.thermalDeliverTo}
+                  </span>
+                  <p className="font-black text-[11px] text-black">{address.name || order.guest_name}</p>
+                  <p className="font-black text-[11px] font-mono text-black">
+                    {toBn(address.phone || order.guest_phone || "")}
+                  </p>
+                  <p className="font-medium text-gray-900 leading-tight">{address.address}</p>
+                  <p className="font-black uppercase text-[9px] pt-0.5">
+                    {address.thana ? `${address.thana}, ` : ""}
+                    {address.district || "DHAKA"}
+                  </p>
+                </div>
+
+                {/* Sender (Shipper Hub) */}
+                <div className="space-y-0.5 pl-0.5">
+                  <span className="font-black uppercase tracking-wider block bg-gray-200 text-black px-1 py-0.2 rounded text-[7px] w-fit">
+                    {t.thermalSender}
+                  </span>
+                  <p className="font-black text-[11px] text-black">{brandName}</p>
+                  <p className="text-gray-800 leading-tight">House 14, Road 27, Dhanmondi</p>
+                  <p className="font-bold text-black">Dhaka, Bangladesh</p>
+                  <p className="font-mono text-[8px] text-gray-700">Phone: 01700-000000</p>
+                </div>
+              </div>
+
+              {/* Package Breakdown & Weight */}
+              <div className="border-b-2 border-black pb-1.5 text-[9px] space-y-1">
+                <div className="flex justify-between font-bold">
+                  <span>{t.weight} {toBn("0.5")} KG</span>
+                  <span>{t.totalItems} {toBn(totalQuantity)}</span>
+                </div>
+                <div className="space-y-1">
+                  {items.map((it: any) => (
+                    <div key={it.id} className="flex justify-between items-start text-gray-900 font-medium gap-2">
+                      <span className="leading-tight break-words flex-1">• {it.product_name_snapshot}</span>
+                      <span className="font-mono font-bold shrink-0">x{toBn(it.quantity)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Secondary Carrier Routing Barcode & Instructions */}
+            <div className="text-center pt-1 space-y-0.5">
+              <span className="text-[8px] font-black uppercase text-gray-600 block font-mono">
+                {courier.toUpperCase()} {t.routing}
+              </span>
+              <div className="py-0.5 flex justify-center">
+                <svg className="w-48 h-7" viewBox="0 0 180 26">
+                  <rect x="0" y="0" width="180" height="26" fill="#ffffff" />
+                  {[
+                    3, 7, 11, 16, 21, 25, 30, 35, 39, 44, 49, 53, 58, 63, 67, 72, 77, 81, 86, 91,
+                    95, 100, 105, 109, 114, 119, 123, 128, 133, 137, 142, 147, 151, 156, 161, 165,
+                    170, 175,
+                  ].map((x, i) => (
+                    <rect
+                      key={i}
+                      x={x}
+                      y="1"
+                      width={i % 2 === 0 ? 2.5 : 1.2}
+                      height="24"
+                      fill="#000000"
+                    />
+                  ))}
+                </svg>
+              </div>
+              <p className="font-mono text-[9px] font-black uppercase">{order.order_number}</p>
+              <p className="text-[7px] font-black uppercase tracking-widest text-gray-500">
+                {t.doNotShip}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

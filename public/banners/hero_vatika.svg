@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 650" width="100%" height="100%">
+  <defs>
+    <linearGradient id="vatikaHeroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="50%" stop-color="#065f46"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="650" fill="url(#vatikaHeroGrad)"/>
+  
+  <g transform="translate(180, 120)">
+    <text x="0" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="900" fill="#6ee7b7" letter-spacing="4">NATURAL HAIR CARE FESTIVAL</text>
+    <text x="0" y="120" font-family="Georgia, serif" font-size="64" font-weight="900" fill="#ffffff" letter-spacing="1">Vatika Naturals</text>
+    <text x="0" y="190" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="900" fill="#fbbf24" letter-spacing="-1">BUY 1 GET 1 FREE</text>
+    <text x="0" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#d1fae5">Ayurvedic Virgin Coconut &amp; Cactus Enriched Therapy</text>
+    
+    <rect x="0" y="280" width="240" height="64" rx="16" fill="#10b981"/>
+    <text x="120" y="322" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="2">SHOP VATIKA</text>
+  </g>
+  
+  <!-- Bottles on Right -->
+  <g transform="translate(1220, 90)">
+    <rect x="30" y="40" width="110" height="340" rx="30" fill="#10b981"/>
+    <rect x="170" y="20" width="120" height="370" rx="35" fill="#059669"/>
+    <rect x="320" y="50" width="110" height="330" rx="28" fill="#34d399"/>
+  </g>
+</svg>

@@ -13,9 +13,16 @@ export const metadata = {
 export default async function ProductsListingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ category?: string; brand?: string; sort?: string; search?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    brand?: string;
+    sort?: string;
+    search?: string;
+    min_price?: string;
+    max_price?: string;
+  }>;
 }) {
-  const { category, brand, sort, search } = await searchParams;
+  const { category, brand, sort, search, min_price, max_price } = await searchParams;
   const supabase = await createClient();
 
   // Fetch Categories & Brands for filters
@@ -63,6 +70,14 @@ export default async function ProductsListingPage({
 
   if (search) {
     query = query.ilike("name", `%${search}%`);
+  }
+
+  if (min_price) {
+    query = query.gte("regular_price", Number(min_price));
+  }
+
+  if (max_price) {
+    query = query.lte("regular_price", Number(max_price));
   }
 
   // Sort
@@ -125,6 +140,8 @@ export default async function ProductsListingPage({
         currentBrand={brand}
         currentSort={sort}
         currentSearch={search}
+        currentMinPrice={min_price}
+        currentMaxPrice={max_price}
       />
     </div>
   );

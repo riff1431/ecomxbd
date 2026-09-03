@@ -1,7 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { ShoppingCart, Save, CheckCircle2, ShieldCheck, UserCheck, Banknote } from "lucide-react";
+import {
+  ShoppingCart,
+  Save,
+  CheckCircle2,
+  ShieldCheck,
+  UserCheck,
+  Banknote,
+  Lock,
+  Mail,
+  Phone,
+  FileText,
+  UserPlus,
+} from "lucide-react";
 import { ModuleHeader } from "@/components/admin/module-settings/module-header";
 import { Button } from "@/components/shared/ui/button";
 import { saveCheckoutSettings } from "@/features/settings/actions";
@@ -13,10 +25,12 @@ interface CheckoutSettingsClientProps {
 export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClientProps) {
   const [formData, setFormData] = useState({
     guest_checkout_enabled: initialSettings.guest_checkout_enabled ?? true,
+    allow_customer_registration: initialSettings.allow_customer_registration ?? true,
     cod_enabled: initialSettings.cod_enabled ?? true,
     cod_max_amount: initialSettings.cod_max_amount ? Number(initialSettings.cod_max_amount) : 20000,
     min_order_amount: initialSettings.min_order_amount ? Number(initialSettings.min_order_amount) : 0,
     require_phone: initialSettings.require_phone ?? true,
+    require_email: initialSettings.require_email ?? false,
     order_notes_enabled: initialSettings.order_notes_enabled ?? true,
   });
 
@@ -40,33 +54,36 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
   return (
     <div className="space-y-6 max-w-4xl">
       <ModuleHeader
-        title="Storefront Checkout & Order Threshold Rules"
-        description="Configure guest purchasing privileges, Cash on Delivery spending thresholds, phone requirements, and minimum order rules."
+        title="Customer Login, Registration & Checkout Rules"
+        description="Control customer login requirements, guest purchasing privileges, registration availability, and order placement rules."
         icon={ShoppingCart}
         isCore
       />
 
       {successMsg && (
-        <div className="flex items-center gap-2 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-xs font-semibold text-emerald-800">
+        <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-xs font-semibold text-emerald-800">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-          <span>Checkout rules and payment thresholds updated successfully!</span>
+          <span>Customer login & checkout rules updated successfully!</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6 text-xs">
-        {/* Guest & Identity Rules */}
-        <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-4">
+        {/* 1. Customer Authentication & Access Permissions */}
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
           <h2 className="text-sm font-bold text-text border-b border-border pb-2 flex items-center gap-2">
-            <UserCheck className="h-4 w-4 text-primary-600" />
-            Customer Checkout Permissions
+            <UserCheck className="h-4 w-4 text-[#e91e63]" />
+            Customer Account & Login Requirements
           </h2>
 
           <div className="space-y-3">
-            <label className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-surface-secondary/40 cursor-pointer">
+            {/* Guest Checkout Toggle */}
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
               <div>
-                <span className="font-semibold text-text block">Allow Guest Checkout</span>
+                <span className="font-bold text-text text-xs sm:text-sm block">
+                  Allow Guest Checkout (No Login Required)
+                </span>
                 <span className="text-text-muted text-[11px]">
-                  Permit customers to place orders without creating a password or registering first.
+                  When ON, customers can place Cash on Delivery orders without signing in. When OFF, customers MUST log in or register before ordering.
                 </span>
               </div>
               <input
@@ -75,15 +92,48 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
                 onChange={(e) =>
                   setFormData({ ...formData, guest_checkout_enabled: e.target.checked })
                 }
-                className="h-4 w-4 rounded border-border text-primary-600 focus:ring-primary-500"
+                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-surface-secondary/40 cursor-pointer">
+            {/* Public Registration Toggle */}
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
               <div>
-                <span className="font-semibold text-text block">Require Valid Bangladesh Mobile Number</span>
+                <span className="font-bold text-text text-xs sm:text-sm block">
+                  Allow New Customer Registrations
+                </span>
                 <span className="text-text-muted text-[11px]">
-                  Enforces 11-digit mobile format (+8801XXXXXXXX) on checkout for courier dispatch.
+                  Permit new visitors to create accounts via the Sign Up form.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={formData.allow_customer_registration}
+                onChange={(e) =>
+                  setFormData({ ...formData, allow_customer_registration: e.target.checked })
+                }
+                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* 2. Customer Form Fields on Order Placement */}
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
+          <h2 className="text-sm font-bold text-text border-b border-border pb-2 flex items-center gap-2">
+            <FileText className="h-4 w-4 text-[#e91e63]" />
+            Checkout Form Fields & Customer Information Rules
+          </h2>
+
+          <div className="space-y-3">
+            {/* Mandatory Phone */}
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
+              <div>
+                <span className="font-bold text-text text-xs sm:text-sm block">
+                  Require Valid Bangladesh Mobile Number (Mandatory)
+                </span>
+                <span className="text-text-muted text-[11px]">
+                  Enforces valid 11-digit mobile format (01XXXXXXXXX) during checkout for courier dispatch.
                 </span>
               </div>
               <input
@@ -92,15 +142,38 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
                 onChange={(e) =>
                   setFormData({ ...formData, require_phone: e.target.checked })
                 }
-                className="h-4 w-4 rounded border-border text-primary-600 focus:ring-primary-500"
+                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
               />
             </label>
 
-            <label className="flex items-center justify-between p-3 rounded-xl border border-border hover:bg-surface-secondary/40 cursor-pointer">
+            {/* Mandatory Email */}
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
               <div>
-                <span className="font-semibold text-text block">Allow Order Delivery Notes</span>
+                <span className="font-bold text-text text-xs sm:text-sm block">
+                  Require Customer Email Address
+                </span>
                 <span className="text-text-muted text-[11px]">
-                  Displays optional instructions field on checkout (e.g. &quot;Leave with building security&quot;).
+                  When OFF, email is optional for fast 1-click mobile checkouts. When ON, valid email is required.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={formData.require_email}
+                onChange={(e) =>
+                  setFormData({ ...formData, require_email: e.target.checked })
+                }
+                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
+              />
+            </label>
+
+            {/* Order Notes */}
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
+              <div>
+                <span className="font-bold text-text text-xs sm:text-sm block">
+                  Allow Customer Order Delivery Instructions
+                </span>
+                <span className="text-text-muted text-[11px]">
+                  Displays special notes field on checkout (e.g. &quot;Call before arriving&quot;).
                 </span>
               </div>
               <input
@@ -109,23 +182,23 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
                 onChange={(e) =>
                   setFormData({ ...formData, order_notes_enabled: e.target.checked })
                 }
-                className="h-4 w-4 rounded border-border text-primary-600 focus:ring-primary-500"
+                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
               />
             </label>
           </div>
         </div>
 
-        {/* Order Limits & Thresholds */}
-        <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-4">
+        {/* 3. Monetary Limits & Thresholds */}
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
           <h2 className="text-sm font-bold text-text border-b border-border pb-2 flex items-center gap-2">
-            <Banknote className="h-4 w-4 text-primary-600" />
-            Monetary Thresholds & Limits (BDT)
+            <Banknote className="h-4 w-4 text-[#e91e63]" />
+            Order Spending Limits & Thresholds (BDT)
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block font-semibold text-text mb-1">
-                Minimum Cart Total to Checkout (৳)
+              <label className="block font-bold text-text mb-1">
+                Minimum Cart Subtotal to Place Order (৳)
               </label>
               <input
                 type="number"
@@ -134,13 +207,16 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
                 onChange={(e) =>
                   setFormData({ ...formData, min_order_amount: Number(e.target.value) })
                 }
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs text-text focus:border-[#e91e63] focus:outline-none"
               />
+              <span className="text-[10px] text-text-muted mt-1 block">
+                Customers must have at least this amount in their bag to place an order (Set to 0 for no minimum).
+              </span>
             </div>
 
             <div>
-              <label className="block font-semibold text-text mb-1">
-                Maximum COD Limit per Order (৳)
+              <label className="block font-bold text-text mb-1">
+                Maximum Cash on Delivery Limit per Order (৳)
               </label>
               <input
                 type="number"
@@ -149,19 +225,23 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
                 onChange={(e) =>
                   setFormData({ ...formData, cod_max_amount: Number(e.target.value) })
                 }
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs text-text focus:border-[#e91e63] focus:outline-none"
               />
-              <span className="text-[10px] text-text-muted mt-0.5 block">
-                Orders above this amount require online prepayment.
+              <span className="text-[10px] text-text-muted mt-1 block">
+                Orders above this amount require advance online payment.
               </span>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={saving} size="sm" className="text-xs">
-            <Save className="h-3.5 w-3.5 mr-1.5" />
-            {saving ? "Saving Changes..." : "Save Checkout Settings"}
+        <div className="flex justify-end pt-2">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="rounded-2xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold px-8 py-3 text-xs shadow-lg transition-all active:scale-95"
+          >
+            <Save className="h-4 w-4 mr-1.5" />
+            {saving ? "Saving Changes..." : "Save Customer & Checkout Rules"}
           </Button>
         </div>
       </form>

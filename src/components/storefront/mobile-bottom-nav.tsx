@@ -2,68 +2,99 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Sparkles, Heart, ShoppingBag, User } from "lucide-react";
-import { useWishlist } from "@/context/wishlist-context";
+import {
+  Home,
+  Tag,
+  LayoutGrid,
+  ShoppingBag,
+  Heart,
+  User,
+} from "lucide-react";
 import { useCart } from "@/context/cart-context";
+import { useWishlist } from "@/context/wishlist-context";
 import { cn } from "@/lib/utils";
+
+interface NavItem {
+  label: string;
+  href?: string;
+  icon: React.ComponentType<{ className?: string }>;
+  isActive: boolean;
+  badge?: number;
+  action?: () => void;
+  external?: boolean;
+}
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const { wishlistCount } = useWishlist();
   const { itemCount, openCart } = useCart();
+  const { wishlistCount } = useWishlist();
 
   // Don't show in admin dashboard or checkout
   if (pathname.startsWith("/admin") || pathname.startsWith("/checkout")) return null;
 
-  const items = [
-    { label: "Home", href: "/", icon: Home },
-    { label: "Catalog", href: "/products", icon: Compass },
-    { label: "Skin Quiz", href: "/quiz", icon: Sparkles, isSpecial: true },
+  const navItems: NavItem[] = [
     {
-      label: "Wishlist",
-      href: "/wishlist",
-      icon: Heart,
-      badge: wishlistCount > 0 ? wishlistCount : null,
+      label: "HOME",
+      href: "/",
+      icon: Home,
+      isActive: pathname === "/",
     },
     {
-      label: "Bag",
+      label: "CATEGORIES",
+      href: "/products",
+      icon: LayoutGrid,
+      isActive: pathname === "/categories" || pathname.startsWith("/products"),
+    },
+    {
+      label: "WISHLIST",
+      href: "/account/wishlist",
+      icon: Heart,
+      badge: wishlistCount,
+      isActive: pathname === "/account/wishlist",
+    },
+    {
+      label: "CART",
       action: openCart,
       icon: ShoppingBag,
-      badge: itemCount > 0 ? itemCount : null,
+      badge: itemCount,
+      isActive: false,
+    },
+    {
+      label: "ACCOUNT",
+      href: "/account",
+      icon: User,
+      isActive: pathname.startsWith("/account") && pathname !== "/account/wishlist",
     },
   ];
 
   return (
     <nav
-      aria-label="Mobile navigation bar"
-      className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-white/95 backdrop-blur-md px-2 py-1 lg:hidden shadow-sticky pb-safe"
+      aria-label="Mobile bottom navigation"
+      className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white px-1 py-1.5 lg:hidden shadow-[0_-2px_10px_rgba(0,0,0,0.05)] pb-safe"
     >
-      <div className="flex items-center justify-around">
-        {items.map((item) => {
+      <div className="grid grid-cols-5 items-center">
+        {navItems.map((item) => {
           const Icon = item.icon;
-          const isActive = item.href ? (item.href === "/" ? pathname === "/" : pathname.startsWith(item.href)) : false;
 
-          const content = (
-            <div className="relative flex flex-col items-center justify-center py-1 px-2 text-[10px] font-semibold transition-colors">
-              <div className="relative">
+          const buttonContent = (
+            <div className="flex flex-col items-center justify-center py-1 text-center group">
+              <div className="relative inline-flex items-center justify-center">
                 <Icon
                   className={cn(
-                    "h-5 w-5 transition-transform",
-                    isActive ? "stroke-[2.5] text-primary-600 scale-105" : "text-text-muted hover:text-text",
-                    item.isSpecial && !isActive && "text-accent-500"
+                    "h-5 w-5 transition-transform duration-150 group-active:scale-90",
+                    item.isActive ? "text-[#e91e63] stroke-[2.4]" : "text-gray-600 stroke-[1.8]"
                   )}
                 />
-                {item.badge !== null && item.badge !== undefined && (
-                  <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-1 text-[9px] font-black text-white shadow-xs">
+                {item.badge !== undefined && item.badge > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[9px] font-black text-white shadow-xs">
                     {item.badge}
                   </span>
                 )}
               </div>
               <span
                 className={cn(
-                  "mt-0.5 tracking-tight",
-                  isActive ? "text-primary-600 font-bold" : "text-text-muted",
-                  item.isSpecial && !isActive && "text-accent-600 font-bold"
+                  "mt-1 text-[9px] tracking-wider uppercase font-semibold transition-colors",
+                  item.isActive ? "text-[#e91e63] font-bold" : "text-gray-600"
                 )}
               >
                 {item.label}
@@ -75,18 +106,39 @@ export function MobileBottomNav() {
             return (
               <button
                 key={item.label}
+                type="button"
                 onClick={item.action}
-                className="focus:outline-none"
-                aria-label={item.label}
+                className="w-full focus:outline-none"
+                aria-label={`Open ${item.label}`}
               >
-                {content}
+                {buttonContent}
               </button>
             );
           }
 
+          if (item.external) {
+            return (
+              <a
+                key={item.label}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full focus:outline-none"
+                aria-label={item.label}
+              >
+                {buttonContent}
+              </a>
+            );
+          }
+
           return (
-            <Link key={item.label} href={item.href!} className="focus:outline-none" aria-label={item.label}>
-              {content}
+            <Link
+              key={item.label}
+              href={item.href!}
+              className="w-full focus:outline-none"
+              aria-label={item.label}
+            >
+              {buttonContent}
             </Link>
           );
         })}

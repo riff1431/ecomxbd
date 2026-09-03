@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 650" width="100%" height="100%">
+  <defs>
+    <linearGradient id="ordHeroGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc"/>
+      <stop offset="50%" stop-color="#f1f5f9"/>
+      <stop offset="100%" stop-color="#e2e8f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="650" fill="url(#ordHeroGrad)"/>
+  
+  <!-- Left Content with Safe Padding -->
+  <g transform="translate(180, 120)">
+    <text x="0" y="50" font-family="Helvetica, Arial, sans-serif" font-size="52" font-weight="900" fill="#0f172a" letter-spacing="-1">The Ordinary.</text>
+    <text x="0" y="160" font-family="Helvetica, Arial, sans-serif" font-size="96" font-weight="900" fill="#0f172a" letter-spacing="-2">33% OFF</text>
+    <text x="0" y="230" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#475569">Direct Canadian Clinical Imports • 100% Authentic</text>
+    
+    <rect x="0" y="280" width="240" height="64" rx="16" fill="#0f172a"/>
+    <text x="120" y="322" font-family="Helvetica, Arial, sans-serif" font-size="20" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="2">SHOP NOW</text>
+  </g>
+  
+  <!-- Right Dropper Bottles with Safe Margin -->
+  <g transform="translate(1200, 100)">
+    <!-- Bottle 1 (AHA/BHA Red Peeling Solution) -->
+    <g transform="translate(0, 80)">
+      <rect x="0" y="80" width="110" height="260" rx="16" fill="#881337"/>
+      <rect x="35" y="40" width="40" height="40" fill="#0f172a"/>
+      <ellipse cx="55" cy="30" rx="30" ry="22" fill="#f8fafc"/>
+      <!-- Label -->
+      <rect x="10" y="120" width="90" height="150" fill="#ffffff" opacity="0.95" rx="4"/>
+      <text x="55" y="160" font-family="sans-serif" font-size="12" font-weight="900" fill="#0f172a" text-anchor="middle">The Ordinary.</text>
+      <text x="55" y="185" font-family="sans-serif" font-size="10" font-weight="700" fill="#881337" text-anchor="middle">AHA 30% + BHA 2%</text>
+      <text x="55" y="205" font-family="sans-serif" font-size="9" font-weight="600" fill="#64748b" text-anchor="middle">Peeling Solution</text>
+    </g>
+    
+    <!-- Bottle 2 (Niacinamide 10% + Zinc 1%) -->
+    <g transform="translate(150, 20)">
+      <rect x="0" y="80" width="120" height="300" rx="18" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="4"/>
+      <rect x="38" y="40" width="44" height="40" fill="#0f172a"/>
+      <ellipse cx="60" cy="30" rx="32" ry="22" fill="#f8fafc"/>
+      <!-- Label -->
+      <rect x="12" y="120" width="96" height="180" fill="#ffffff" rx="4"/>
+      <text x="60" y="165" font-family="sans-serif" font-size="13" font-weight="900" fill="#0f172a" text-anchor="middle">The Ordinary.</text>
+      <text x="60" y="195" font-family="sans-serif" font-size="11" font-weight="800" fill="#0f172a" text-anchor="middle">Niacinamide 10%</text>
+      <text x="60" y="215" font-family="sans-serif" font-size="10" font-weight="700" fill="#64748b" text-anchor="middle">+ Zinc 1%</text>
+      <text x="60" y="240" font-family="sans-serif" font-size="9" font-weight="600" fill="#94a3b8" text-anchor="middle">30ml Serum</text>
+    </g>
+    
+    <!-- Bottle 3 (Hyaluronic Acid 2% + B5) -->
+    <g transform="translate(310, 60)">
+      <rect x="0" y="80" width="110" height="280" rx="16" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="4"/>
+      <rect x="35" y="40" width="40" height="40" fill="#0f172a"/>
+      <ellipse cx="55" cy="30" rx="30" ry="22" fill="#f8fafc"/>
+      <!-- Label -->
+      <rect x="10" y="120" width="90" height="160" fill="#ffffff" rx="4"/>
+      <text x="55" y="160" font-family="sans-serif" font-size="12" font-weight="900" fill="#0f172a" text-anchor="middle">The Ordinary.</text>
+      <text x="55" y="185" font-family="sans-serif" font-size="10" font-weight="800" fill="#0284c7" text-anchor="middle">Hyaluronic Acid</text>
+      <text x="55" y="205" font-family="sans-serif" font-size="9" font-weight="600" fill="#64748b" text-anchor="middle">2% + B5</text>
+    </g>
+  </g>
+</svg>

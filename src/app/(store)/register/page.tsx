@@ -1,16 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2, Mail, Lock, User, Phone, ArrowRight } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import {
+  Eye,
+  EyeOff,
+  Loader2,
+  Mail,
+  Lock,
+  User,
+  Phone,
+  ArrowRight,
+  CheckCircle2,
+  Sparkles,
+  ShieldCheck,
+} from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/shared/ui/button";
 import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
+import { getHomepageConfig } from "@/features/marketing/homepage-actions";
+import { type HomepageFullConfig, DEFAULT_HOMEPAGE_CONFIG } from "@/features/marketing/homepage-types";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/account";
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -22,6 +38,18 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
+  const [config, setConfig] = useState<HomepageFullConfig>(DEFAULT_HOMEPAGE_CONFIG);
+
+  useEffect(() => {
+    getHomepageConfig().then((data) => {
+      if (data) setConfig(data);
+    });
+  }, []);
+
+  const logoImg = config.headerConfig?.logoImageUrl;
+  const brandName = config.headerConfig?.logoText || "Blush & Budget";
 
   const updateField = (field: string, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -29,6 +57,8 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccessMsg(null);
+    setNeedsVerification(false);
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match.");
@@ -44,183 +74,247 @@ export default function RegisterPage() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signUp({
-        email: formData.email,
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
+        email: formData.email.trim(),
         password: formData.password,
         options: {
           data: {
-            full_name: formData.fullName,
-            phone: formData.phone,
+            full_name: formData.fullName.trim(),
+            phone: formData.phone.trim(),
           },
         },
       });
 
       if (authError) {
         setError(authError.message);
+        setLoading(false);
         return;
       }
 
-      router.push("/account");
-      router.refresh();
+      // Check if session was automatically granted
+      if (signUpData?.session) {
+        setSuccessMsg("Account created successfully! Redirecting to your dashboard...");
+        setTimeout(() => {
+          window.location.href = redirectTo;
+        }, 1200);
+        return;
+      }
+
+      // If no session, attempt immediate sign-in with password
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email.trim(),
+        password: formData.password,
+      });
+
+      if (signInData?.session) {
+        setSuccessMsg("Account created and logged in! Redirecting...");
+        setTimeout(() => {
+          window.location.href = redirectTo;
+        }, 1200);
+        return;
+      }
+
+      // If email confirmation is required by Supabase configuration
+      setNeedsVerification(true);
+      setSuccessMsg(
+        "Account created successfully! If email confirmation is enabled, please verify your email or sign in below."
+      );
+      setLoading(false);
     } catch {
       setError("An unexpected error occurred. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-[85vh] items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-6 rounded-3xl border border-border bg-white p-7 sm:p-9 shadow-card">
+    <div className="flex min-h-[85vh] items-center justify-center px-4 py-12 bg-gray-50/50">
+      <div className="w-full max-w-md space-y-6 rounded-3xl border border-gray-200 bg-white p-7 sm:p-9 shadow-xl">
         {/* Logo & Heading */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2 group">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary-600 font-black text-white text-lg shadow-sm">
-              eX
-            </div>
-            <span className="text-2xl font-black text-text tracking-tight">
-              ecom<span className="text-primary-600">X</span>
-            </span>
+        <div className="text-center space-y-3">
+          <Link href="/" className="inline-flex items-center justify-center">
+            {logoImg ? (
+              <img
+                src={logoImg}
+                alt={brandName}
+                className="h-9 sm:h-10 max-h-10 w-auto max-w-[180px] object-contain"
+              />
+            ) : (
+              <span className="text-2xl font-black text-gray-900 tracking-[0.15em] uppercase font-sans">
+                {brandName}
+              </span>
+            )}
           </Link>
-          <h1 className="text-xl font-black text-text">Create an Account</h1>
-          <p className="text-xs text-text-secondary">
-            Join thousands of authentic skincare and beauty enthusiasts.
-          </p>
+          <div>
+            <h1 className="text-xl font-black text-gray-900">Create an Account</h1>
+            <p className="text-xs text-gray-500 mt-1">
+              Join thousands of authentic skincare and beauty enthusiasts.
+            </p>
+          </div>
         </div>
+
+        {/* Success Alert */}
+        {successMsg && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-bold text-emerald-800 space-y-2 animate-in fade-in-0">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0" />
+              <span>{successMsg}</span>
+            </div>
+            {needsVerification && (
+              <div className="pt-2 border-t border-emerald-200/60 flex justify-end">
+                <Link
+                  href={`/login?redirect=${encodeURIComponent(redirectTo)}`}
+                  className="inline-flex items-center gap-1 font-black text-[#e91e63] hover:underline"
+                >
+                  Proceed to Sign In &rarr;
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Error Alert */}
         {error && (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-3.5 text-xs font-semibold text-red-700">
             {error}
           </div>
         )}
 
         {/* Register Form */}
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="fullName" className="text-xs font-bold text-text">
-              Full Name
-            </Label>
-            <div className="relative">
-              <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-              <Input
-                id="fullName"
-                placeholder="e.g. Nusrat Jahan"
-                className="pl-10 h-11 rounded-xl text-sm border-border focus:border-primary-600 focus:ring-primary-500/10"
-                value={formData.fullName}
-                onChange={(e) => updateField("fullName", e.target.value)}
-                required
-                autoComplete="name"
-              />
+        {!needsVerification && (
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="reg-name" className="text-xs font-bold text-gray-800">
+                Full Name
+              </Label>
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="reg-name"
+                  type="text"
+                  placeholder="Rahim Ahmed"
+                  value={formData.fullName}
+                  onChange={(e) => updateField("fullName", e.target.value)}
+                  required
+                  disabled={loading || !!successMsg}
+                  className="pl-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-xs font-bold text-text">
-              Email Address
-            </Label>
-            <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="name@example.com"
-                className="pl-10 h-11 rounded-xl text-sm border-border focus:border-primary-600 focus:ring-primary-500/10"
-                value={formData.email}
-                onChange={(e) => updateField("email", e.target.value)}
-                required
-                autoComplete="email"
-              />
+            <div className="space-y-1.5">
+              <Label htmlFor="reg-email" className="text-xs font-bold text-gray-800">
+                Email Address
+              </Label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="reg-email"
+                  type="email"
+                  placeholder="rahim@example.com"
+                  value={formData.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  required
+                  disabled={loading || !!successMsg}
+                  className="pl-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="phone" className="text-xs font-bold text-text">
-              Phone Number (for Courier Delivery)
-            </Label>
-            <div className="relative">
-              <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="01XXXXXXXXX"
-                className="pl-10 h-11 rounded-xl text-sm border-border focus:border-primary-600 focus:ring-primary-500/10"
-                value={formData.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
-                autoComplete="tel"
-              />
+            <div className="space-y-1.5">
+              <Label htmlFor="reg-phone" className="text-xs font-bold text-gray-800">
+                Phone Number
+              </Label>
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="reg-phone"
+                  type="tel"
+                  placeholder="01700-000000"
+                  value={formData.phone}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  disabled={loading || !!successMsg}
+                  className="pl-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-xs font-bold text-text">
-              Password (Min 8 chars)
-            </Label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Create a strong password"
-                className="pl-10 pr-10 h-11 rounded-xl text-sm border-border focus:border-primary-600 focus:ring-primary-500/10"
-                value={formData.password}
-                onChange={(e) => updateField("password", e.target.value)}
-                required
-                minLength={8}
-                autoComplete="new-password"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+            <div className="space-y-1.5">
+              <Label htmlFor="reg-password" className="text-xs font-bold text-gray-800">
+                Password (min. 8 characters)
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="reg-password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Create a strong password"
+                  value={formData.password}
+                  onChange={(e) => updateField("password", e.target.value)}
+                  required
+                  minLength={8}
+                  disabled={loading || !!successMsg}
+                  className="pl-10 pr-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="confirmPassword" className="text-xs font-bold text-text">
-              Confirm Password
-            </Label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Re-enter your password"
-                className="pl-10 h-11 rounded-xl text-sm border-border focus:border-primary-600 focus:ring-primary-500/10"
-                value={formData.confirmPassword}
-                onChange={(e) => updateField("confirmPassword", e.target.value)}
-                required
-                minLength={8}
-                autoComplete="new-password"
-              />
+            <div className="space-y-1.5">
+              <Label htmlFor="reg-confirm" className="text-xs font-bold text-gray-800">
+                Confirm Password
+              </Label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  id="reg-confirm"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Repeat your password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => updateField("confirmPassword", e.target.value)}
+                  required
+                  disabled={loading || !!successMsg}
+                  className="pl-10 h-11 rounded-xl text-sm border-gray-200 focus:border-[#e91e63] focus:ring-[#e91e63]/10"
+                />
+              </div>
             </div>
-          </div>
 
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full h-11 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Account...
-              </>
-            ) : (
-              <>
-                Create Account <ArrowRight className="h-4 w-4 ml-1.5" />
-              </>
-            )}
-          </Button>
-        </form>
+            <Button
+              id="register-submit-btn"
+              type="submit"
+              disabled={loading || !!successMsg}
+              className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Your Account...
+                </>
+              ) : successMsg ? (
+                <>
+                  <CheckCircle2 className="mr-2 h-4 w-4" /> Success!
+                </>
+              ) : (
+                <>
+                  Create Account <ArrowRight className="h-4 w-4 ml-1.5" />
+                </>
+              )}
+            </Button>
+          </form>
+        )}
 
-        {/* Footer */}
-        <div className="text-center pt-2 border-t border-border text-xs text-text-secondary">
+        {/* Footer / Switch */}
+        <div className="text-center pt-2 border-t border-gray-100 text-xs text-gray-500">
           <span>Already have an account? </span>
-          <Link href="/login" className="font-bold text-primary-600 hover:underline">
+          <Link
+            href={redirectTo !== "/account" ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login"}
+            className="font-bold text-[#e91e63] hover:underline"
+          >
             Sign In
           </Link>
         </div>

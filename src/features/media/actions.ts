@@ -10,7 +10,18 @@ export async function uploadMediaDirectly(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Unauthorized" };
+    return { error: "Unauthorized: Please sign in as an administrator." };
+  }
+
+  // Strict Admin & Moderator Role Verification (Block customer uploads)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile || (profile.role !== "admin" && profile.role !== "moderator")) {
+    return { error: "Access Denied: Only store administrators are authorized to upload media to this website." };
   }
 
   const file = formData.get("file") as File | null;
@@ -18,6 +29,28 @@ export async function uploadMediaDirectly(formData: FormData) {
 
   if (!file) {
     return { error: "No file provided" };
+  }
+
+  // Security: File Type & MIME Whitelist
+  const ALLOWED_MIME_TYPES = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+    "image/svg+xml",
+    "video/mp4",
+    "video/webm",
+  ];
+
+  if (!ALLOWED_MIME_TYPES.includes(file.type.toLowerCase())) {
+    return { error: `Security Error: File type '${file.type}' is not allowed. Only safe images (JPG, PNG, WebP, GIF) and videos (MP4, WebM) are permitted.` };
+  }
+
+  // Max 15MB file size limit
+  const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    return { error: "File too large: Maximum file size allowed is 15MB." };
   }
 
   try {

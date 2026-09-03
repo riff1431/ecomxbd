@@ -23,6 +23,7 @@ export function SmsManagerClient({ initialTemplates, initialLogs }: SmsManagerCl
     setSending(true);
     setMsg(null);
 
+    const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
     const res = await sendSmsNotification({
       recipientPhone: testPhone,
       eventType: "order_created",
@@ -30,7 +31,7 @@ export function SmsManagerClient({ initialTemplates, initialLogs }: SmsManagerCl
         customer_name: "Tanvir Ahmed",
         order_number: "ORD-2026-895823",
         total: "1365",
-        tracking_url: "http://localhost:3000/track-order",
+        tracking_url: `${origin}/account/track`,
       },
     });
 

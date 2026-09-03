@@ -7,12 +7,13 @@ import { Button } from "@/components/shared/ui/button";
 
 export default function AdminCatalogFeedsPage() {
   const [copied, setCopied] = useState<string | null>(null);
+  const origin = typeof window !== "undefined" && window.location.origin ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
 
   const feeds = [
     {
       id: "meta",
       name: "Meta Dynamic Product Catalog (Facebook & Instagram Shop)",
-      url: "http://localhost:3000/api/feed/meta",
+      url: `${origin}/api/feed/meta`,
       format: "RSS 2.0 / XML",
       products_count: "Published Catalog",
       status: "Active & Auto-Syncing",
@@ -21,7 +22,7 @@ export default function AdminCatalogFeedsPage() {
     {
       id: "google",
       name: "Google Merchant Center Product Feed",
-      url: "http://localhost:3000/api/feed/meta",
+      url: `${origin}/api/feed/meta`,
       format: "Google Merchant XML",
       products_count: "Published Catalog",
       status: "Active",

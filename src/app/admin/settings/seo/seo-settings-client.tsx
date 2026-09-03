@@ -17,7 +17,9 @@ export function SeoSettingsClient({ initialSettings }: SeoSettingsClientProps) {
       initialSettings.meta_description ||
       "Shop authentic international skincare, beauty formulas, and lifestyle essentials in Bangladesh with verified fast nationwide delivery.",
     og_image_url: initialSettings.og_image_url || "https://res.cloudinary.com/dyvma4kfc/image/upload/v1/og-default.jpg",
-    canonical_url: initialSettings.canonical_url || "http://localhost:3000",
+    canonical_url:
+      initialSettings.canonical_url ||
+      (typeof window !== "undefined" ? window.location.origin : "https://blushandbudget.com"),
     twitter_handle: initialSettings.twitter_handle || "@ecomxbangladesh",
   });
 

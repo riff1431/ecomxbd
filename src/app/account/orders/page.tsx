@@ -78,6 +78,12 @@ export default async function CustomerOrdersPage() {
                     >
                       {order.status}
                     </span>
+                    <Link href={`/orders/${order.id}/invoice`} target="_blank">
+                      <Button variant="outline" size="sm" className="text-xs font-semibold text-gray-700 hover:text-black">
+                        <ShoppingBag className="h-3.5 w-3.5 mr-1 text-[#e91e63]" />
+                        Invoice
+                      </Button>
+                    </Link>
                     <Link href={`/account/orders/${order.id}`}>
                       <Button variant="outline" size="sm" className="text-xs">
                         <Eye className="h-3.5 w-3.5 mr-1" />

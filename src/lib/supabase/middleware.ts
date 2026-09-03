@@ -1,14 +1,49 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSecurityHeaders } from "@/lib/security/headers";
+import { checkRateLimit } from "@/lib/security/rate-limiter";
+import { validateSafeRedirect } from "@/lib/security/sanitizer";
 
 export async function updateSession(request: NextRequest) {
+  const securityHeaders = getSecurityHeaders();
+  const clientIp = request.headers.get("x-forwarded-for") || request.headers.get("x-real-ip") || "127.0.0.1";
+  const pathname = request.nextUrl.pathname;
+
+  // 1. Rate Limiting Protection for Auth & Search endpoints
+  if (pathname.startsWith("/api/auth") || pathname === "/login" || pathname === "/register") {
+    const rateCheck = checkRateLimit(`auth:${clientIp}`, { intervalMs: 60000, maxRequests: 20 });
+    if (!rateCheck.allowed) {
+      return new NextResponse(
+        JSON.stringify({ error: "Too many authentication requests. Please try again in 1 minute." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...securityHeaders } }
+      );
+    }
+  }
+
+  if (pathname.startsWith("/api/search")) {
+    const rateCheck = checkRateLimit(`search:${clientIp}`, { intervalMs: 60000, maxRequests: 120 });
+    if (!rateCheck.allowed) {
+      return new NextResponse(
+        JSON.stringify({ error: "Search rate limit exceeded. Please slow down." }),
+        { status: 429, headers: { "Content-Type": "application/json", ...securityHeaders } }
+      );
+    }
+  }
+
   // Gracefully handle missing Supabase config (dev without Supabase)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === "your_supabase_url") {
-    // Supabase not configured — skip auth checks, allow all routes
-    return NextResponse.next({ request });
+  if (
+    !supabaseUrl ||
+    !supabaseAnonKey ||
+    supabaseUrl === "your_supabase_url" ||
+    supabaseUrl.includes("your-project.supabase.co") ||
+    supabaseAnonKey === "dummy_anon_key"
+  ) {
+    const res = NextResponse.next({ request });
+    Object.entries(securityHeaders).forEach(([k, v]) => res.headers.set(k, v));
+    return res;
   }
 
   let supabaseResponse = NextResponse.next({
@@ -44,29 +79,33 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protected routes
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
-  const isAccountRoute = request.nextUrl.pathname.startsWith("/account");
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isAccountRoute = pathname.startsWith("/account") && pathname !== "/account/wishlist";
   const isAuthRoute =
-    request.nextUrl.pathname === "/login" ||
-    request.nextUrl.pathname === "/register" ||
-    request.nextUrl.pathname === "/forgot-password";
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname === "/forgot-password";
 
-  // Redirect unauthenticated users from protected routes
+  // Redirect unauthenticated users from protected routes with safe redirect validation
   if (!user && (isAdminRoute || isAccountRoute)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
+    url.searchParams.set("redirect", validateSafeRedirect(pathname, "/account"));
+    const redirectRes = NextResponse.redirect(url);
+    Object.entries(securityHeaders).forEach(([k, v]) => redirectRes.headers.set(k, v));
+    return redirectRes;
   }
 
   // Redirect authenticated users away from auth pages
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/account";
-    return NextResponse.redirect(url);
+    const redirectRes = NextResponse.redirect(url);
+    Object.entries(securityHeaders).forEach(([k, v]) => redirectRes.headers.set(k, v));
+    return redirectRes;
   }
 
-  // Admin route protection — check role via profile
+  // Admin route protection — check role via profile strictly
   if (user && isAdminRoute) {
     const { data: profile } = await supabase
       .from("profiles")
@@ -77,9 +116,14 @@ export async function updateSession(request: NextRequest) {
     if (!profile || (profile.role !== "admin" && profile.role !== "moderator")) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
-      return NextResponse.redirect(url);
+      const redirectRes = NextResponse.redirect(url);
+      Object.entries(securityHeaders).forEach(([k, v]) => redirectRes.headers.set(k, v));
+      return redirectRes;
     }
   }
+
+  // Attach all security headers to response
+  Object.entries(securityHeaders).forEach(([k, v]) => supabaseResponse.headers.set(k, v));
 
   return supabaseResponse;
 }

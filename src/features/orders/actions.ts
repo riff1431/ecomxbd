@@ -254,6 +254,70 @@ export async function updateOrderStatus(orderId: string, newStatus: string, note
   return { success: true, order: data };
 }
 
+export async function updateAdminOrderFull(orderId: string, payload: {
+  status?: string;
+  note?: string;
+  internalNote?: string;
+  payment_method?: string;
+  payment_status?: string;
+  shipping_amount?: number;
+  discount_amount?: number;
+  total?: number;
+  shipping_address_snapshot?: any;
+}) {
+  const supabaseAdmin = createAdminClient();
+  const supabaseUser = await createClient();
+  const { data: authData } = await supabaseUser.auth.getUser();
+
+  const updateData: any = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.status) updateData.status = payload.status;
+  if (payload.payment_method) updateData.payment_method = payload.payment_method;
+  if (payload.payment_status) updateData.payment_status = payload.payment_status;
+  if (payload.shipping_amount !== undefined) updateData.shipping_amount = payload.shipping_amount;
+  if (payload.discount_amount !== undefined) updateData.discount_amount = payload.discount_amount;
+  if (payload.total !== undefined) updateData.total = payload.total;
+  if (payload.shipping_address_snapshot) updateData.shipping_address_snapshot = payload.shipping_address_snapshot;
+
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .update(updateData)
+    .eq("id", orderId)
+    .select(`
+      *,
+      order_items (
+        id,
+        product_name_snapshot,
+        sku_snapshot,
+        unit_price,
+        quantity,
+        total
+      ),
+      order_status_history (
+        id,
+        status,
+        note,
+        created_at
+      )
+    `)
+    .single();
+
+  if (error) return { error: error.message };
+
+  if (payload.status || payload.note) {
+    await supabaseAdmin.from("order_status_history").insert({
+      order_id: orderId,
+      status: payload.status || data.status,
+      note: payload.note || `Order modified by admin`,
+      created_by: authData?.user?.id || null,
+    });
+  }
+
+  return { success: true, order: data };
+}
+
 export async function trackOrder(orderNumber: string, phone: string) {
   const supabase = createAdminClient();
   const cleanNumber = orderNumber.trim().toUpperCase();

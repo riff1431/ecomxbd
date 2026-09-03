@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="100%" height="100%">
+  <defs>
+    <linearGradient id="trimmerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e0836"/>
+      <stop offset="50%" stop-color="#2e0854"/>
+      <stop offset="100%" stop-color="#4a0e4e"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="350" fill="url(#trimmerGrad)" rx="20"/>
+  <circle cx="700" cy="180" r="160" fill="#ec4899" opacity="0.18" filter="blur(30px)"/>
+  
+  <text x="60" y="70" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#f472b6" letter-spacing="3">NEW LAUNCH</text>
+  <text x="60" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" fill="#ffffff" letter-spacing="-0.5">the only trimmer</text>
+  <text x="60" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" fill="#f472b6" letter-spacing="-0.5">you&apos;ll ever need</text>
+  <text x="60" y="230" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#e9d5ff">Precision Eyebrow &amp; Facial Grooming</text>
+  
+  <!-- Trimmer Illustration -->
+  <g transform="translate(560, 40) rotate(35)">
+    <rect x="0" y="0" width="40" height="220" rx="20" fill="#f472b6"/>
+    <rect x="5" y="15" width="30" height="190" rx="15" fill="#ec4899"/>
+    <rect x="10" y="40" width="20" height="8" rx="4" fill="#fbbf24"/>
+    <rect x="12" y="195" width="16" height="35" rx="4" fill="#9ca3af"/>
+  </g>
+  
+  <rect x="60" y="270" width="160" height="42" rx="10" fill="#ec4899"/>
+  <text x="140" y="296" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="1">SHOP COLLECTION</text>
+</svg>

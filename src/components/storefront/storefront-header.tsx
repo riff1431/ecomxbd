@@ -11,23 +11,29 @@ import {
   Menu,
   X,
   Sparkles,
-  Phone,
   Truck,
   ChevronDown,
   ChevronRight,
   ShieldCheck,
   Tag,
-  ArrowRight,
   Loader2,
-  HelpCircle,
-  Clock,
   Compass,
+  ArrowRight,
+  Sparkle,
+  Phone,
+  Layers,
 } from "lucide-react";
 import { formatPrice, cn } from "@/lib/utils";
 import { useWishlist } from "@/context/wishlist-context";
 import { useCart } from "@/context/cart-context";
 import { Button } from "@/components/shared/ui/button";
 import { createClient } from "@/lib/supabase/client";
+import { getHomepageConfig } from "@/features/marketing/homepage-actions";
+import {
+  type HomepageFullConfig,
+  type HeaderNavCategory,
+  DEFAULT_HOMEPAGE_CONFIG,
+} from "@/features/marketing/homepage-types";
 
 interface SearchResult {
   products: Array<{
@@ -43,61 +49,83 @@ interface SearchResult {
   brands: Array<{ id: string; name: string; slug: string }>;
 }
 
-const CATEGORY_NAV = [
-  {
-    name: "Skin Care",
-    slug: "skin-care",
-    subcategories: [
-      { name: "Cleansers & Facewash", slug: "skin-care?type=cleanser" },
-      { name: "Toners & Mists", slug: "skin-care?type=toner" },
-      { name: "Serums & Ampoules", slug: "skin-care?type=serum" },
-      { name: "Moisturizers & Creams", slug: "skin-care?type=moisturizer" },
-      { name: "Sunscreen & SPF", slug: "skin-care?type=sunscreen" },
-      { name: "Eye Care & Lip Care", slug: "skin-care?type=eye-lip" },
-    ],
-  },
-  {
-    name: "Hair Care",
-    slug: "hair-care",
-    subcategories: [
-      { name: "Shampoos", slug: "hair-care?type=shampoo" },
-      { name: "Conditioners & Masks", slug: "hair-care?type=conditioner" },
-      { name: "Hair Oils & Serums", slug: "hair-care?type=oil" },
-      { name: "Scalp Treatments", slug: "hair-care?type=treatment" },
-    ],
-  },
-  {
-    name: "Makeup",
-    slug: "makeup",
-    subcategories: [
-      { name: "Foundations & BB Creams", slug: "makeup?type=foundation" },
-      { name: "Lipsticks & Tints", slug: "makeup?type=lip" },
-      { name: "Eyes & Eyeliners", slug: "makeup?type=eyes" },
-      { name: "Setting Sprays & Powders", slug: "makeup?type=setting" },
-    ],
-  },
-  {
-    name: "Body Care",
-    slug: "body-care",
-    subcategories: [
-      { name: "Body Lotions & Creams", slug: "body-care?type=lotion" },
-      { name: "Body Washes & Scrubs", slug: "body-care?type=wash" },
-      { name: "Hand & Foot Care", slug: "body-care?type=hand-foot" },
-    ],
-  },
-  { name: "Brands", slug: "brands", isDirect: true },
-  { name: "Flash Deals", slug: "products?discount=true", isDirect: true, isSpecial: true },
-  { name: "Skin Quiz", slug: "quiz", isDirect: true, isQuiz: true },
+const TOP_BRANDS_DEFAULT = [
+  { name: "COSRX", slug: "cosrx" },
+  { name: "The Ordinary", slug: "the-ordinary" },
+  { name: "CeraVe", slug: "cerave" },
+  { name: "Beauty of Joseon", slug: "beauty-of-joseon" },
+  { name: "Cetaphil", slug: "cetaphil" },
+  { name: "Neutrogena", slug: "neutrogena" },
+  { name: "Simple", slug: "simple" },
+  { name: "L'Oréal Paris", slug: "loreal" },
 ];
 
 export function StorefrontHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const { wishlistCount } = useWishlist();
-  const { itemCount, subtotal, openCart } = useCart();
+  const { itemCount, openCart } = useCart();
   const [user, setUser] = useState<any>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null);
+  const [expandedMobileCategories, setExpandedMobileCategories] = useState<string[]>([]);
+
+  // Config from Admin Dashboard
+  const [config, setConfig] = useState<HomepageFullConfig>(DEFAULT_HOMEPAGE_CONFIG);
+
+  useEffect(() => {
+    getHomepageConfig().then((data) => {
+      if (data) setConfig(data);
+    });
+  }, []);
+
+  const headerConfig = config.headerConfig || DEFAULT_HOMEPAGE_CONFIG.headerConfig;
+  const navCategories = headerConfig.navCategories?.length > 0
+    ? headerConfig.navCategories
+    : DEFAULT_HOMEPAGE_CONFIG.headerConfig.navCategories;
+  const campaignPills = config.campaignPills?.length > 0
+    ? config.campaignPills
+    : DEFAULT_HOMEPAGE_CONFIG.campaignPills;
+  const searchPlaceholders = headerConfig.searchPlaceholders?.length > 0
+    ? headerConfig.searchPlaceholders
+    : DEFAULT_HOMEPAGE_CONFIG.headerConfig.searchPlaceholders;
+
+  // Hoverable Mega Menu State (with smooth debounce)
+  const [activeMegaCategory, setActiveMegaCategory] = useState<HeaderNavCategory | null>(null);
+  const [brandsMegaOpen, setBrandsMegaOpen] = useState(false);
+  const menuCloseTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnterCategory = (cat: HeaderNavCategory) => {
+    if (menuCloseTimeout.current) clearTimeout(menuCloseTimeout.current);
+    setBrandsMegaOpen(false);
+    setActiveMegaCategory(cat);
+  };
+
+  const handleMouseLeaveCategory = () => {
+    menuCloseTimeout.current = setTimeout(() => {
+      setActiveMegaCategory(null);
+    }, 150);
+  };
+
+  const handleMouseEnterBrands = () => {
+    if (menuCloseTimeout.current) clearTimeout(menuCloseTimeout.current);
+    setActiveMegaCategory(null);
+    setBrandsMegaOpen(true);
+  };
+
+  const handleMouseLeaveBrands = () => {
+    menuCloseTimeout.current = setTimeout(() => {
+      setBrandsMegaOpen(false);
+    }, 150);
+  };
+
+  // Dynamic animated placeholder cycling
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPlaceholderIndex((prev) => (prev + 1) % searchPlaceholders.length);
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [searchPlaceholders.length]);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,11 +142,12 @@ export function StorefrontHeader() {
     });
   }, []);
 
-  // Close mobile drawer on route changes
+  // Close mobile drawer and dropdowns on route change
   useEffect(() => {
     setMobileMenuOpen(false);
     setShowSearchDropdown(false);
-    setActiveMegaMenu(null);
+    setActiveMegaCategory(null);
+    setBrandsMegaOpen(false);
   }, [pathname]);
 
   // Debounced search query
@@ -169,108 +198,228 @@ export function StorefrontHeader() {
     router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
   };
 
+  const toggleMobileCategory = (catName: string) => {
+    setExpandedMobileCategories((prev) =>
+      prev.includes(catName) ? prev.filter((c) => c !== catName) : [...prev, catName]
+    );
+  };
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-white shadow-xs">
-      {/* 1. Top Utility Announcement Bar */}
-      <div className="bg-zinc-950 px-4 py-1.5 text-white text-[11px] sm:text-xs">
-        <div className="container-main flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="rounded-full bg-accent-500 px-2 py-0.5 text-[9px] font-extrabold text-white uppercase tracking-wider">
-              Free Delivery
-            </span>
-            <span className="hidden sm:inline text-zinc-300 font-medium">
-              Free shipping inside Dhaka on orders over <strong>৳2,500</strong>!
-            </span>
-            <span className="sm:hidden text-zinc-300 font-medium">Free shipping over ৳2,500!</span>
+    <header className="sticky top-0 z-40 w-full bg-white shadow-xs border-b border-gray-100">
+      {/* 1. Top Utility Announcement Bar (Fully Responsive on All Devices) */}
+      <div className="bg-[#111827] px-3 sm:px-4 py-1.5 text-white text-[11px] sm:text-xs">
+        <div className="container-main flex items-center justify-between gap-2 overflow-hidden">
+          {/* Mobile Single-Line Compact View (< 640px) */}
+          <div className="flex items-center justify-between gap-2 sm:hidden w-full">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <span className="shrink-0 rounded-full bg-[#e91e63] px-2 py-0.5 text-[8.5px] font-black text-white uppercase tracking-wider">
+                {config.announcementBadgeText || "FREE DELIVERY"}
+              </span>
+              <span className="truncate text-zinc-300 font-medium text-[10.5px]">
+                {config.announcementText || "Free nationwide delivery over ৳2,000!"}
+              </span>
+            </div>
+            <Link
+              href={config.routineFinderHref || "/products?category=skin-care"}
+              className="shrink-0 flex items-center gap-1 text-[10px] font-bold text-pink-300 hover:text-white transition-colors pl-1"
+            >
+              <Sparkles className="h-2.5 w-2.5 text-pink-400" />
+              <span className="whitespace-nowrap">{config.routineFinderText || "Routine Finder"}</span>
+            </Link>
           </div>
 
-          <div className="flex items-center gap-4 text-zinc-400 font-medium">
+          {/* Desktop & Tablet View (>= 640px) */}
+          <div className="hidden sm:flex items-center gap-2 flex-1">
+            <span className="rounded-full bg-[#e91e63] px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-wider">
+              {config.announcementBadgeText || "Free Delivery"}
+            </span>
+            <span className="text-zinc-300 font-medium text-[11px] sm:text-xs">
+              {config.announcementText || "Free nationwide delivery on orders over ৳2,000!"}
+            </span>
+          </div>
+
+          <div className="hidden sm:flex items-center gap-4 text-zinc-400 font-medium shrink-0">
             <Link
-              href="/quiz"
-              className="flex items-center gap-1 text-primary-300 hover:text-white transition-colors"
+              href={config.routineFinderHref || "/products?category=skin-care"}
+              className="flex items-center gap-1 text-pink-300 hover:text-white transition-colors text-xs font-bold"
             >
-              <Sparkles className="h-3 w-3" />
-              <span>Routine Finder</span>
+              <Sparkles className="h-3 w-3 text-pink-400" />
+              <span>{config.routineFinderText || "Routine Finder"}</span>
             </Link>
             <span className="hidden md:inline text-zinc-700">|</span>
             <Link
-              href="/track-order"
+              href={config.trackOrderHref || "/account/orders"}
               className="hidden md:flex items-center gap-1 hover:text-white transition-colors"
             >
               <Truck className="h-3 w-3" />
-              <span>Track Order</span>
+              <span>{config.trackOrderText || "Track Order"}</span>
             </Link>
             <span className="hidden md:inline text-zinc-700">|</span>
             <span className="hidden sm:inline text-emerald-400 font-semibold flex items-center gap-1">
-              <ShieldCheck className="h-3.5 w-3.5" /> 100% Authentic Guarantee
+              <ShieldCheck className="h-3.5 w-3.5" /> {config.authenticGuaranteeText || "100% Authentic Guarantee"}
             </span>
           </div>
         </div>
       </div>
 
-      {/* 2. Main Desktop & Mobile Header Bar */}
-      <div className="container-main py-2.5 sm:py-3.5">
-        <div className="flex items-center justify-between gap-3 sm:gap-6">
-          {/* Mobile Menu Hamburger + Logo */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="rounded-xl p-2 text-text hover:bg-surface-secondary lg:hidden transition-colors"
-              aria-label="Open navigation menu"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
+      {/* 2. Main Header Bar (Mobile + Desktop) */}
+      <div className="container-main py-2 sm:py-3">
+        {/* Mobile View: Top Row (Hamburger + Centered Logo + Wishlist & Bag on Right) */}
+        <div className="flex items-center justify-between lg:hidden mb-2">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-1.5 text-gray-700 hover:text-[#e91e63] focus:outline-none transition-colors"
+            aria-label="Open menu"
+          >
+            <Menu className="h-6 w-6 stroke-[2.2]" />
+          </button>
 
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-600 font-black text-white text-base shadow-sm group-hover:bg-primary-700 transition-colors">
-                eX
-              </div>
-              <div className="flex flex-col">
-                <span className="text-xl font-extrabold tracking-tight text-text leading-none">
-                  ecom<span className="text-primary-600">X</span>
+          <Link href={headerConfig.logoLink || "/"} className="flex items-center justify-center">
+            {headerConfig.mobileLogoImageUrl || headerConfig.logoImageUrl ? (
+              <img
+                src={headerConfig.mobileLogoImageUrl || headerConfig.logoImageUrl}
+                alt={headerConfig.mobileLogoText || headerConfig.logoText || "Blush & Budget"}
+                className="h-8 sm:h-9 max-h-9 w-auto max-w-[150px] sm:max-w-[180px] object-contain shrink-0"
+              />
+            ) : (
+              <span className="text-xl sm:text-2xl font-black text-black tracking-[0.15em] uppercase font-sans">
+                {headerConfig.mobileLogoText || headerConfig.logoText || "Blush & Budget"}
+              </span>
+            )}
+          </Link>
+
+          <div className="flex items-center gap-1">
+            <Link
+              href="/account/wishlist"
+              className="relative p-1.5 text-gray-700 hover:text-[#e91e63] focus:outline-none"
+              aria-label="Wishlist"
+            >
+              <Heart className="h-6 w-6 stroke-[2]" />
+              {wishlistCount > 0 && (
+                <span className="absolute 0 top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[9px] font-black text-white">
+                  {wishlistCount}
                 </span>
-                <span className="text-[9px] font-semibold text-text-muted tracking-widest uppercase mt-0.5">
-                  Bangladesh
-                </span>
-              </div>
+              )}
             </Link>
+
+            <button
+              type="button"
+              onClick={openCart}
+              className="relative p-1.5 text-gray-700 hover:text-[#e91e63] focus:outline-none"
+              aria-label="View Cart"
+            >
+              <ShoppingBag className="h-6 w-6 stroke-[2]" />
+              {itemCount > 0 && (
+                <span className="absolute 0 top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[9px] font-black text-white">
+                  {itemCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop View: 3-column Header Row */}
+        <div className="hidden lg:flex items-center justify-between gap-6">
+          {/* Left: Brand Logo & Brands Mega-Menu Link */}
+          <div className="flex items-center gap-8">
+            <Link href={headerConfig.logoLink || "/"} className="flex items-center shrink-0">
+              {headerConfig.logoImageUrl ? (
+                <img
+                  src={headerConfig.logoImageUrl}
+                  alt={headerConfig.logoText || "Blush & Budget"}
+                  className="h-10 xl:h-11 max-h-12 w-auto max-w-[200px] xl:max-w-[240px] object-contain shrink-0"
+                />
+              ) : (
+                <span className="text-2xl xl:text-3xl font-black text-black tracking-[0.15em] uppercase font-sans">
+                  {headerConfig.logoText || "Blush & Budget"}
+                </span>
+              )}
+            </Link>
+
+            {/* Desktop Brands dropdown trigger */}
+            <div
+              className="relative"
+              onMouseEnter={handleMouseEnterBrands}
+              onMouseLeave={handleMouseLeaveBrands}
+            >
+              <button
+                type="button"
+                className="text-xs font-bold uppercase tracking-wider text-gray-800 hover:text-[#e91e63] flex items-center gap-1 py-2"
+              >
+                <span>Brands</span>
+                <ChevronDown className="h-3.5 w-3.5" />
+              </button>
+
+              {/* Brands Mega-Dropdown Menu */}
+              {brandsMegaOpen && (
+                <div className="absolute top-full left-0 z-50 w-80 rounded-2xl border border-gray-200 bg-white p-4 shadow-xl animate-in fade-in-0 zoom-in-95">
+                  <div className="border-b border-gray-100 pb-2 mb-3 flex items-center justify-between">
+                    <span className="text-xs font-black uppercase text-gray-900 tracking-wider">
+                      TOP BRANDS
+                    </span>
+                    <Link
+                      href="/products"
+                      className="text-[11px] font-bold text-[#e91e63] hover:underline"
+                    >
+                      View All &rarr;
+                    </Link>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {TOP_BRANDS_DEFAULT.map((brand) => (
+                      <Link
+                        key={brand.name}
+                        href={`/products?brand=${brand.slug}`}
+                        className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-pink-50 hover:text-[#e91e63] transition-colors"
+                      >
+                        {brand.name}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Desktop Search Bar with Live Suggestions */}
-          <div ref={searchContainerRef} className="relative hidden lg:block flex-1 max-w-xl mx-4">
+          {/* Center: Signature Pink-Border Pill Search Bar */}
+          <div ref={searchContainerRef} className="relative flex-1 max-w-xl mx-2">
             <form onSubmit={handleSearchSubmit} className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setShowSearchDropdown(true)}
-                placeholder="Search authentic skincare, COSRX, serums, sunscreens..."
-                className="w-full rounded-full border border-border bg-surface-secondary/80 py-2.5 pl-11 pr-24 text-xs sm:text-sm text-text placeholder:text-text-muted focus:border-primary-600 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary-500/10 transition-all"
-              />
-              <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
-              <Button
-                type="submit"
-                size="sm"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full px-4 h-7 text-xs font-semibold"
-              >
-                Search
-              </Button>
+              <div className="relative flex items-center rounded-full border-2 border-[#e91e63] bg-[#f8f9fa] focus-within:bg-white shadow-xs transition-all">
+                <Search className="h-4 w-4 ml-4 text-gray-400 shrink-0" />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onFocus={() => setShowSearchDropdown(true)}
+                  placeholder={searchPlaceholders[placeholderIndex] || "Search products..."}
+                  className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none rounded-full"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="mr-3 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
             </form>
 
             {/* Instant Search Suggestions Dropdown */}
             {showSearchDropdown && (
-              <div className="absolute top-full left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-border bg-white shadow-2xl animate-in fade-in-0 zoom-in-95">
+              <div className="absolute top-full left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl animate-in fade-in-0 zoom-in-95">
                 {isSearching ? (
-                  <div className="p-6 text-center text-xs text-text-muted">
-                    <Loader2 className="mx-auto h-5 w-5 animate-spin text-primary-600" />
-                    <p className="mt-2 font-medium">Searching authentic catalogue...</p>
+                  <div className="p-6 text-center text-xs text-gray-500">
+                    <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#e91e63]" />
+                    <p className="mt-2 font-medium">Searching authentic products...</p>
                   </div>
                 ) : searchResults && (searchResults.products.length > 0 || searchResults.categories.length > 0 || searchResults.brands.length > 0) ? (
                   <div className="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
                     {/* Matching Categories */}
                     {searchResults.categories.length > 0 && (
                       <div>
-                        <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                        <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                           Categories
                         </span>
                         <div className="mt-1 flex flex-wrap gap-1.5">
@@ -279,7 +428,7 @@ export function StorefrontHeader() {
                               key={cat.id}
                               href={`/products?category=${cat.slug}`}
                               onClick={() => setShowSearchDropdown(false)}
-                              className="rounded-full bg-surface-secondary px-3 py-1 text-xs font-medium text-text hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                              className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800 hover:bg-pink-50 hover:text-[#e91e63] transition-colors"
                             >
                               {cat.name}
                             </Link>
@@ -288,31 +437,10 @@ export function StorefrontHeader() {
                       </div>
                     )}
 
-                    {/* Matching Brands */}
-                    {searchResults.brands.length > 0 && (
-                      <div>
-                        <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                          Brands
-                        </span>
-                        <div className="mt-1 flex flex-wrap gap-1.5">
-                          {searchResults.brands.map((b) => (
-                            <Link
-                              key={b.id}
-                              href={`/products?brand=${b.slug}`}
-                              onClick={() => setShowSearchDropdown(false)}
-                              className="rounded-full bg-surface-secondary px-3 py-1 text-xs font-medium text-text hover:bg-primary-50 hover:text-primary-700 transition-colors"
-                            >
-                              {b.name}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     {/* Matching Products */}
                     {searchResults.products.length > 0 && (
-                      <div className="pt-2 border-t border-border">
-                        <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-text-muted">
+                      <div className="pt-2 border-t border-gray-100">
+                        <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
                           Products
                         </span>
                         <div className="mt-1 space-y-1">
@@ -321,31 +449,31 @@ export function StorefrontHeader() {
                               key={prod.id}
                               href={`/products/${prod.slug}`}
                               onClick={() => setShowSearchDropdown(false)}
-                              className="flex items-center justify-between gap-3 rounded-xl p-2 hover:bg-surface-secondary transition-colors"
+                              className="flex items-center justify-between gap-3 rounded-xl p-2 hover:bg-gray-50 transition-colors"
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
                                 {prod.og_image_url ? (
                                   <img
                                     src={prod.og_image_url}
                                     alt={prod.name}
-                                    className="h-10 w-10 shrink-0 rounded-lg object-cover border border-border"
+                                    className="h-10 w-10 shrink-0 rounded-lg object-cover border border-gray-200"
                                   />
                                 ) : (
-                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-tertiary">
-                                    <ShoppingBag className="h-4 w-4 text-text-muted" />
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                                    <ShoppingBag className="h-4 w-4 text-gray-400" />
                                   </div>
                                 )}
                                 <div className="min-w-0">
-                                  <p className="truncate text-xs font-semibold text-text">{prod.name}</p>
+                                  <p className="truncate text-xs font-bold text-gray-900">{prod.name}</p>
                                   {prod.brands && (
-                                    <span className="text-[10px] font-medium text-text-muted">
+                                    <span className="text-[10px] font-medium text-gray-500">
                                       {prod.brands.name}
                                     </span>
                                   )}
                                 </div>
                               </div>
                               <div className="text-right shrink-0">
-                                <p className="text-xs font-bold text-text">
+                                <p className="text-xs font-black text-gray-900">
                                   {formatPrice(prod.sale_price ?? prod.regular_price)}
                                 </p>
                               </div>
@@ -356,301 +484,393 @@ export function StorefrontHeader() {
                     )}
                   </div>
                 ) : (
-                  <div className="p-4 space-y-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                      Trending Searches
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {["COSRX Snail Mucin", "Sunscreen SPF 50", "Niacinamide Serum", "Ceramide Cream", "Beauty of Joseon", "Salicylic Cleanser"].map((trend) => (
-                        <button
-                          key={trend}
-                          onClick={() => {
-                            setSearchQuery(trend);
-                            router.push(`/products?search=${encodeURIComponent(trend)}`);
-                            setShowSearchDropdown(false);
-                          }}
-                          className="rounded-full bg-surface-secondary px-3 py-1 text-xs font-medium text-text-secondary hover:bg-primary-50 hover:text-primary-700 transition-colors"
-                        >
-                          {trend}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="p-4 text-center text-xs text-gray-500">
+                    No results found for "{searchQuery}".
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* Header Action Icons */}
-          <div className="flex items-center gap-1.5 sm:gap-3">
-            {/* Skin Quiz Pill Button */}
+          {/* Right: Wishlist, Account, and Cart Bag */}
+          <div className="flex items-center gap-3">
             <Link
-              href="/quiz"
-              className="hidden xl:inline-flex items-center gap-1.5 rounded-full bg-primary-50 border border-primary-200/80 px-3.5 py-1.5 text-xs font-bold text-primary-700 hover:bg-primary-100 transition-colors"
+              href="/account/wishlist"
+              className="text-gray-700 hover:text-[#e91e63] flex items-center gap-1.5 text-xs font-bold uppercase transition-colors px-2 py-2"
             >
-              <Sparkles className="h-3.5 w-3.5 text-primary-600" />
-              <span>Skin Quiz</span>
-            </Link>
-
-            {/* Wishlist Icon Button */}
-            <Link
-              href="/wishlist"
-              className="relative rounded-xl p-2 text-text hover:bg-surface-secondary transition-colors"
-              aria-label="View Wishlist"
-            >
-              <Heart className="h-5 w-5" />
+              <Heart className="h-4 w-4" />
+              <span>WISHLIST</span>
               {wishlistCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-1 text-[10px] font-extrabold text-white shadow-xs">
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[9px] font-black text-white">
                   {wishlistCount}
                 </span>
               )}
             </Link>
 
-            {/* Account Link Button */}
             <Link
-              href={user ? "/account" : "/login"}
-              className="hidden sm:flex items-center gap-2 rounded-xl p-2 text-text hover:bg-surface-secondary transition-colors text-xs font-semibold"
+              href={user ? "/account" : "/auth/login"}
+              className="text-gray-700 hover:text-[#e91e63] flex items-center gap-1.5 text-xs font-bold uppercase transition-colors px-2 py-2"
             >
-              <User className="h-5 w-5" />
-              <div className="hidden md:flex flex-col text-left leading-none">
-                <span className="text-[10px] text-text-muted">Welcome</span>
-                <span className="text-xs font-bold text-text mt-0.5">
-                  {user ? "My Account" : "Sign In"}
-                </span>
-              </div>
+              <User className="h-4 w-4" />
+              <span>{user ? "ACCOUNT" : "LOGIN"}</span>
             </Link>
 
-            {/* Cart Button */}
-            <Button
+            <button
+              type="button"
               onClick={openCart}
-              size="sm"
-              className="relative flex items-center gap-2 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-bold px-3.5 py-2 text-xs shadow-sm transition-all active:scale-95"
-              aria-label="Open Shopping Bag"
+              className="bg-[#e91e63] text-white font-bold text-xs uppercase px-4 py-2.5 rounded-full hover:bg-[#d81b60] transition-colors flex items-center gap-1.5 shadow-xs"
             >
-              <div className="relative">
-                <ShoppingBag className="h-4 w-4" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-1 text-[9px] font-extrabold text-white">
-                    {itemCount}
-                  </span>
-                )}
-              </div>
-              <span className="hidden sm:inline">
-                {itemCount > 0 ? formatPrice(subtotal) : "Bag"}
+              <ShoppingBag className="h-3.5 w-3.5" />
+              <span>BAG</span>
+              <span className="ml-1 inline-flex items-center justify-center h-4.5 w-4.5 rounded-full bg-white text-[#e91e63] text-[10px] font-black">
+                {itemCount}
               </span>
-            </Button>
+            </button>
           </div>
         </div>
 
-        {/* Mobile Search Row (Always visible on mobile for quick discovery) */}
-        <div className="mt-2.5 lg:hidden">
+        {/* Mobile Full-Width Pink-Bordered Pill Search Input */}
+        <div ref={searchContainerRef} className="lg:hidden mt-1">
           <form onSubmit={handleSearchSubmit} className="relative">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search skincare, makeup, brands..."
-              className="w-full rounded-xl border border-border bg-surface-secondary/80 py-2 pl-10 pr-4 text-xs text-text placeholder:text-text-muted focus:border-primary-600 focus:bg-white focus:outline-none"
-            />
-            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
+            <div className="relative flex items-center rounded-full border-2 border-[#e91e63] bg-[#f8f9fa] shadow-xs px-3.5 py-2">
+              <Search className="h-4 w-4 mr-2 text-gray-700 shrink-0" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setShowSearchDropdown(true)}
+                placeholder={searchPlaceholders[placeholderIndex] || "Search products..."}
+                className="w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </form>
         </div>
       </div>
 
-      {/* 3. Desktop Category Navigation Menu Bar */}
-      <nav className="hidden lg:block border-t border-border bg-surface-secondary/40">
+      {/* 3. Desktop Category Navigation Menu Bar with FULL HOVERABLE MEGA-MENU */}
+      <nav
+        className="hidden lg:block border-t border-gray-100 bg-white relative"
+        onMouseLeave={handleMouseLeaveCategory}
+      >
         <div className="container-main">
-          <ul className="flex items-center gap-1 text-xs font-semibold text-text">
-            <li>
-              <Link
-                href="/products"
-                className="flex items-center gap-1 px-3.5 py-2.5 hover:text-primary-600 transition-colors"
-              >
-                <span>All Products</span>
-              </Link>
-            </li>
-
-            {CATEGORY_NAV.map((cat) => (
-              <li
-                key={cat.name}
-                className="relative"
-                onMouseEnter={() => !cat.isDirect && setActiveMegaMenu(cat.name)}
-                onMouseLeave={() => setActiveMegaMenu(null)}
-              >
-                <Link
-                  href={`/products?category=${cat.slug}`}
-                  className={cn(
-                    "flex items-center gap-1 px-3.5 py-2.5 transition-colors",
-                    cat.isSpecial
-                      ? "text-accent-600 font-bold hover:text-accent-700"
-                      : cat.isQuiz
-                      ? "text-primary-600 font-bold hover:text-primary-700"
-                      : "text-text hover:text-primary-600"
-                  )}
-                >
-                  {cat.isQuiz && <Sparkles className="h-3 w-3 mr-0.5" />}
-                  {cat.isSpecial && <Tag className="h-3 w-3 mr-0.5" />}
-                  <span>{cat.name}</span>
-                  {!cat.isDirect && <ChevronDown className="h-3 w-3 text-text-muted" />}
-                </Link>
-
-                {/* Dropdown Mega Subcategories */}
-                {!cat.isDirect && activeMegaMenu === cat.name && (
-                  <div className="absolute top-full left-0 z-50 w-64 rounded-2xl border border-border bg-white p-3 shadow-xl animate-in fade-in-0 zoom-in-95">
-                    <span className="px-3 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                      {cat.name} Categories
-                    </span>
-                    <ul className="mt-1 space-y-0.5">
-                      {cat.subcategories?.map((sub) => (
-                        <li key={sub.name}>
-                          <Link
-                            href={`/products?category=${sub.slug}`}
-                            className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-medium text-text hover:bg-primary-50 hover:text-primary-700 transition-colors"
-                          >
-                            <span>{sub.name}</span>
-                            <ChevronRight className="h-3.5 w-3.5 text-text-muted" />
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </nav>
-
-      {/* 4. Mobile Category Drill-Down Drawer */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in-0"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="fixed inset-y-0 left-0 w-4/5 max-w-sm bg-white shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
-            {/* Drawer Header */}
-            <div className="flex items-center justify-between border-b border-border p-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-600 font-extrabold text-white text-sm">
-                  eX
-                </div>
-                <span className="font-extrabold text-text text-base">Menu</span>
-              </div>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="rounded-lg p-1.5 text-text-muted hover:bg-surface-secondary hover:text-text"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Navigation List */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {/* Routine Finder Promo Card */}
-              <Link
-                href="/quiz"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-2xl bg-gradient-to-r from-primary-600 to-indigo-600 p-3.5 text-white shadow-sm"
-              >
-                <div className="space-y-0.5">
-                  <span className="flex items-center gap-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-300">
-                    <Sparkles className="h-3 w-3" /> Personalized Routine
-                  </span>
-                  <p className="text-xs font-bold">Find Products for Your Skin Type</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-white/80" />
-              </Link>
-
-              {/* Main Categories */}
-              <div className="space-y-1">
-                <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                  Categories
-                </span>
-                <Link
-                  href="/products"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold text-text hover:bg-surface-secondary"
-                >
-                  <span>All Products</span>
-                  <ChevronRight className="h-4 w-4 text-text-muted" />
-                </Link>
-
-                {CATEGORY_NAV.map((cat) => (
-                  <div key={cat.name} className="space-y-1">
+          <div className="flex items-center justify-between py-2 overflow-x-auto no-scrollbar">
+            {/* Left: Interactive Category Links with Mega Menu Triggers */}
+            <div className="flex items-center gap-6 xl:gap-8 text-xs font-bold text-gray-700">
+              {navCategories.map((cat) => {
+                const isHovered = activeMegaCategory?.id === cat.id;
+                return (
+                  <div
+                    key={cat.id}
+                    onMouseEnter={() => handleMouseEnterCategory(cat)}
+                    className="relative py-1"
+                  >
                     <Link
-                      href={`/products?category=${cat.slug}`}
-                      onClick={() => setMobileMenuOpen(false)}
+                      href={cat.href || `/products?category=${cat.slug}`}
                       className={cn(
-                        "flex items-center justify-between rounded-xl px-3 py-2.5 text-xs font-bold hover:bg-surface-secondary",
-                        cat.isSpecial ? "text-accent-600" : "text-text"
+                        "hover:text-[#e91e63] transition-colors whitespace-nowrap flex items-center gap-1",
+                        isHovered ? "text-[#e91e63]" : ""
                       )}
                     >
-                      <span className="flex items-center gap-1.5">
-                        {cat.isSpecial && <Tag className="h-3.5 w-3.5" />}
-                        {cat.name}
-                      </span>
-                      <ChevronRight className="h-4 w-4 text-text-muted" />
+                      <span>{cat.name}</span>
+                      {cat.subcategories?.length > 0 && (
+                        <ChevronDown
+                          className={cn(
+                            "h-3 w-3 transition-transform duration-200",
+                            isHovered ? "rotate-180 text-[#e91e63]" : "text-gray-400"
+                          )}
+                        />
+                      )}
                     </Link>
                   </div>
-                ))}
-              </div>
-
-              {/* Account & Service Links */}
-              <div className="pt-3 border-t border-border space-y-1">
-                <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-text-muted">
-                  Account & Services
-                </span>
-                <Link
-                  href={user ? "/account" : "/login"}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-text hover:bg-surface-secondary"
-                >
-                  <span className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-primary-600" />
-                    {user ? "My Account" : "Sign In / Register"}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-text-muted" />
-                </Link>
-
-                <Link
-                  href="/track-order"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-text hover:bg-surface-secondary"
-                >
-                  <span className="flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-primary-600" />
-                    Track Your Order
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-text-muted" />
-                </Link>
-
-                <Link
-                  href="/return-policy"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-text hover:bg-surface-secondary"
-                >
-                  <span className="flex items-center gap-2">
-                    <ShieldCheck className="h-4 w-4 text-primary-600" />
-                    7-Day Authentic Returns
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-text-muted" />
-                </Link>
-              </div>
+                );
+              })}
             </div>
 
-            {/* Hotline footer in drawer */}
-            <div className="border-t border-border p-4 bg-surface-secondary/50 text-xs">
-              <a
-                href="tel:+8801700000000"
-                className="flex items-center justify-center gap-2 rounded-xl bg-white border border-border p-2.5 font-bold text-text hover:bg-primary-50 transition-colors"
-              >
-                <Phone className="h-4 w-4 text-primary-600" />
-                <span>Customer Care: 01700-000000</span>
-              </a>
+            {/* Right: Signature Colorful Campaign Pills */}
+            <div className="flex items-center gap-2 xl:gap-3">
+              {campaignPills.map((pill) => (
+                <Link
+                  key={pill.id}
+                  href={pill.href}
+                  className={cn(
+                    "rounded-full text-white font-black text-[10px] sm:text-[11px] uppercase px-3 py-1 shadow-2xs tracking-wider transition-transform hover:scale-105",
+                    pill.bgClass || "bg-[#e91e63]"
+                  )}
+                >
+                  {pill.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>
+
+        {/* ============================================================ */}
+        {/* INTERACTIVE FULL HOVERABLE MEGA MENU PANEL */}
+        {/* ============================================================ */}
+        {activeMegaCategory && (
+          <div
+            onMouseEnter={() => {
+              if (menuCloseTimeout.current) clearTimeout(menuCloseTimeout.current);
+            }}
+            onMouseLeave={handleMouseLeaveCategory}
+            className="absolute top-full left-0 right-0 z-50 bg-white border-y border-gray-200 shadow-2xl animate-in fade-in-0 slide-in-from-top-2 duration-200"
+          >
+            <div className="container-main py-6">
+              <div className="grid grid-cols-12 gap-6">
+                {/* Column 1 & 2: Subcategories List (6 cols) */}
+                <div className="col-span-6 space-y-3">
+                  <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-[#e91e63]" />
+                      {activeMegaCategory.name} Essentials
+                    </h3>
+                    <Link
+                      href={activeMegaCategory.href || `/products?category=${activeMegaCategory.slug}`}
+                      className="text-xs font-bold text-[#e91e63] hover:underline flex items-center gap-0.5"
+                    >
+                      View All {activeMegaCategory.name} &rarr;
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    {activeMegaCategory.subcategories?.map((sub, idx) => (
+                      <Link
+                        key={idx}
+                        href={sub.href}
+                        className="group flex items-center justify-between rounded-xl p-2.5 text-xs font-semibold text-gray-700 hover:bg-pink-50 hover:text-[#e91e63] transition-colors"
+                      >
+                        <span className="truncate">{sub.name}</span>
+                        <ChevronRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#e91e63] group-hover:translate-x-0.5 transition-all shrink-0" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Column 3: Featured Brands (3 cols) */}
+                <div className="col-span-3 space-y-3 border-l border-gray-100 pl-6">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-gray-900">
+                    Popular Brands
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {(activeMegaCategory.featuredBrands || ["COSRX", "The Ordinary", "CeraVe", "Beauty of Joseon"]).map(
+                      (brand, idx) => (
+                        <Link
+                          key={idx}
+                          href={`/products?search=${encodeURIComponent(brand)}`}
+                          className="rounded-full bg-gray-50 border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 hover:border-[#e91e63] hover:bg-pink-50 hover:text-[#e91e63] transition-colors"
+                        >
+                          {brand}
+                        </Link>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* Column 4: Promotional Banner Card (3 cols) */}
+                <div className="col-span-3 border-l border-gray-100 pl-6">
+                  <Link
+                    href={activeMegaCategory.promoBanner?.href || activeMegaCategory.href || "/products"}
+                    className="group relative block overflow-hidden rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 text-white p-4 shadow-sm hover:shadow-md transition-all h-full flex flex-col justify-between"
+                  >
+                    {activeMegaCategory.promoBanner?.image && (
+                      <img
+                        src={activeMegaCategory.promoBanner.image}
+                        alt="Promo"
+                        className="absolute inset-0 h-full w-full object-cover opacity-35 group-hover:scale-105 transition-transform duration-500"
+                      />
+                    )}
+                    <div className="relative z-10 space-y-1">
+                      <span className="rounded-full bg-white/20 backdrop-blur-xs px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+                        Special Highlight
+                      </span>
+                      <h4 className="text-sm font-black text-white pt-1">
+                        {activeMegaCategory.promoBanner?.title || `Shop ${activeMegaCategory.name}`}
+                      </h4>
+                      <p className="text-[11px] text-pink-100 line-clamp-2">
+                        {activeMegaCategory.promoBanner?.subtitle || "100% genuine guaranteed authentic imports."}
+                      </p>
+                    </div>
+
+                    <div className="relative z-10 pt-3">
+                      <span className="inline-flex items-center gap-1 text-xs font-black text-white bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl transition-colors">
+                        Shop Now <ArrowRight className="h-3 w-3" />
+                      </span>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* 4. Slide-Over Mobile Menu Navigation Drawer */}
+      {mobileMenuOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs transition-opacity lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          <div className="fixed inset-y-0 left-0 z-50 w-80 max-w-full bg-white shadow-2xl transition-transform lg:hidden flex flex-col">
+            {/* Drawer Header */}
+            <div className="relative flex items-center justify-between px-4 py-3.5 border-b border-gray-200 bg-white">
+              <Link href={headerConfig.logoLink || "/"} onClick={() => setMobileMenuOpen(false)} className="flex items-center">
+                {headerConfig.drawerLogoImageUrl || headerConfig.mobileLogoImageUrl || headerConfig.logoImageUrl ? (
+                  <img
+                    src={headerConfig.drawerLogoImageUrl || headerConfig.mobileLogoImageUrl || headerConfig.logoImageUrl}
+                    alt={headerConfig.drawerLogoText || headerConfig.mobileLogoText || headerConfig.logoText || "Blush & Budget"}
+                    className="h-7 sm:h-8 max-h-8 w-auto max-w-[160px] object-contain shrink-0"
+                  />
+                ) : (
+                  <span className="text-base font-black text-gray-900 tracking-wider">
+                    {headerConfig.drawerLogoText || headerConfig.mobileLogoText || headerConfig.logoText || "Blush & Budget"}
+                  </span>
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1.5 text-[#e91e63] hover:text-[#d81b60] focus:outline-none"
+                aria-label="Close Menu"
+              >
+                <X className="h-5 w-5 stroke-[2.5]" />
+              </button>
+            </div>
+
+            {/* User Account Strip */}
+            <div className="p-4 bg-pink-50/50 border-b border-gray-100 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#e91e63] text-white">
+                <User className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-medium">Welcome to {headerConfig.logoText || "Blush & Budget"}</p>
+                <Link
+                  href={user ? "/account" : "/auth/login"}
+                  className="text-xs font-black text-[#e91e63] hover:underline"
+                >
+                  {user ? "View My Account" : "Sign In / Register"}
+                </Link>
+              </div>
+            </div>
+
+            {/* Quick Mobile Action Shortcuts: Wishlist, Routine Finder */}
+            <div className="p-3 grid grid-cols-2 gap-2 bg-gray-50 border-b border-gray-100">
+              <Link
+                href="/account/wishlist"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:border-[#e91e63] hover:text-[#e91e63] transition-colors shadow-2xs"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Heart className="h-4 w-4 text-[#e91e63]" />
+                  <span>Wishlist</span>
+                </div>
+                {wishlistCount > 0 && (
+                  <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-[#e91e63] px-1.5 text-[10px] font-black text-white">
+                    {wishlistCount}
+                  </span>
+                )}
+              </Link>
+
+              <Link
+                href={config.routineFinderHref || "/products?category=skin-care"}
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-1.5 p-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:border-[#e91e63] hover:text-[#e91e63] transition-colors shadow-2xs"
+              >
+                <Sparkles className="h-4 w-4 text-pink-500" />
+                <span className="truncate">{config.routineFinderText || "Routine Finder"}</span>
+              </Link>
+            </div>
+
+            {/* Scrollable Categories List */}
+            <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+              {navCategories.map((cat) => {
+                const isExpanded = expandedMobileCategories.includes(cat.name);
+                return (
+                  <div key={cat.id} className="py-1">
+                    <div className="flex items-center justify-between px-4 py-2.5">
+                      <Link
+                        href={cat.href || `/products?category=${cat.slug}`}
+                        className="text-xs font-bold text-gray-800 hover:text-[#e91e63]"
+                      >
+                        {cat.name}
+                      </Link>
+                      {cat.subcategories?.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleMobileCategory(cat.name)}
+                          className="p-1 text-gray-400 hover:text-gray-700"
+                        >
+                          <ChevronDown
+                            className={cn(
+                              "h-4 w-4 transition-transform duration-200",
+                              isExpanded ? "rotate-180 text-[#e91e63]" : ""
+                            )}
+                          />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Subcategories Accordion */}
+                    {isExpanded && cat.subcategories?.length > 0 && (
+                      <div className="bg-gray-50/80 px-4 py-2 space-y-1.5 border-t border-gray-100">
+                        {cat.subcategories.map((sub, idx) => (
+                          <Link
+                            key={idx}
+                            href={sub.href}
+                            className="block text-[11px] font-semibold text-gray-600 hover:text-[#e91e63] py-1 pl-2 border-l-2 border-transparent hover:border-[#e91e63]"
+                          >
+                            {sub.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Mobile Campaign Badges Grid */}
+              <div className="p-4 space-y-2">
+                <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">
+                  Featured Campaigns
+                </span>
+                <div className="grid grid-cols-2 gap-2">
+                  {campaignPills.map((pill) => (
+                    <Link
+                      key={pill.id}
+                      href={pill.href}
+                      className={cn(
+                        "rounded-xl text-white font-black text-[10px] uppercase p-2 text-center shadow-2xs",
+                        pill.bgClass || "bg-[#e91e63]"
+                      )}
+                    >
+                      {pill.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Drawer Footer Actions */}
+            <div className="border-t border-gray-100 p-4 bg-gray-50 space-y-2">
+              <Link
+                href="/products"
+                className="block w-full rounded-xl bg-[#e91e63] py-2.5 text-center text-xs font-bold text-white shadow-md"
+              >
+                Browse All Products
+              </Link>
+            </div>
+          </div>
+        </>
       )}
     </header>
   );

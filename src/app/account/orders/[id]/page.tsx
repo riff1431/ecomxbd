@@ -90,14 +90,14 @@ export default async function CustomerOrderDetailPage({
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href={`/orders/${order.id}/confirmation`} target="_blank">
-            <Button variant="outline" size="sm" className="text-xs">
-              <Printer className="h-3.5 w-3.5 mr-1" />
-              Invoice Receipt
+          <Link href={`/orders/${order.id}/invoice`} target="_blank">
+            <Button variant="outline" size="sm" className="text-xs font-bold text-gray-800 hover:text-black">
+              <Printer className="h-3.5 w-3.5 mr-1 text-[#e91e63]" />
+              Print / Download Invoice
             </Button>
           </Link>
           <Link href={`/track-order`}>
-            <Button size="sm" className="text-xs">
+            <Button size="sm" className="text-xs font-bold bg-[#e91e63] hover:bg-[#d81b60] text-white shadow-xs">
               <Truck className="h-3.5 w-3.5 mr-1" />
               Live Tracking
             </Button>

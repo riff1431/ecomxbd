@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Heart, ShoppingBag, Star, Eye, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Heart, Star, Check, Zap, ShoppingBag } from "lucide-react";
 import { formatPrice, cn } from "@/lib/utils";
-import { Button } from "@/components/shared/ui/button";
 import { useWishlist } from "@/context/wishlist-context";
 import { useCart } from "@/context/cart-context";
+import { triggerMicroRipple } from "@/lib/ui-effects";
 import { QuickViewModal } from "./quick-view-modal";
+import { type ProductCardConfig } from "@/features/marketing/homepage-types";
 
 export interface ProductCardData {
   id: string;
@@ -19,12 +21,21 @@ export interface ProductCardData {
   brand_name?: string | null;
   rating?: number;
   review_count?: number;
+  size?: string | null;
   is_in_stock?: boolean;
 }
 
-export function ProductCard({ product }: { product: ProductCardData }) {
+export function ProductCard({
+  product,
+  cardSettings,
+}: {
+  product: ProductCardData;
+  cardSettings?: ProductCardConfig;
+}) {
+  const router = useRouter();
   const [showQuickView, setShowQuickView] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
+  const [imgSrc, setImgSrc] = useState(product.image_url || "/product_placeholder.svg");
   const { isWishlisted, toggleWishlist } = useWishlist();
   const { addItem } = useCart();
   const inWishlist = isWishlisted(product.id);
@@ -36,9 +47,16 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         )
       : 0;
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  // Extract volume/size from product name (e.g. 245ml, 125ml, 100g, 30ml) if not explicitly given
+  const detectedSize =
+    product.size ||
+    product.name.match(/\b\d+\s?(?:ml|g|gm|oz|kg)\b/i)?.[0] ||
+    "Standard";
+
+  const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    triggerMicroRipple(e);
     addItem(
       {
         id: product.id,
@@ -56,77 +74,100 @@ export function ProductCard({ product }: { product: ProductCardData }) {
     setTimeout(() => setJustAdded(false), 1500);
   };
 
+  const handleOrderNow = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    triggerMicroRipple(e);
+    addItem(
+      {
+        id: product.id,
+        product_id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: product.sale_price ?? product.regular_price,
+        regular_price: product.regular_price,
+        image_url: product.image_url || null,
+        brand_name: product.brand_name || null,
+      },
+      1
+    );
+    router.push("/checkout");
+  };
+
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-white transition-all duration-300 hover:border-primary-300 hover:shadow-card-hover">
-      {/* Floating Badges */}
-      <div className="absolute left-2 top-2 z-10 flex flex-col gap-1">
-        {discountPercent > 0 && (
-          <span className="rounded-full bg-accent-500 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-xs">
-            -{discountPercent}%
-          </span>
+    <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-gray-200/90 bg-white transition-all duration-300 ease-out hover:scale-[1.04] hover:-translate-y-1 hover:shadow-2xl hover:border-[#e91e63] cursor-pointer btn-soft-fill">
+      {/* 1. Top Image & Badges Container */}
+      <div className="relative aspect-square w-full overflow-hidden bg-white flex items-center justify-center">
+        {/* Top-Left Discount Badge */}
+        {cardSettings?.showDiscountBadge !== false && discountPercent > 0 && (
+          <div
+            style={{ position: "absolute", top: "10px", left: "10px", zIndex: 20 }}
+            className="pointer-events-none"
+          >
+            <span className="rounded-md bg-[#e91e63] px-2 py-0.5 text-[10px] font-black text-white shadow-xs tracking-wider">
+              {discountPercent}% OFF
+            </span>
+          </div>
         )}
-        {product.is_in_stock === false && (
-          <span className="rounded-full bg-zinc-900/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-xs">
-            Sold Out
-          </span>
-        )}
-      </div>
 
-      {/* Wishlist Button */}
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          toggleWishlist({
-            id: product.id,
-            name: product.name,
-            slug: product.slug,
-            regular_price: product.regular_price,
-            sale_price: product.sale_price,
-            image_url: product.image_url || null,
-            brand_name: product.brand_name || null,
-          });
-        }}
-        aria-label="Add to wishlist"
-        className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-xs backdrop-blur-xs transition-all hover:bg-white hover:scale-110 active:scale-95"
-      >
-        <Heart
-          className={cn(
-            "h-4 w-4 transition-colors",
-            inWishlist ? "fill-accent-500 text-accent-500" : "text-zinc-600 hover:text-accent-500"
-          )}
-        />
-      </button>
-
-      {/* Product Image Area with Quick View Trigger */}
-      <div className="relative aspect-square w-full overflow-hidden bg-surface-secondary/70">
-        <Link href={`/products/${product.slug}`} className="block h-full w-full">
-          {product.image_url ? (
-            <img
-              src={product.image_url}
-              alt={product.name}
-              className="h-full w-full object-contain p-2.5 transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
+        {/* Top-Right Wishlist Button (Guaranteed Explicit Top-Right Positioning) */}
+        {cardSettings?.showWishlistButton !== false && (
+          <button
+            type="button"
+            style={{ position: "absolute", top: "10px", right: "10px", zIndex: 30 }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              triggerMicroRipple(e, true);
+              toggleWishlist({
+                id: product.id,
+                name: product.name,
+                slug: product.slug,
+                regular_price: product.regular_price,
+                sale_price: product.sale_price,
+                image_url: product.image_url || null,
+                brand_name: product.brand_name || null,
+              });
+            }}
+            aria-label="Add to wishlist"
+            className="ripple-container flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-md backdrop-blur-xs transition-all duration-200 hover:bg-white hover:scale-115 active:scale-90 border border-gray-200/80 text-gray-700"
+          >
+            <Heart
+              className={cn(
+                "h-4 w-4 transition-colors",
+                inWishlist
+                  ? "fill-[#e91e63] text-[#e91e63]"
+                  : "text-gray-700 hover:text-[#e91e63]"
+              )}
             />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-text-muted">
-              <ShoppingBag className="h-10 w-10 stroke-[1.2]" />
-            </div>
-          )}
+          </button>
+        )}
+
+        {/* Product Image Link with Fallback - 100% Full Edge-to-Edge Size with Smooth Image Zoom */}
+        <Link
+          href={`/products/${product.slug}`}
+          className="block h-full w-full overflow-hidden flex items-center justify-center"
+        >
+          <img
+            src={imgSrc}
+            alt={product.name}
+            onError={() => setImgSrc("/product_placeholder.svg")}
+            className="h-full w-full object-cover object-center transition-transform duration-500 ease-out group-hover:scale-110"
+            loading="lazy"
+          />
         </Link>
 
-        {/* Quick View Hover Button (Desktop) */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowQuickView(true);
-          }}
-          className="absolute bottom-2.5 left-2.5 right-2.5 hidden sm:flex items-center justify-center gap-1.5 rounded-xl bg-white/95 py-2 text-xs font-bold text-text shadow-md backdrop-blur-xs opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all hover:bg-primary-600 hover:text-white"
-        >
-          <Eye className="h-3.5 w-3.5" />
-          Quick View
-        </button>
+        {/* Solid Pink FREE SHIPPING Strip at the bottom of the image (Exact Shajgoj Style) */}
+        {cardSettings?.showFreeShippingStrip !== false && (
+          <div
+            style={{ position: "absolute", bottom: "0px", left: "0px", right: "0px", zIndex: 10 }}
+            className="bg-[#e91e63] py-1 text-center shadow-xs pointer-events-none"
+          >
+            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white">
+              {cardSettings?.freeShippingText || "FREE SHIPPING"}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Quick View Modal */}
@@ -136,76 +177,105 @@ export function ProductCard({ product }: { product: ProductCardData }) {
         onClose={() => setShowQuickView(false)}
       />
 
-      {/* Product Card Info Body */}
-      <div className="flex flex-1 flex-col p-3 sm:p-3.5">
-        {/* Brand Tag */}
-        {product.brand_name ? (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-primary-600 truncate">
-            {product.brand_name}
-          </span>
-        ) : (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
-            Authentic
-          </span>
-        )}
-
-        {/* Title */}
+      {/* 2. Product Information Body */}
+      <div className="flex flex-1 flex-col p-3 sm:p-3.5 space-y-2">
+        {/* Product Title */}
         <Link
           href={`/products/${product.slug}`}
-          className="mt-0.5 line-clamp-2 text-xs sm:text-sm font-semibold text-text leading-tight hover:text-primary-600 transition-colors"
+          className="line-clamp-2 text-xs sm:text-sm font-bold text-gray-900 leading-tight hover:text-[#e91e63] transition-colors min-h-[2rem]"
           title={product.name}
         >
           {product.name}
         </Link>
 
-        {/* Rating */}
-        <div className="mt-1.5 flex items-center gap-1">
-          <div className="flex items-center text-amber-400">
-            <Star className="h-3 w-3 fill-current" />
-          </div>
-          <span className="text-[11px] font-bold text-text">
-            {product.rating ? product.rating.toFixed(1) : "5.0"}
-          </span>
-          <span className="text-[10px] text-text-muted">
-            ({product.review_count ?? 12})
-          </span>
+        {/* Rating & Size Badge Row */}
+        <div className="flex items-center justify-between gap-1 pt-0.5">
+          {/* Star Rating */}
+          {cardSettings?.showRating !== false ? (
+            <div className="flex items-center gap-1">
+              <div className="flex items-center text-amber-400">
+                <Star className="h-3 w-3 fill-current" />
+                <Star className="h-3 w-3 fill-current" />
+                <Star className="h-3 w-3 fill-current" />
+                <Star className="h-3 w-3 fill-current" />
+                <Star className="h-3 w-3 fill-current text-amber-200" />
+              </div>
+              <span className="text-[10px] text-gray-500 font-semibold">
+                ({product.rating ? product.rating.toFixed(1) : "4.3"})
+              </span>
+            </div>
+          ) : <div />}
+
+          {/* Size / Volume Pill Badge */}
+          {cardSettings?.showSizeBadge !== false && detectedSize && (
+            <span className="rounded-md bg-pink-50 border border-pink-100 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-[#e91e63] whitespace-nowrap">
+              {detectedSize}
+            </span>
+          )}
         </div>
 
-        {/* Price & 1-Tap Add to Cart Row */}
-        <div className="mt-auto pt-2.5 flex items-center justify-between gap-2 border-t border-border/60">
-          <div className="flex flex-col">
-            <div className="flex items-baseline gap-1.5 flex-wrap">
-              <span className="text-sm sm:text-base font-extrabold text-text">
-                {formatPrice(product.sale_price ?? product.regular_price)}
-              </span>
-              {product.sale_price && product.sale_price < product.regular_price && (
-                <span className="text-[11px] text-text-muted line-through">
-                  {formatPrice(product.regular_price)}
-                </span>
-              )}
-            </div>
-          </div>
+        {/* Pricing Row */}
+        <div className="flex items-baseline gap-2 pt-0.5">
+          <span className="text-sm sm:text-base font-black text-[#e91e63]">
+            {formatPrice(product.sale_price ?? product.regular_price)}
+          </span>
+          {product.sale_price && product.sale_price < product.regular_price && (
+            <span className="text-[11px] sm:text-xs text-gray-400 line-through font-medium">
+              {formatPrice(product.regular_price)}
+            </span>
+          )}
+        </div>
 
-          <button
-            onClick={handleAddToCart}
-            disabled={product.is_in_stock === false}
-            aria-label={`Add ${product.name} to bag`}
-            className={cn(
-              "flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-xl transition-all active:scale-90",
-              justAdded
-                ? "bg-emerald-600 text-white shadow-xs"
-                : product.is_in_stock === false
-                ? "bg-surface-tertiary text-text-muted cursor-not-allowed"
-                : "bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white border border-primary-100"
-            )}
-            title={product.is_in_stock === false ? "Out of Stock" : "Add to Bag"}
-          >
-            {justAdded ? (
-              <Check className="h-4 w-4 stroke-[2.5]" />
-            ) : (
-              <ShoppingBag className="h-4 w-4 stroke-[2]" />
-            )}
-          </button>
+        {/* Dual Action Buttons: ADD TO CART & ORDER NOW below it */}
+        <div className="overflow-hidden transition-all duration-300 ease-out max-h-28 sm:max-h-0 sm:opacity-0 group-hover:max-h-28 group-hover:opacity-100 group-hover:pt-2">
+          <div className="flex flex-col sm:grid sm:grid-cols-2 gap-1.5 w-full">
+            {/* 1. ADD TO CART Button (Hover shifts to Midnight Noir) */}
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={product.is_in_stock === false}
+              aria-label={`Add ${product.name} to cart`}
+              className={cn(
+                "ripple-container w-full rounded-xl py-2 px-2 text-[11px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-95",
+                justAdded
+                  ? "bg-emerald-600 !bg-emerald-600 text-white shadow-sm"
+                  : product.is_in_stock === false
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "btn-add-to-cart-action"
+              )}
+            >
+              {justAdded ? (
+                <>
+                  <Check className="h-3 w-3 stroke-[3] animate-in zoom-in-50" />
+                  <span>ADDED!</span>
+                </>
+              ) : product.is_in_stock === false ? (
+                <span>OUT OF STOCK</span>
+              ) : (
+                <>
+                  <ShoppingBag className="h-3 w-3" />
+                  <span>{cardSettings?.addToCartText || "ADD TO CART"}</span>
+                </>
+              )}
+            </button>
+
+            {/* 2. ORDER NOW Button (Hover shifts to Radiant Pink) */}
+            <button
+              type="button"
+              onClick={handleOrderNow}
+              disabled={product.is_in_stock === false}
+              aria-label={`Order ${product.name} now`}
+              className={cn(
+                "ripple-container w-full rounded-xl py-2 px-2 text-[11px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-95",
+                product.is_in_stock === false
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "btn-order-now-action"
+              )}
+            >
+              <Zap className="h-3 w-3 fill-current text-amber-400" />
+              <span>{cardSettings?.orderNowText || "ORDER NOW"}</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

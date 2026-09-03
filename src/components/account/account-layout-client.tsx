@@ -4,16 +4,37 @@ import React from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
-  LayoutDashboard, ShoppingBag, MapPin, Heart, Star,
-  RotateCcw, Award, Ticket, Bell, User, Lock, LogOut,
+  LayoutDashboard,
+  ShoppingBag,
+  MapPin,
+  Heart,
+  Star,
+  RotateCcw,
+  Award,
+  Ticket,
+  Bell,
+  User,
+  Lock,
+  LogOut,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { customerNavItems } from "@/config/site";
 import { createClient } from "@/lib/supabase/client";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  LayoutDashboard, ShoppingBag, MapPin, Heart, Star,
-  RotateCcw, Award, Ticket, Bell, User, Lock,
+  LayoutDashboard,
+  ShoppingBag,
+  MapPin,
+  Heart,
+  Star,
+  RotateCcw,
+  Award,
+  Ticket,
+  Bell,
+  User,
+  Lock,
+  Truck,
 };
 
 export default function AccountLayoutClient({
@@ -36,41 +57,46 @@ export default function AccountLayoutClient({
   };
 
   return (
-    <div className="container-main py-6 lg:py-8">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 bg-gray-50/40">
       <div className="flex flex-col gap-6 lg:flex-row lg:gap-8">
-        {/* Sidebar */}
+        {/* Customer Sidebar Navigation */}
         <aside className="w-full lg:w-64 shrink-0">
-          <nav className="rounded-xl border border-border bg-white shadow-card">
-            <div className="border-b border-border p-4">
-              <h2 className="text-lg font-semibold text-text">My Account</h2>
+          <nav className="rounded-3xl border border-gray-200 bg-white p-3 shadow-sm space-y-1">
+            <div className="border-b border-gray-100 px-3 py-3">
+              <h2 className="text-base font-black text-gray-900 tracking-tight">My Account</h2>
+              <p className="text-[11px] text-gray-400">Customer portal & settings</p>
             </div>
-            <ul className="p-2">
+
+            <ul className="space-y-0.5 pt-2">
               {customerNavItems.map((item) => {
-                const Icon = iconMap[item.icon] || User;
+                const Icon = item.href === "/account/track" ? Truck : (iconMap[item.icon] || User);
+                const active = isActive(item.href);
+
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-surface-secondary",
-                        isActive(item.href)
-                          ? "bg-primary-50 text-primary-700 font-medium"
-                          : "text-text-secondary"
+                        "flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold transition-all",
+                        active
+                          ? "bg-pink-50 text-[#e91e63] shadow-xs scale-102"
+                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                       )}
                     >
-                      <Icon className="h-4 w-4 shrink-0" />
+                      <Icon className={cn("h-4 w-4 shrink-0", active ? "text-[#e91e63]" : "text-gray-400")} />
                       <span>{item.title}</span>
                     </Link>
                   </li>
                 );
               })}
-              <li>
+
+              <li className="pt-2 border-t border-gray-100">
                 <button
                   id="customer-logout-btn"
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600"
+                  className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
                 >
-                  <LogOut className="h-4 w-4 shrink-0" />
+                  <LogOut className="h-4 w-4 shrink-0 text-gray-400 group-hover:text-red-600" />
                   <span>Logout</span>
                 </button>
               </li>
@@ -78,7 +104,7 @@ export default function AccountLayoutClient({
           </nav>
         </aside>
 
-        {/* Main content */}
+        {/* Main View Area */}
         <main className="flex-1 min-w-0">{children}</main>
       </div>
     </div>

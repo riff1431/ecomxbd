@@ -15,6 +15,7 @@ import { createProduct, updateProduct } from "@/features/products/actions";
 import { getCategories } from "@/features/categories/actions";
 import { getBrands } from "@/features/brands/actions";
 import { getAttributes } from "@/features/attributes/actions";
+import { RichTextEditor } from "@/components/shared/rich-text-editor";
 
 interface AttributeOption {
   id: string;
@@ -479,33 +480,70 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
 
           {/* 2. Content */}
           {activeTab === "content" && (
-            <div className="rounded-xl border border-border bg-white p-6 shadow-card space-y-4">
-              <h2 className="text-lg font-semibold text-text">Product Content</h2>
-              {[
-                { key: "short_description", label: "Short Description", rows: 2 },
-                { key: "description", label: "Full Description", rows: 6 },
-                { key: "benefits", label: "Benefits", rows: 4 },
-                { key: "usage", label: "How to Use", rows: 3 },
-                { key: "ingredients_specifications", label: "Ingredients / Specifications", rows: 4 },
-              ].map(({ key, label, rows }) => (
-                <div key={key} className="space-y-2">
-                  <Label>{label}</Label>
-                  <textarea
-                    value={form[key as keyof typeof form] as string}
-                    onChange={(e) => updateField(key as keyof typeof form, e.target.value as never)}
-                    rows={rows}
-                    className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm resize-none focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-                  />
-                </div>
-              ))}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Country of Origin</Label>
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-6">
+              <div className="border-b border-gray-100 pb-3">
+                <h2 className="text-base font-bold text-gray-900">Product Content & Rich Media</h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Format headings, bullet lists, numbered lists, insert images, links, and switch to raw HTML mode anytime.
+                </p>
+              </div>
+
+              {/* Short Description */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-gray-700">Short Description (Overview)</Label>
+                <textarea
+                  value={form.short_description}
+                  onChange={(e) => updateField("short_description", e.target.value)}
+                  rows={2}
+                  placeholder="Non-oily 24hr hydration gel with Hyaluronic Acid & Vitamin E."
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium resize-none focus:border-[#e91e63] focus:outline-none focus:ring-2 focus:ring-pink-500/10"
+                />
+              </div>
+
+              {/* Full Description with Rich Editor & HTML Mode */}
+              <RichTextEditor
+                label="Full Description"
+                value={form.description}
+                onChange={(val) => updateField("description", val)}
+                placeholder="Write detailed product story, clinical formulation, texture details..."
+                minHeight="220px"
+              />
+
+              {/* Benefits with Rich Editor & HTML Mode */}
+              <RichTextEditor
+                label="Benefits (Key Advantages & Results)"
+                value={form.benefits}
+                onChange={(val) => updateField("benefits", val)}
+                placeholder="• 72hr Intense hydration barrier&#10;• Non-sticky glass skin glow&#10;• Dermatologically tested"
+                minHeight="160px"
+              />
+
+              {/* How to Use with Rich Editor & HTML Mode */}
+              <RichTextEditor
+                label="How to Use (Application Routine)"
+                value={form.usage}
+                onChange={(val) => updateField("usage", val)}
+                placeholder="1. Cleanse face with lukewarm water&#10;2. Apply 2-3 pumps evenly&#10;3. Gently massage in upward circular motions"
+                minHeight="140px"
+              />
+
+              {/* Ingredients / Specifications with Rich Editor & HTML Mode */}
+              <RichTextEditor
+                label="Ingredients / Specifications"
+                value={form.ingredients_specifications}
+                onChange={(val) => updateField("ingredients_specifications", val)}
+                placeholder="Aqua/Water, Hyaluronic Acid, Niacinamide (5%), Glycerin, Vitamin E, Centella Asiatica Extract..."
+                minHeight="140px"
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-gray-100">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-gray-700">Country of Origin</Label>
                   <Input value={form.country} onChange={(e) => updateField("country", e.target.value)} placeholder="e.g. South Korea" />
                 </div>
-                <div className="space-y-2">
-                  <Label>Warranty</Label>
-                  <Input value={form.warranty} onChange={(e) => updateField("warranty", e.target.value)} placeholder="e.g. 100% Authentic" />
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-gray-700">Warranty / Authenticity</Label>
+                  <Input value={form.warranty} onChange={(e) => updateField("warranty", e.target.value)} placeholder="e.g. 100% Authentic Guaranteed" />
                 </div>
               </div>
             </div>

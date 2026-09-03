@@ -1,9 +1,9 @@
 // Site-wide configuration constants
 
 export const siteConfig = {
-  name: process.env.NEXT_PUBLIC_APP_NAME || "ecomXbangladesh",
-  url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-  description: "Premium e-commerce platform for Bangladesh",
+  name: process.env.NEXT_PUBLIC_APP_NAME || "Blush & Budget",
+  url: process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://blushandbudget.com",
+  description: "Authentic Skincare & Beauty Imports in Bangladesh",
   defaultCurrency: "BDT",
   defaultLocale: "en-BD",
   defaultTimezone: "Asia/Dhaka",
@@ -30,9 +30,9 @@ export const adminNavItems = [
     children: [
       { title: "All Orders", href: "/admin/orders" },
       { title: "Incomplete Orders", href: "/admin/orders/incomplete" },
-      { title: "Returns", href: "/admin/returns" },
+      { title: "Fraud & Blocklist", href: "/admin/orders/fraud" },
       { title: "Order Tracking", href: "/admin/orders/tracking" },
-      { title: "Fraud Orders", href: "/admin/fraud" },
+      { title: "Returns & RTO", href: "/admin/returns" },
       { title: "Order Settings", href: "/admin/orders/settings" },
     ],
   },
@@ -64,6 +64,7 @@ export const adminNavItems = [
     title: "Marketing",
     icon: "Megaphone",
     children: [
+      { title: "Storefront Sections", href: "/admin/marketing/homepage" },
       { title: "Coupons", href: "/admin/coupons" },
       { title: "SMS Marketing", href: "/admin/marketing/sms" },
       { title: "Facebook / Meta", href: "/admin/marketing/meta" },

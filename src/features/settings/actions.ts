@@ -41,21 +41,25 @@ export async function saveSeoSettings(settings: {
   return { success: true };
 }
 
-// Checkout Settings
+// Checkout & Customer Settings
 export async function getCheckoutSettings() {
   return getSettingsByGroup("checkout");
 }
 
 export async function saveCheckoutSettings(settings: {
-  guest_checkout_enabled: boolean;
-  cod_enabled: boolean;
-  cod_max_amount: number;
-  min_order_amount: number;
-  require_phone: boolean;
-  order_notes_enabled: boolean;
+  guest_checkout_enabled?: boolean;
+  allow_customer_registration?: boolean;
+  cod_enabled?: boolean;
+  cod_max_amount?: number;
+  min_order_amount?: number;
+  require_phone?: boolean;
+  require_email?: boolean;
+  order_notes_enabled?: boolean;
 }) {
   await updateGroupSettings("checkout", settings);
   revalidatePath("/admin/settings/checkout");
   revalidatePath("/checkout");
+  revalidatePath("/login");
+  revalidatePath("/register");
   return { success: true };
 }

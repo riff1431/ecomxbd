@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+  <defs>
+    <linearGradient id="fragBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fffbeb"/>
+      <stop offset="100%" stop-color="#fef3c7"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" fill="url(#fragBg)" rx="30"/>
+  <circle cx="150" cy="150" r="100" fill="#f59e0b" opacity="0.15"/>
+  
+  <!-- Crystal Perfume Bottle -->
+  <g transform="translate(90, 50)">
+    <!-- Glass Body with Facets -->
+    <rect x="15" y="80" width="90" height="110" rx="16" fill="#fde047" opacity="0.6" stroke="#f59e0b" stroke-width="4"/>
+    <rect x="25" y="95" width="70" height="80" rx="8" fill="#ffffff" opacity="0.9"/>
+    <text x="60" y="135" font-family="Georgia, serif" font-size="11" font-weight="900" fill="#b45309" text-anchor="middle">EAU DE</text>
+    <text x="60" y="152" font-family="sans-serif" font-size="9" font-weight="700" fill="#d97706" text-anchor="middle">PARFUM</text>
+    
+    <!-- Gold Atomizer Collar & Cap -->
+    <rect x="45" y="60" width="30" height="20" rx="4" fill="#d97706"/>
+    <rect x="40" y="30" width="40" height="30" rx="6" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+    
+    <!-- Sparkle Stars -->
+    <path d="M-10,60 Q-10,75 5,75 Q-10,75 -10,90 Q-10,75 -25,75 Q-10,75 -10,60 Z" fill="#f59e0b"/>
+    <path d="M125,120 Q125,130 135,130 Q125,130 125,140 Q125,130 115,130 Q125,130 125,120 Z" fill="#fbbf24"/>
+  </g>
+</svg>

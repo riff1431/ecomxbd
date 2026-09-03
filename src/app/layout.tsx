@@ -14,7 +14,9 @@ export const metadata: Metadata = {
     template: "%s | ecomXbangladesh",
   },
   description: "Premium e-commerce platform for Bangladesh — Shop the best products with fast delivery.",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://blushandbudget.com"
+  ),
   openGraph: {
     type: "website",
     locale: "en_BD",

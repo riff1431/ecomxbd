@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="100%" height="100%">
+  <defs>
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="50%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#075985"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="350" fill="url(#glowGrad)" rx="20"/>
+  
+  <rect x="60" y="45" width="170" height="32" rx="8" fill="#ffffff" opacity="0.18"/>
+  <text x="145" y="66" font-family="Georgia, serif" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Treasure of Glow</text>
+  
+  <text x="60" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" fill="#ffffff" letter-spacing="-0.5">UP TO 35% OFF</text>
+  <text x="60" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#38bdf8" letter-spacing="-0.5">FREE DELIVERY</text>
+  <text x="60" y="215" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#e0f2fe">on orders above 1099 Tk</text>
+  
+  <!-- Bottles on Right -->
+  <g transform="translate(540, 60)">
+    <rect x="0" y="30" width="60" height="180" rx="20" fill="#f59e0b"/>
+    <rect x="75" y="10" width="70" height="200" rx="22" fill="#ffffff"/>
+    <rect x="160" y="40" width="60" height="170" rx="18" fill="#38bdf8"/>
+  </g>
+</svg>

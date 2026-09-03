@@ -7,6 +7,7 @@ import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
 import { useWishlist } from "@/context/wishlist-context";
 import { useCart } from "@/context/cart-context";
+import { triggerMicroRipple } from "@/lib/ui-effects";
 
 interface QuickViewProduct {
   id: string;
@@ -130,7 +131,8 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
             {/* Action Buttons */}
             <div className="space-y-2 pt-2">
               <Button
-                onClick={() => {
+                onClick={(e) => {
+                  triggerMicroRipple(e);
                   addItem({
                     id: product.id,
                     product_id: product.id,
@@ -143,7 +145,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                   }, quantity);
                   onClose();
                 }}
-                className="w-full py-5 text-xs font-bold shadow-sm"
+                className="btn-add-to-cart ripple-container w-full py-5 text-xs font-bold shadow-sm flex items-center justify-center gap-2"
               >
                 <ShoppingBag className="h-4 w-4" />
                 Add to Cart ({quantity})

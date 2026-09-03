@@ -115,7 +115,7 @@ export default function AdminMetaSettingsPage() {
             </p>
 
             <div className="rounded-xl bg-surface-secondary p-3 font-mono text-[11px] text-text-secondary break-all border border-border">
-              http://localhost:3000/api/feed/meta
+              /api/feed/meta
             </div>
 
             <Link href="/api/feed/meta" target="_blank" className="inline-block">
