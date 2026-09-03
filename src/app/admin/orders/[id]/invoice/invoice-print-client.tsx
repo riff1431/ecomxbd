@@ -80,14 +80,25 @@ export default function InvoicePrintClient({
   const accentColor = invoiceSettings?.invoice_accent_color || "#e91e63";
 
   const totalQuantity = items.reduce((sum: number, it: any) => sum + (it.quantity || 1), 0);
-  const courier = order.courier_name || "SteadFast Courier";
-  const consignmentCode = order.consignment_id || `SF-${order.order_number.replace(/\D/g, "")}`;
+  const hasAssignedCourier = Boolean(order.courier_name);
+  const courier = order.courier_name || "Standard Delivery";
+  const consignmentCode = order.consignment_id || order.order_number;
   const isCod = order.payment_method === "cod" || !order.payment_method;
   const baseUrl =
     typeof window !== "undefined" && window.location.origin
       ? window.location.origin
       : process.env.NEXT_PUBLIC_APP_URL || "";
   const trackingUrl = `${baseUrl}/account/track?order=${order.order_number}`;
+
+  const thermalHeaderTitle =
+    invoiceSettings?.thermal_header_title ||
+    (hasAssignedCourier
+      ? `${courier.toUpperCase()} EXPRESS`
+      : `${brandName.toUpperCase()} • PARCEL DELIVERY`);
+
+  const thermalRoutingTitle = hasAssignedCourier
+    ? `${courier.toUpperCase()} ROUTING & SORTING`
+    : `PARCEL ROUTING & DELIVERY`;
 
   // Bengali Numeral Converter helper
   const toBn = (val: string | number) => {
@@ -239,7 +250,7 @@ export default function InvoicePrintClient({
       doc.setFontSize(7.5);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(60, 60, 60);
-      doc.text(invoiceSettings?.thermal_header_title || `${courier.toUpperCase()} EXPRESS`, 6, 18);
+      doc.text(thermalHeaderTitle, 6, 18);
 
       doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
@@ -310,7 +321,7 @@ export default function InvoicePrintClient({
       doc.setLineWidth(0.4);
       doc.line(50, 63, 50, 93);
 
-      // Sender (Hub)
+      // Sender (Store / Merchant)
       doc.setFillColor(220, 220, 220);
       doc.setTextColor(0, 0, 0);
       doc.rect(53, 63, 24, 4, "F");
@@ -352,7 +363,7 @@ export default function InvoicePrintClient({
       // 5. Carrier Routing & Bottom Barcode
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text(`${courier.toUpperCase()} ROUTING & SORTING`, 50, 126, { align: "center" });
+      doc.text(thermalRoutingTitle, 50, 126, { align: "center" });
 
       // Draw Routing Barcode
       if (thermalRoutingBarcodeDataUrl) {
@@ -633,11 +644,11 @@ export default function InvoicePrintClient({
       free: "FREE",
       thermalTrackingNo: "Tracking Number:",
       thermalDeliverTo: "DELIVER TO:",
-      thermalSender: "SENDER (HUB):",
+      thermalSender: "FROM / STORE:",
       weight: "WEIGHT:",
       totalItems: "TOTAL ITEMS:",
       routing: "ROUTING & SORTING",
-      doNotShip: "DO NOT SHIP IF DAMAGED • RETURN TO HUB",
+      doNotShip: "FRAGILE • PLEASE INSPECT PARCEL BEFORE ACCEPTING",
       scanToTrack: "Scan to track parcel",
       orderDate: "ORDER DATE:",
       tabA4: "A4 Tax Invoice",
@@ -676,11 +687,11 @@ export default function InvoicePrintClient({
       free: "ফ্রি (০৳)",
       thermalTrackingNo: "ট্র্যাকিং নম্বর:",
       thermalDeliverTo: "ডেলিভারি ঠিকানা (প্রাপক):",
-      thermalSender: "প্রেরক (রিটার্ন হাব):",
+      thermalSender: "প্রেরক (শপ / স্টোর):",
       weight: "ওজন:",
       totalItems: "মোট পণ্য:",
       routing: "কুরিয়ার রাউটিং ও শর্টিং",
-      doNotShip: "ক্ষতিগ্রস্ত হলে ডেলিভারি করবেন না • হাবে ফেরত পাঠান",
+      doNotShip: "সাবধানে হ্যান্ডেল করুন • ডেলিভারির সময় চেক করুন",
       scanToTrack: "পার্সেল ট্র্যাক করতে স্ক্যান করুন",
       orderDate: "অর্ডার তারিখ:",
       tabA4: "A4 ট্যাক্স ইনভয়েস",
@@ -973,7 +984,7 @@ export default function InvoicePrintClient({
               </span>
             )}
             <span className="text-[9px] font-bold text-gray-700 block uppercase font-mono">
-              {invoiceSettings?.thermal_header_title || `${courier} Express`}
+              {thermalHeaderTitle}
             </span>
           </div>
 
@@ -1043,7 +1054,7 @@ export default function InvoicePrintClient({
             </p>
           </div>
 
-          {/* Sender (Shipper Hub) */}
+          {/* Sender (Store / Merchant) */}
           <div className="space-y-0.5 pl-0.5">
             <span className="font-black uppercase tracking-wider block bg-gray-200 text-black px-1 py-0.2 rounded text-[7px] w-fit">
               {t.thermalSender}
@@ -1081,7 +1092,7 @@ export default function InvoicePrintClient({
       {/* Secondary Carrier Routing Barcode & Instructions */}
       <div className="text-center pt-1 space-y-0.5">
         <span className="text-[8px] font-black uppercase text-gray-600 block font-mono">
-          {courier.toUpperCase()} {t.routing}
+          {thermalRoutingTitle}
         </span>
 
         {/* Scannable Routing Barcode */}
