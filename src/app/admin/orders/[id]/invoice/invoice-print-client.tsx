@@ -145,14 +145,226 @@ export default function InvoicePrintClient({
     window.print();
   };
 
-  // 1-Click Direct PDF File Download Handler
+  // Infallible Direct Vector jsPDF Fallback Generator
+  const generateVectorPdfFallback = () => {
+    const isThermal = printMode === "thermal";
+
+    if (isThermal) {
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [100, 150],
+      });
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(13);
+      doc.text(brandName.toUpperCase(), 8, 12);
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.text(courier.toUpperCase() + " EXPRESS", 8, 17);
+      doc.text(`DATE: ${new Date(order.created_at).toLocaleDateString("en-GB")}`, 92, 12, { align: "right" });
+
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.6);
+      doc.line(8, 20, 92, 20);
+
+      // Tracking No & Code
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("TRACKING NUMBER:", 50, 26, { align: "center" });
+      doc.setFontSize(12);
+      doc.text(consignmentCode, 50, 32, { align: "center" });
+
+      // COD Box
+      doc.rect(25, 36, 50, 8);
+      doc.setFontSize(10);
+      doc.text(isCod ? `COD : BDT ${order.total}` : "PAID (BDT 0)", 50, 41.5, { align: "center" });
+
+      doc.line(8, 48, 92, 48);
+
+      // Deliver To
+      doc.setFontSize(8);
+      doc.text("DELIVER TO:", 8, 54);
+      doc.setFontSize(9);
+      doc.text(address.name || order.guest_name || "Customer", 8, 59);
+      doc.text(address.phone || order.guest_phone || "", 8, 64);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(`${address.address || ""}`, 8, 69);
+      doc.text(`${address.thana ? address.thana + ", " : ""}${address.district || "Dhaka"}`, 8, 74);
+
+      // Sender
+      doc.setFont("helvetica", "bold");
+      doc.text("SENDER (HUB):", 54, 54);
+      doc.setFontSize(9);
+      doc.text(brandName, 54, 59);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(invoiceSettings?.thermal_return_address || "House 42, Road 11, Banani", 54, 64);
+      doc.text("Dhaka, Bangladesh", 54, 69);
+
+      doc.line(8, 78, 92, 78);
+
+      // Items summary
+      doc.setFont("helvetica", "bold");
+      doc.text(`TOTAL ITEMS: ${totalQuantity}`, 8, 84);
+      doc.text(`WEIGHT: 0.5 KG`, 92, 84, { align: "right" });
+
+      let itemY = 90;
+      doc.setFont("helvetica", "normal");
+      items.slice(0, 4).forEach((it: any) => {
+        doc.text(`• ${it.product_name_snapshot?.substring(0, 35)}`, 8, itemY);
+        doc.text(`x${it.quantity}`, 92, itemY, { align: "right" });
+        itemY += 5;
+      });
+
+      doc.line(8, 120, 92, 120);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text("DO NOT SHIP IF DAMAGED • RETURN TO HUB", 50, 128, { align: "center" });
+      doc.text(`ORDER NO: ${order.order_number}`, 50, 134, { align: "center" });
+
+      doc.save(`${order.order_number}_4x6_Thermal_Label.pdf`);
+      return;
+    }
+
+    // Direct Exact A4 Tax Invoice
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    // Top Brand Header
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(20, 20, 20);
+    doc.text(brandName, 15, 20);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    doc.text(invoiceSettings?.invoice_tagline || "Authentic Skincare & Beauty Imports", 15, 26);
+    doc.text(invoiceSettings?.invoice_address || "House 42, Road 11, Banani, Dhaka-1213", 15, 31);
+
+    // Right Title & Order No
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.setTextColor(233, 30, 99);
+    doc.text("TAX INVOICE", 195, 20, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(70, 70, 70);
+    doc.text(order.order_number, 195, 26, { align: "right" });
+
+    // Metadata Gray Box
+    doc.setFillColor(243, 244, 246);
+    doc.roundedRect(15, 38, 180, 26, 3, 3, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text("INVOICE TO:", 20, 44);
+    doc.setFontSize(10);
+    doc.setTextColor(20, 20, 20);
+    doc.text(address.name || order.guest_name || "Valued Customer", 20, 50);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`${address.address || ""}, ${address.district || "Dhaka"}`, 20, 55);
+    doc.text(`Phone: ${address.phone || order.guest_phone || ""}`, 20, 60);
+
+    // Date & Courier
+    doc.setFont("helvetica", "normal");
+    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString("en-GB")}`, 105, 47, { align: "center" });
+    doc.text(`Invoice No: ${order.order_number}`, 105, 53, { align: "center" });
+    doc.text(`Courier: ${courier}`, 105, 59, { align: "center" });
+
+    // Total Due Box
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text("TOTAL DUE:", 190, 47, { align: "right" });
+    doc.setFontSize(13);
+    doc.setTextColor(233, 30, 99);
+    doc.text(`BDT ${order.total}`, 190, 56, { align: "right" });
+
+    // Table Header
+    doc.setFillColor(233, 30, 99);
+    doc.rect(15, 70, 180, 8, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text("DESCRIPTION", 20, 75.5);
+    doc.text("QTY", 125, 75.5, { align: "center" });
+    doc.text("PRICE", 155, 75.5, { align: "right" });
+    doc.text("TOTAL", 190, 75.5, { align: "right" });
+
+    // Table Rows
+    let y = 84;
+    doc.setTextColor(40, 40, 40);
+    doc.setFont("helvetica", "normal");
+    items.forEach((it: any, idx: number) => {
+      if (idx % 2 === 1) {
+        doc.setFillColor(249, 250, 251);
+        doc.rect(15, y - 5.5, 180, 8, "F");
+      }
+      doc.text(it.product_name_snapshot?.substring(0, 50) || "Product Item", 20, y);
+      doc.text(String(it.quantity || 1), 125, y, { align: "center" });
+      doc.text(`BDT ${it.unit_price}`, 155, y, { align: "right" });
+      doc.text(`BDT ${it.total}`, 190, y, { align: "right" });
+      y += 9;
+    });
+
+    // Divider
+    doc.setDrawColor(220, 220, 220);
+    doc.line(15, y + 2, 195, y + 2);
+
+    // Financial Totals
+    const totalY = y + 10;
+    doc.setFontSize(9);
+    doc.text("Sub Total:", 145, totalY);
+    doc.text(`BDT ${order.subtotal || order.total}`, 190, totalY, { align: "right" });
+
+    doc.text("Delivery Charge:", 145, totalY + 6);
+    doc.text(`BDT ${order.shipping_amount || 0}`, 190, totalY + 6, { align: "right" });
+
+    // Grand Total Box
+    doc.setFillColor(233, 30, 99);
+    doc.roundedRect(140, totalY + 11, 55, 9, 2, 2, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text("GRAND TOTAL", 144, totalY + 17);
+    doc.text(`BDT ${order.total}`, 192, totalY + 17, { align: "right" });
+
+    // Footer & Authorized Signature
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text("Payment Method: " + (isCod ? "Cash on Delivery (COD)" : order.payment_method), 15, totalY + 10);
+    doc.text("Support: " + (invoiceSettings?.invoice_email || "support@blushandbudget.com"), 15, totalY + 16);
+
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(80, 80, 80);
+    doc.text(invoiceSettings?.invoice_authorized_signatory_text || "Authorized Signature", 190, totalY + 35, { align: "right" });
+    doc.setDrawColor(150, 150, 150);
+    doc.line(150, totalY + 31, 195, totalY + 31);
+
+    doc.save(`${order.order_number}_A4_Tax_Invoice.pdf`);
+  };
+
+  // 1-Click Guaranteed Direct PDF File Download Handler
   const handleDownloadPdf = async () => {
     const isThermal = printMode === "thermal";
     const target = isThermal ? exportThermalRef.current : exportA4Ref.current;
-    if (!target) return;
     setDownloadingPdf(true);
 
     try {
+      if (!target) {
+        generateVectorPdfFallback();
+        return;
+      }
+
       const canvas = await html2canvas(target, {
         scale: 2,
         useCORS: true,
@@ -183,8 +395,9 @@ export default function InvoicePrintClient({
         pdf.save(`${order.order_number}_A4_Tax_Invoice.pdf`);
       }
     } catch (err: any) {
-      console.error("PDF Download error:", err);
-      alert("Failed to generate PDF. Please use the Print button -> Save as PDF.");
+      console.warn("Falling back to direct vector jsPDF generator:", err);
+      // Instant guaranteed vector PDF generation
+      generateVectorPdfFallback();
     } finally {
       setDownloadingPdf(false);
     }
