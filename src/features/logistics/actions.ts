@@ -116,14 +116,47 @@ export async function bookCourierDelivery(input: {
       ? "Paperfly Express"
       : "Sundarban Courier";
 
-  const prefix = input.courierCode === "steadfast" ? "SF" : input.courierCode === "pathao" ? "PTH" : "STF";
-  const consignmentId = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
-  const trackingId = `TRK-${Math.floor(10000000 + Math.random() * 90000000)}`;
+  let prefix = input.courierCode === "steadfast" ? "SF" : input.courierCode === "pathao" ? "PTH" : "STF";
+  let consignmentId = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
+  let trackingId = `TRK-${Math.floor(10000000 + Math.random() * 90000000)}`;
   const parcelWeight = input.weightKg || 0.5;
   const itemsSummary = input.itemDescription || "Skincare cosmetics package";
   const instructions = input.specialInstruction || "Fragile skincare cosmetics. Handle with care.";
 
   try {
+    // 0. If SteadFast API credentials are configured, execute live SteadFast booking
+    if (input.courierCode === "steadfast") {
+      try {
+        const { getSteadfastSettings } = await import("./courier-settings-actions");
+        const sfSettings = await getSteadfastSettings();
+        if (sfSettings.api_key && sfSettings.secret_key && sfSettings.secret_key !== "••••••••") {
+          const sfRes = await fetch(`${sfSettings.api_base_url}/create_order`, {
+            method: "POST",
+            headers: {
+              "Api-Key": sfSettings.api_key,
+              "Secret-Key": sfSettings.secret_key,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              invoice: input.orderNumber,
+              recipient_name: input.recipientName,
+              recipient_phone: input.recipientPhone,
+              recipient_address: input.recipientAddress,
+              cod_amount: input.codAmount,
+              note: instructions,
+            }),
+          });
+          const sfJson = await sfRes.json();
+          if (sfJson.status === 200 && sfJson.consignment) {
+            consignmentId = String(sfJson.consignment.consignment_id || sfJson.consignment.tracking_code);
+            trackingId = String(sfJson.consignment.tracking_code || `SF-${consignmentId}`);
+          }
+        }
+      } catch (sfErr) {
+        console.warn("SteadFast live API booking attempt:", sfErr);
+      }
+    }
+
     // 1. Try to record in courier_shipments with complete payload
     await supabase.from("courier_shipments").insert({
       order_id: input.orderId,
@@ -139,11 +172,14 @@ export async function bookCourierDelivery(input: {
       booked_at: new Date().toISOString(),
     });
 
-    // 2. Update order status to shipped, courier_name, consignment_id
+    // 2. Update order status to shipped, courier_id, consignment_id
     await supabase
       .from("orders")
       .update({
         status: "shipped",
+        courier_id: courierName,
+        consignment_id: consignmentId,
+        tracking_id: trackingId,
         updated_at: new Date().toISOString(),
       })
       .eq("id", input.orderId);

@@ -10,7 +10,7 @@ export interface PostPurchaseConfig {
   autoLoyaltyPoints: number;
   autoRestockOnReturn: boolean;
   autoDispatchOnConfirm: boolean;
-  defaultCourier: "steadfast" | "pathao";
+  defaultCourier: "steadfast" | "pathao" | "smart" | "manual";
 }
 
 let memoryAutomationConfig: PostPurchaseConfig = {
@@ -19,7 +19,7 @@ let memoryAutomationConfig: PostPurchaseConfig = {
   autoLoyaltyPoints: 50,
   autoRestockOnReturn: true,
   autoDispatchOnConfirm: true,
-  defaultCourier: "steadfast",
+  defaultCourier: "smart",
 };
 
 export async function getPostPurchaseConfig(): Promise<PostPurchaseConfig> {

@@ -1,4 +1,5 @@
 import { getPostPurchaseConfig } from "@/features/automation/post-purchase-actions";
+import { getSteadfastSettings, getPathaoSettings } from "@/features/logistics/courier-settings-actions";
 import OrderAutomationSettingsClient from "./settings-client";
 
 export const metadata = {
@@ -6,7 +7,17 @@ export const metadata = {
 };
 
 export default async function AdminOrderSettingsPage() {
-  const config = await getPostPurchaseConfig();
+  const [config, steadfastSettings, pathaoSettings] = await Promise.all([
+    getPostPurchaseConfig(),
+    getSteadfastSettings(),
+    getPathaoSettings(),
+  ]);
 
-  return <OrderAutomationSettingsClient initialConfig={config} />;
+  return (
+    <OrderAutomationSettingsClient
+      initialConfig={config}
+      initialSteadfast={steadfastSettings}
+      initialPathao={pathaoSettings}
+    />
+  );
 }
