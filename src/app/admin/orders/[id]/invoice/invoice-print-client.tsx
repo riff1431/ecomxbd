@@ -20,6 +20,7 @@ import {
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
 import QRCode from "qrcode";
+import JsBarcode from "jsbarcode";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import type { InvoiceSettings } from "@/features/settings/actions";
@@ -41,6 +42,9 @@ export default function InvoicePrintClient({
   );
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const [logoDataUrl, setLogoDataUrl] = useState<string>("");
+  const [invoiceBarcodeDataUrl, setInvoiceBarcodeDataUrl] = useState<string>("");
+  const [thermalPrimaryBarcodeDataUrl, setThermalPrimaryBarcodeDataUrl] = useState<string>("");
+  const [thermalRoutingBarcodeDataUrl, setThermalRoutingBarcodeDataUrl] = useState<string>("");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [viewportWidth, setViewportWidth] = useState(800);
 
@@ -140,6 +144,50 @@ export default function InvoicePrintClient({
       .catch((err) => console.error("QR Code Generation Error:", err));
   }, [trackingUrl]);
 
+  // Generate 100% Valid, Scannable Code-128 Barcodes on mount
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    try {
+      // 1. A4 Invoice Barcode (Code 128)
+      const canvas1 = document.createElement("canvas");
+      JsBarcode(canvas1, order.order_number, {
+        format: "CODE128",
+        displayValue: false,
+        margin: 0,
+        width: 1.8,
+        height: 28,
+        lineColor: "#000000",
+      });
+      setInvoiceBarcodeDataUrl(canvas1.toDataURL("image/png"));
+
+      // 2. Thermal Primary Tracking Barcode (Code 128)
+      const canvas2 = document.createElement("canvas");
+      JsBarcode(canvas2, consignmentCode, {
+        format: "CODE128",
+        displayValue: false,
+        margin: 0,
+        width: 2.2,
+        height: 48,
+        lineColor: "#000000",
+      });
+      setThermalPrimaryBarcodeDataUrl(canvas2.toDataURL("image/png"));
+
+      // 3. Thermal Carrier Routing Barcode (Code 128)
+      const canvas3 = document.createElement("canvas");
+      JsBarcode(canvas3, order.order_number, {
+        format: "CODE128",
+        displayValue: false,
+        margin: 0,
+        width: 1.8,
+        height: 32,
+        lineColor: "#000000",
+      });
+      setThermalRoutingBarcodeDataUrl(canvas3.toDataURL("image/png"));
+    } catch (err) {
+      console.error("JsBarcode generation error:", err);
+    }
+  }, [consignmentCode, order.order_number]);
+
   // Direct Print Handler
   const handlePrint = () => {
     window.print();
@@ -162,24 +210,9 @@ export default function InvoicePrintClient({
     }
   };
 
-  // Infallible Direct Vector jsPDF Fallback Generator (with QR code, Logo, and Barcodes)
+  // Infallible Direct Vector jsPDF Fallback Generator (with QR code, Logo, and Scannable Barcodes)
   const generateVectorPdfFallback = () => {
     const isThermal = printMode === "thermal";
-
-    // Barcode drawing helper
-    const drawBarcode = (doc: any, startX: number, startY: number, totalW: number, totalH: number) => {
-      const bars = [3, 1, 2, 1, 4, 1, 2, 3, 1, 2, 1, 3, 2, 1, 1, 4, 2, 1, 3, 1, 2, 3, 1, 2, 1, 4, 2, 1, 2, 1, 3, 2];
-      const sum = bars.reduce((a, b) => a + b, 0);
-      const unit = totalW / sum;
-      let curX = startX;
-      doc.setFillColor(0, 0, 0);
-      bars.forEach((b, idx) => {
-        if (idx % 2 === 0) {
-          doc.rect(curX, startY, b * unit, totalH, "F");
-        }
-        curX += b * unit;
-      });
-    };
 
     if (isThermal) {
       const doc = new jsPDF({
@@ -227,7 +260,7 @@ export default function InvoicePrintClient({
       doc.setLineWidth(0.6);
       doc.line(6, 26, 94, 26);
 
-      // 2. Tracking Number & Primary High-Contrast Barcode
+      // 2. Tracking Number & Primary Scannable Barcode
       doc.setTextColor(0, 0, 0);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7.5);
@@ -236,8 +269,14 @@ export default function InvoicePrintClient({
       doc.setFontSize(12);
       doc.text(consignmentCode, 50, 35.5, { align: "center" });
 
-      // Draw Primary Barcode
-      drawBarcode(doc, 10, 38, 80, 10);
+      // Embed Real Code-128 Scannable Barcode Image
+      if (thermalPrimaryBarcodeDataUrl) {
+        try {
+          doc.addImage(thermalPrimaryBarcodeDataUrl, "PNG", 12, 38, 76, 10);
+        } catch (e) {
+          console.error("Primary barcode embed error:", e);
+        }
+      }
 
       // COD Box
       doc.rect(20, 50, 60, 8.5);
@@ -248,7 +287,6 @@ export default function InvoicePrintClient({
       doc.line(6, 61, 94, 61);
 
       // 3. Deliver To & Sender Address Grid
-      // Deliver To (Receiver)
       doc.setFontSize(7.5);
       doc.setFillColor(0, 0, 0);
       doc.setTextColor(255, 255, 255);
@@ -317,7 +355,13 @@ export default function InvoicePrintClient({
       doc.text(`${courier.toUpperCase()} ROUTING & SORTING`, 50, 126, { align: "center" });
 
       // Draw Routing Barcode
-      drawBarcode(doc, 15, 128, 70, 8);
+      if (thermalRoutingBarcodeDataUrl) {
+        try {
+          doc.addImage(thermalRoutingBarcodeDataUrl, "PNG", 18, 128, 64, 8);
+        } catch (e) {
+          console.error("Routing barcode embed error:", e);
+        }
+      }
 
       doc.setFontSize(8);
       doc.text(order.order_number, 50, 139, { align: "center" });
@@ -369,6 +413,15 @@ export default function InvoicePrintClient({
     doc.setFontSize(10);
     doc.setTextColor(70, 70, 70);
     doc.text(order.order_number, 195, 26, { align: "right" });
+
+    // Header Barcode
+    if (invoiceBarcodeDataUrl) {
+      try {
+        doc.addImage(invoiceBarcodeDataUrl, "PNG", 160, 29, 35, 6);
+      } catch (e) {
+        console.error("Invoice barcode embed error:", e);
+      }
+    }
 
     // Metadata Gray Box
     doc.setFillColor(243, 244, 246);
@@ -679,24 +732,14 @@ export default function InvoicePrintClient({
             <p className="text-xs font-mono font-bold text-gray-600 mt-0.5">
               {order.order_number}
             </p>
-            {invoiceSettings?.invoice_show_barcode !== false && (
+            {invoiceSettings?.invoice_show_barcode !== false && invoiceBarcodeDataUrl && (
               <div className="pt-1 flex justify-end">
-                <svg className="w-36 h-6" viewBox="0 0 140 22">
-                  <rect x="0" y="0" width="140" height="22" fill="#ffffff" />
-                  {[
-                    3, 7, 10, 15, 19, 23, 27, 32, 36, 40, 46, 50, 54, 59, 64, 69, 74, 79,
-                    84, 89, 94, 98, 103, 108, 113, 118, 123, 128, 133,
-                  ].map((x, i) => (
-                    <rect
-                      key={i}
-                      x={x}
-                      y="1"
-                      width={i % 2 === 0 ? 2 : 1.2}
-                      height="20"
-                      fill="#000000"
-                    />
-                  ))}
-                </svg>
+                <img
+                  src={invoiceBarcodeDataUrl}
+                  alt="Barcode"
+                  crossOrigin="anonymous"
+                  className="h-6 w-auto max-w-[140px] object-contain"
+                />
               </div>
             )}
           </div>
@@ -910,7 +953,7 @@ export default function InvoicePrintClient({
     </>
   );
 
-  // Reusable 4x6 Thermal Label Content
+  // Reusable 4x6 Thermal Label Content (with 100% Scannable Code-128 Barcodes)
   const renderThermalContent = () => (
     <>
       <div className="space-y-2">
@@ -949,7 +992,7 @@ export default function InvoicePrintClient({
           </div>
         </div>
 
-        {/* Primary Tracking Barcode Block */}
+        {/* Primary Tracking Barcode Block (Scannable Code 128) */}
         <div className="text-center py-0.5 border-b-2 border-black space-y-0.5">
           <span className="text-[9px] font-bold text-gray-600 uppercase block font-mono">
             {t.thermalTrackingNo}
@@ -957,26 +1000,19 @@ export default function InvoicePrintClient({
           <p className="font-mono text-sm font-black tracking-wider text-black">
             {consignmentCode}
           </p>
-          {/* High-Contrast Thermal SVG Barcode */}
-          <div className="py-0.5 flex justify-center">
-            <svg className="w-56 h-9" viewBox="0 0 200 36">
-              <rect x="0" y="0" width="200" height="36" fill="#ffffff" />
-              {[
-                2, 6, 9, 14, 18, 22, 26, 31, 35, 38, 44, 48, 52, 57, 62, 66, 70, 75, 80, 84,
-                88, 93, 98, 102, 106, 111, 116, 120, 125, 130, 134, 139, 144, 148, 153, 158,
-                162, 167, 172, 176, 181, 186, 190, 195,
-              ].map((x, i) => (
-                <rect
-                  key={i}
-                  x={x}
-                  y="1"
-                  width={i % 3 === 0 ? 3 : i % 2 === 0 ? 2 : 1.2}
-                  height="34"
-                  fill="#000000"
-                />
-              ))}
-            </svg>
-          </div>
+
+          {/* Valid, Scannable Code 128 Barcode */}
+          {thermalPrimaryBarcodeDataUrl && (
+            <div className="py-0.5 flex justify-center">
+              <img
+                src={thermalPrimaryBarcodeDataUrl}
+                alt="Tracking Barcode"
+                crossOrigin="anonymous"
+                className="h-10 w-auto max-w-[240px] object-contain"
+              />
+            </div>
+          )}
+
           {/* Prominent COD Badge */}
           <div>
             <span className="inline-block border-2 border-black px-2.5 py-0.5 font-black text-xs uppercase font-mono rounded bg-white text-black">
@@ -1047,25 +1083,19 @@ export default function InvoicePrintClient({
         <span className="text-[8px] font-black uppercase text-gray-600 block font-mono">
           {courier.toUpperCase()} {t.routing}
         </span>
-        <div className="py-0.5 flex justify-center">
-          <svg className="w-48 h-7" viewBox="0 0 180 26">
-            <rect x="0" y="0" width="180" height="26" fill="#ffffff" />
-            {[
-              3, 7, 11, 16, 21, 25, 30, 35, 39, 44, 49, 53, 58, 63, 67, 72, 77, 81, 86, 91,
-              95, 100, 105, 109, 114, 119, 123, 128, 133, 137, 142, 147, 151, 156, 161, 165,
-              170, 175,
-            ].map((x, i) => (
-              <rect
-                key={i}
-                x={x}
-                y="1"
-                width={i % 2 === 0 ? 2.5 : 1.2}
-                height="24"
-                fill="#000000"
-              />
-            ))}
-          </svg>
-        </div>
+
+        {/* Scannable Routing Barcode */}
+        {thermalRoutingBarcodeDataUrl && (
+          <div className="py-0.5 flex justify-center">
+            <img
+              src={thermalRoutingBarcodeDataUrl}
+              alt="Routing Barcode"
+              crossOrigin="anonymous"
+              className="h-7 w-auto max-w-[200px] object-contain"
+            />
+          </div>
+        )}
+
         <p className="font-mono text-[9px] font-black uppercase">{order.order_number}</p>
         <p className="text-[7px] font-black uppercase tracking-widest text-gray-600">
           {invoiceSettings?.thermal_instructions || t.doNotShip}
