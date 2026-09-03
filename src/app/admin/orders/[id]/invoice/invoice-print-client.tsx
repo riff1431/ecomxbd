@@ -148,12 +148,22 @@ export default function InvoicePrintClient({
     if (!printRef.current) return;
     setDownloadingPdf(true);
 
+    const el = printRef.current;
+    const prevTransform = el.style.transform;
+    const prevPosition = el.style.position;
+    const prevTop = el.style.top;
+    const prevLeft = el.style.left;
+
     try {
       const isThermal = printMode === "thermal";
       const targetWidth = isThermal ? 378 : 794;
       const targetHeight = isThermal ? 567 : 1123;
 
-      const canvas = await html2canvas(printRef.current, {
+      // Temporarily remove transform so html2canvas renders exact 1:1 pixels
+      el.style.transform = "none";
+      el.style.position = "static";
+
+      const canvas = await html2canvas(el, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
@@ -165,24 +175,13 @@ export default function InvoicePrintClient({
         height: targetHeight,
         windowWidth: targetWidth,
         windowHeight: targetHeight,
-        onclone: (clonedDoc) => {
-          const target = clonedDoc.querySelector(
-            isThermal ? ".print-area-thermal" : ".print-area-invoice"
-          ) as HTMLElement;
-          if (target) {
-            target.style.position = "static";
-            target.style.transform = "none";
-            target.style.margin = "0";
-            target.style.width = `${targetWidth}px`;
-            target.style.minWidth = `${targetWidth}px`;
-            target.style.maxWidth = `${targetWidth}px`;
-            target.style.height = `${targetHeight}px`;
-            target.style.minHeight = `${targetHeight}px`;
-            target.style.maxHeight = `${targetHeight}px`;
-            target.style.padding = isThermal ? "14px" : "36px 44px";
-          }
-        },
       });
+
+      // Restore position & transform immediately
+      el.style.transform = prevTransform;
+      el.style.position = prevPosition;
+      el.style.top = prevTop;
+      el.style.left = prevLeft;
 
       const imgData = canvas.toDataURL("image/jpeg", 0.98);
 
@@ -207,8 +206,11 @@ export default function InvoicePrintClient({
       }
     } catch (err) {
       console.error("PDF Download error:", err);
-      // Fallback
-      window.print();
+      el.style.transform = prevTransform;
+      el.style.position = prevPosition;
+      el.style.top = prevTop;
+      el.style.left = prevLeft;
+      alert("Failed to generate PDF. Please use the Print button -> Save as PDF.");
     } finally {
       setDownloadingPdf(false);
     }
@@ -468,10 +470,10 @@ export default function InvoicePrintClient({
       {/* 1. AUTHENTIC A4 TAX INVOICE (Exact Proportional Scale View)  */}
       {/* ============================================================ */}
       {printMode === "invoice" && (
-        <div className="flex flex-col items-center justify-center w-full pb-12">
+        <div className="flex flex-col items-center justify-center w-full pb-12 overflow-x-hidden">
           {/* Scaled A4 Document Viewport (Maintains 100% exact layout on any phone/tablet/desktop) */}
           <div
-            className="relative flex justify-center items-start print:w-auto print:h-auto"
+            className="relative mx-auto print:w-auto print:h-auto print:static"
             style={{
               width: `${794 * a4Scale}px`,
               height: `${1123 * a4Scale}px`,
@@ -487,6 +489,9 @@ export default function InvoicePrintClient({
                 height: "1123px",
                 transform: `scale(${a4Scale})`,
                 transformOrigin: "top left",
+                position: "absolute",
+                top: 0,
+                left: 0,
               }}
               className="print-area-invoice bg-white p-[36px_44px] border border-gray-300 shadow-2xl print:shadow-none print:border-none text-gray-900 relative overflow-hidden flex flex-col justify-between"
             >
@@ -765,10 +770,10 @@ export default function InvoicePrintClient({
       {/* 2. AUTHENTIC 4×6 POS THERMAL SHIPPING LABEL                  */}
       {/* ============================================================ */}
       {printMode === "thermal" && (
-        <div className="flex flex-col items-center justify-center w-full pb-12">
+        <div className="flex flex-col items-center justify-center w-full pb-12 overflow-x-hidden">
           {/* Scaled 4x6 Thermal Document Viewport */}
           <div
-            className="relative flex justify-center items-start print:w-auto print:h-auto"
+            className="relative mx-auto print:w-auto print:h-auto print:static"
             style={{
               width: `${378 * thermalScale}px`,
               height: `${567 * thermalScale}px`,
@@ -784,6 +789,9 @@ export default function InvoicePrintClient({
                 height: "567px",
                 transform: `scale(${thermalScale})`,
                 transformOrigin: "top left",
+                position: "absolute",
+                top: 0,
+                left: 0,
               }}
               className="print-area-thermal bg-white p-4 border-2 border-dashed border-gray-400 shadow-xl print:shadow-none print:border-none text-gray-900 space-y-2.5 font-sans relative overflow-hidden flex flex-col justify-between"
             >
