@@ -478,23 +478,43 @@ export default function InvoicePrintClient({
 
   // 1-Click Guaranteed Direct PDF File Download Handler
   const handleDownloadPdf = async () => {
-    const isThermal = printMode === "thermal";
-    const target = isThermal ? exportThermalRef.current : exportA4Ref.current;
+    if (!printRef.current) return;
     setDownloadingPdf(true);
 
+    const isThermal = printMode === "thermal";
+    const target = printRef.current;
+    const prevTransform = target.style.transform;
+    const prevPosition = target.style.position;
+    const prevTop = target.style.top;
+    const prevLeft = target.style.left;
+
     try {
-      if (!target) {
-        generateVectorPdfFallback();
-        return;
-      }
+      const targetWidth = isThermal ? 378 : 794;
+      const targetHeight = isThermal ? 567 : 1123;
+
+      // Temporarily remove transform so html2canvas renders exact 1:1 on-screen visual pixels
+      target.style.transform = "none";
+      target.style.position = "static";
 
       const canvas = await html2canvas(target, {
-        scale: 2,
+        scale: 2.5,
         useCORS: true,
         allowTaint: true,
         logging: false,
         backgroundColor: "#ffffff",
+        scrollX: 0,
+        scrollY: 0,
+        width: targetWidth,
+        height: targetHeight,
+        windowWidth: targetWidth,
+        windowHeight: targetHeight,
       });
+
+      // Restore position & transform immediately
+      target.style.transform = prevTransform;
+      target.style.position = prevPosition;
+      target.style.top = prevTop;
+      target.style.left = prevLeft;
 
       const imgData = canvas.toDataURL("image/jpeg", 0.98);
 
@@ -519,7 +539,10 @@ export default function InvoicePrintClient({
       }
     } catch (err: any) {
       console.warn("Falling back to direct vector jsPDF generator:", err);
-      // Instant guaranteed vector PDF generation
+      target.style.transform = prevTransform;
+      target.style.position = prevPosition;
+      target.style.top = prevTop;
+      target.style.left = prevLeft;
       generateVectorPdfFallback();
     } finally {
       setDownloadingPdf(false);
