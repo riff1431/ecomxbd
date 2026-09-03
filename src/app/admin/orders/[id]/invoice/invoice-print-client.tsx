@@ -1,24 +1,23 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { formatPrice } from "@/lib/utils";
+import { useState, useRef, useEffect } from "react";
+import Link from "next/link";
 import {
   Printer,
+  Download,
   ArrowLeft,
-  Truck,
-  Package,
-  CheckCircle2,
   FileText,
   Tag,
-  Copy,
-  Check,
-  Download,
   Languages,
   Loader2,
-  Phone,
+  Check,
+  Copy,
+  Building,
   Mail,
+  Phone,
   Globe,
 } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
 import QRCode from "qrcode";
 import jsPDF from "jspdf";
@@ -43,12 +42,25 @@ export default function InvoicePrintClient({
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const [logoDataUrl, setLogoDataUrl] = useState<string>("");
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [viewportWidth, setViewportWidth] = useState(800);
 
   const printRef = useRef<HTMLDivElement>(null);
 
   const address = order.shipping_address_snapshot || {};
   const items = order.order_items || [];
+
+  // Track window resize to scale authentic A4 and 4x6 paper proportionally across all devices
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const a4Scale = Math.min(1, Math.max(0.32, (viewportWidth - 24) / 794));
+  const thermalScale = Math.min(1, Math.max(0.45, (viewportWidth - 24) / 378));
 
   // Dynamic branding from Admin Settings
   const brandName =
@@ -65,7 +77,10 @@ export default function InvoicePrintClient({
   const courier = order.courier_name || "SteadFast Courier";
   const consignmentCode = order.consignment_id || `SF-${order.order_number.replace(/\D/g, "")}`;
   const isCod = order.payment_method === "cod" || !order.payment_method;
-  const baseUrl = typeof window !== "undefined" && window.location.origin ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || "");
+  const baseUrl =
+    typeof window !== "undefined" && window.location.origin
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_APP_URL || "";
   const trackingUrl = `${baseUrl}/account/track?order=${order.order_number}`;
 
   // Bengali Numeral Converter helper
@@ -128,16 +143,17 @@ export default function InvoicePrintClient({
     window.print();
   };
 
-  // Infallible 1-Click PDF Download Handler (Exact A4 210mm x 297mm / 4x6 Thermal 100mm x 150mm)
+  // 1-Click Direct PDF File Download Handler
   const handleDownloadPdf = async () => {
     if (!printRef.current) return;
     setDownloadingPdf(true);
 
     try {
-      const element = printRef.current;
       const isThermal = printMode === "thermal";
+      const targetWidth = isThermal ? 378 : 794;
+      const targetHeight = isThermal ? 567 : 1123;
 
-      const canvas = await html2canvas(element, {
+      const canvas = await html2canvas(printRef.current, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
@@ -145,7 +161,10 @@ export default function InvoicePrintClient({
         backgroundColor: "#ffffff",
         scrollX: 0,
         scrollY: 0,
-        windowWidth: isThermal ? 400 : 800,
+        width: targetWidth,
+        height: targetHeight,
+        windowWidth: targetWidth,
+        windowHeight: targetHeight,
         onclone: (clonedDoc) => {
           const target = clonedDoc.querySelector(
             isThermal ? ".print-area-thermal" : ".print-area-invoice"
@@ -153,20 +172,14 @@ export default function InvoicePrintClient({
           if (target) {
             target.style.position = "static";
             target.style.transform = "none";
-            target.style.margin = "0 auto";
-            if (!isThermal) {
-              target.style.width = "794px";
-              target.style.minWidth = "794px";
-              target.style.maxWidth = "794px";
-              target.style.minHeight = "1123px";
-              target.style.padding = "36px 44px";
-            } else {
-              target.style.width = "378px";
-              target.style.minWidth = "378px";
-              target.style.maxWidth = "378px";
-              target.style.minHeight = "567px";
-              target.style.padding = "16px";
-            }
+            target.style.margin = "0";
+            target.style.width = `${targetWidth}px`;
+            target.style.minWidth = `${targetWidth}px`;
+            target.style.maxWidth = `${targetWidth}px`;
+            target.style.height = `${targetHeight}px`;
+            target.style.minHeight = `${targetHeight}px`;
+            target.style.maxHeight = `${targetHeight}px`;
+            target.style.padding = isThermal ? "14px" : "36px 44px";
           }
         },
       });
@@ -174,7 +187,6 @@ export default function InvoicePrintClient({
       const imgData = canvas.toDataURL("image/jpeg", 0.98);
 
       if (isThermal) {
-        // Exact 4x6 inch (100mm x 150mm) POS Thermal Label PDF
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "mm",
@@ -182,9 +194,8 @@ export default function InvoicePrintClient({
           compress: true,
         });
         pdf.addImage(imgData, "JPEG", 0, 0, 100, 150, undefined, "FAST");
-        pdf.save(`${order.order_number}_Thermal_Label.pdf`);
+        pdf.save(`${order.order_number}_4x6_Thermal_Label.pdf`);
       } else {
-        // Exact A4 PDF (210mm x 297mm)
         const pdf = new jsPDF({
           orientation: "portrait",
           unit: "mm",
@@ -192,11 +203,11 @@ export default function InvoicePrintClient({
           compress: true,
         });
         pdf.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
-        pdf.save(`${order.order_number}_Tax_Invoice.pdf`);
+        pdf.save(`${order.order_number}_A4_Tax_Invoice.pdf`);
       }
     } catch (err) {
       console.error("PDF Download error:", err);
-      // Seamless browser print fallback
+      // Fallback
       window.print();
     } finally {
       setDownloadingPdf(false);
@@ -206,7 +217,7 @@ export default function InvoicePrintClient({
   // Translations dictionary for full Bangla / English
   const t = {
     en: {
-      invoiceTitle: invoiceSettings?.invoice_title || "INVOICE",
+      invoiceTitle: invoiceSettings?.invoice_title || "TAX INVOICE",
       invoiceTo: "INVOICE TO:",
       date: "Date:",
       invoiceNo: "Invoice No:",
@@ -230,7 +241,7 @@ export default function InvoicePrintClient({
       authSignature: invoiceSettings?.invoice_authorized_signatory_text || "Authorized Signature",
       tagline: invoiceSettings?.invoice_tagline || "Authentic Skincare & Beauty Imports",
       addressText:
-        invoiceSettings?.invoice_address || "House 14, Road 27, Dhanmondi, Dhaka, Bangladesh",
+        invoiceSettings?.invoice_address || "House 42, Road 11, Banani, Dhaka-1213, Bangladesh",
       free: "FREE",
       thermalTrackingNo: "Tracking Number:",
       thermalDeliverTo: "DELIVER TO:",
@@ -249,7 +260,7 @@ export default function InvoicePrintClient({
       closeWindow: "Close Window",
     },
     bn: {
-      invoiceTitle: invoiceSettings?.invoice_title ? invoiceSettings.invoice_title : "ইনভয়েস",
+      invoiceTitle: invoiceSettings?.invoice_title ? invoiceSettings.invoice_title : "ট্যাক্স ইনভয়েস",
       invoiceTo: "প্রাপক / কাস্টমার:",
       date: "তারিখ:",
       invoiceNo: "ইনভয়েস নং:",
@@ -273,7 +284,7 @@ export default function InvoicePrintClient({
       authSignature: invoiceSettings?.invoice_authorized_signatory_text || "কর্তৃপক্ষের স্বাক্ষর",
       tagline: invoiceSettings?.invoice_tagline || "১০০% অথেনটিক স্কিনকেয়ার ও বিউটি ইম্পোর্টস",
       addressText:
-        invoiceSettings?.invoice_address || "হাউজ ১৪, রোড ২৭, ধানমন্ডি, ঢাকা, বাংলাদেশ",
+        invoiceSettings?.invoice_address || "হাউজ ৪২, রোড ১১, বনানী, ঢাকা-১২১৩, বাংলাদেশ",
       free: "ফ্রি (০৳)",
       thermalTrackingNo: "ট্র্যাকিং নম্বর:",
       thermalDeliverTo: "ডেলিভারি ঠিকানা (প্রাপক):",
@@ -314,7 +325,7 @@ export default function InvoicePrintClient({
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
-            height: auto !important;
+            height: 100% !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
@@ -324,8 +335,10 @@ export default function InvoicePrintClient({
           }
 
           .print-area-invoice {
+            transform: none !important;
             width: 210mm !important;
             height: 297mm !important;
+            min-height: 297mm !important;
             max-width: 210mm !important;
             max-height: 297mm !important;
             margin: 0 !important;
@@ -340,8 +353,10 @@ export default function InvoicePrintClient({
           }
 
           .print-area-thermal {
+            transform: none !important;
             width: 100mm !important;
             height: 150mm !important;
+            min-height: 150mm !important;
             max-width: 100mm !important;
             max-height: 150mm !important;
             margin: 0 !important;
@@ -422,7 +437,7 @@ export default function InvoicePrintClient({
             <span>{lang === "en" ? "বাংলা" : "English"}</span>
           </button>
 
-          {/* 1-Click PDF Download Button */}
+          {/* 1-Click Direct PDF Download Button */}
           <Button
             onClick={handleDownloadPdf}
             disabled={downloadingPdf}
@@ -437,6 +452,7 @@ export default function InvoicePrintClient({
             {t.downloadPdf}
           </Button>
 
+          {/* Print Button */}
           <Button
             onClick={handlePrint}
             style={{ backgroundColor: accentColor }}
@@ -449,46 +465,62 @@ export default function InvoicePrintClient({
       </div>
 
       {/* ============================================================ */}
-      {/* 1. CORPORATE PINK A4 TAX INVOICE (Exact A4 210mm × 297mm)     */}
+      {/* 1. AUTHENTIC A4 TAX INVOICE (Exact Proportional Scale View)  */}
       {/* ============================================================ */}
       {printMode === "invoice" && (
-        <div className="flex justify-center w-full overflow-x-auto pb-8">
+        <div className="flex flex-col items-center justify-center w-full pb-12">
+          {/* Scaled A4 Document Viewport (Maintains 100% exact layout on any phone/tablet/desktop) */}
           <div
-            ref={printRef}
-            className="print-area-invoice w-full max-w-[210mm] sm:w-[210mm] sm:min-h-[297mm] bg-white p-4 sm:p-[10mm_14mm] border border-gray-200 shadow-xl print:shadow-none print:border-none text-gray-900 relative overflow-hidden flex flex-col justify-between"
+            className="relative flex justify-center items-start print:w-auto print:h-auto"
+            style={{
+              width: `${794 * a4Scale}px`,
+              height: `${1123 * a4Scale}px`,
+            }}
           >
-            <div className="space-y-4 sm:space-y-6">
-              {/* Top Brand & Title Bar */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-gray-100 pb-3 sm:pb-4">
-                <div className="space-y-0.5 sm:space-y-1">
-                  {/* Brand Logo */}
-                  {logoSrc ? (
-                    <img
-                      src={logoDataUrl || logoSrc}
-                      alt={brandName}
-                      crossOrigin="anonymous"
-                      className="h-10 sm:h-14 w-auto object-contain mb-0.5"
-                    />
-                  ) : (
-                    <span className="text-xl sm:text-2xl font-black text-gray-900 uppercase tracking-wider block">
-                      {brandName}
-                    </span>
-                  )}
-                  <p className="text-[10px] sm:text-[11px] font-bold text-gray-500 uppercase tracking-wider">
-                    {t.tagline}
-                  </p>
-                  <p className="text-[9px] sm:text-[10px] text-gray-500">{t.addressText}</p>
-                  {invoiceSettings?.invoice_tax_id_or_bin && (
-                    <p className="text-[9px] sm:text-[9.5px] font-bold text-gray-600 font-mono">
-                      {invoiceSettings.invoice_tax_id_or_bin}
+            <div
+              ref={printRef}
+              style={{
+                width: "794px",
+                minWidth: "794px",
+                maxWidth: "794px",
+                minHeight: "1123px",
+                height: "1123px",
+                transform: `scale(${a4Scale})`,
+                transformOrigin: "top left",
+              }}
+              className="print-area-invoice bg-white p-[36px_44px] border border-gray-300 shadow-2xl print:shadow-none print:border-none text-gray-900 relative overflow-hidden flex flex-col justify-between"
+            >
+              <div className="space-y-6">
+                {/* Top Brand & Title Bar */}
+                <div className="flex items-center justify-between gap-4 border-b border-gray-100 pb-4">
+                  <div className="space-y-1">
+                    {/* Brand Logo */}
+                    {logoSrc ? (
+                      <img
+                        src={logoDataUrl || logoSrc}
+                        alt={brandName}
+                        crossOrigin="anonymous"
+                        className="h-14 w-auto object-contain mb-0.5"
+                      />
+                    ) : (
+                      <span className="text-2xl font-black text-gray-900 uppercase tracking-wider block">
+                        {brandName}
+                      </span>
+                    )}
+                    <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                      {t.tagline}
                     </p>
-                  )}
-                </div>
+                    <p className="text-[10px] text-gray-500">{t.addressText}</p>
+                    {invoiceSettings?.invoice_tax_id_or_bin && (
+                      <p className="text-[9.5px] font-bold text-gray-600 font-mono">
+                        {invoiceSettings.invoice_tax_id_or_bin}
+                      </p>
+                    )}
+                  </div>
 
-                <div className="text-left sm:text-right w-full sm:w-auto flex sm:block items-center justify-between">
-                  <div>
+                  <div className="text-right">
                     <h1
-                      className="text-2xl sm:text-3xl font-black uppercase tracking-wider"
+                      className="text-3xl font-black uppercase tracking-wider"
                       style={{ color: accentColor }}
                     >
                       {t.invoiceTitle}
@@ -496,217 +528,230 @@ export default function InvoicePrintClient({
                     <p className="text-xs font-mono font-bold text-gray-600 mt-0.5">
                       {order.order_number}
                     </p>
-                  </div>
-                  {invoiceSettings?.invoice_show_barcode !== false && (
-                    <div className="pt-1 flex justify-end">
-                      <svg className="w-28 sm:w-36 h-5 sm:h-6" viewBox="0 0 140 22">
-                        <rect x="0" y="0" width="140" height="22" fill="#ffffff" />
-                        {[3, 7, 10, 15, 19, 23, 27, 32, 36, 40, 46, 50, 54, 59, 64, 69, 74, 79, 84, 89, 94, 98, 103, 108, 113, 118, 123, 128, 133].map((x, i) => (
-                          <rect key={i} x={x} y="1" width={i % 2 === 0 ? 2 : 1.2} height="20" fill="#000000" />
-                        ))}
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Full-Width Tinted Grey Metadata Banner */}
-              <div className="bg-gray-100/90 rounded-xl p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs border border-gray-200">
-                {/* INVOICE TO (Customer) */}
-                <div className="space-y-0.5">
-                  <span className="font-bold text-[9px] sm:text-[10px] uppercase text-gray-500 tracking-wider block">
-                    {t.invoiceTo}
-                  </span>
-                  <p className="font-black text-xs sm:text-sm text-gray-900 uppercase">
-                    {address.name || order.guest_name || "VALUED CUSTOMER"}
-                  </p>
-                  <p className="text-gray-600 font-medium text-[10px] sm:text-[11px] leading-tight">
-                    {address.address || "Address on record"}
-                    {address.thana ? `, ${address.thana}` : ""}
-                    {address.district ? `, ${address.district}` : ""}
-                  </p>
-                  <p className="font-mono font-bold text-gray-800 text-[10px] sm:text-[11px]">
-                    {toBn(address.phone || order.guest_phone || "")}
-                  </p>
-                </div>
-
-                {/* Date & Invoice No */}
-                <div className="space-y-1 sm:text-center text-[10px] sm:text-[11px] border-t sm:border-t-0 sm:border-x border-gray-200 pt-2 sm:pt-0 sm:px-2">
-                  <div>
-                    <span className="text-gray-500 font-medium">{t.date} </span>
-                    <span className="font-bold text-gray-900 font-mono">
-                      {toBn(
-                        new Date(order.created_at).toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "2-digit",
-                          year: "numeric",
-                        })
-                      )}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 font-medium">{t.invoiceNo} </span>
-                    <span className="font-bold text-gray-900 font-mono">{order.order_number}</span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 font-medium">{t.courier} </span>
-                    <span className="font-bold text-emerald-700">{courier}</span>
-                  </div>
-                </div>
-
-                {/* TOTAL DUE Box with Offline Vector QR Code */}
-                <div className="flex items-center justify-between sm:justify-end gap-3 text-right border-t sm:border-t-0 border-gray-200 pt-2 sm:pt-0">
-                  <div className="text-left sm:text-right">
-                    <span className="font-bold text-[9px] sm:text-[10px] uppercase text-gray-500 tracking-wider block">
-                      {t.totalDue}
-                    </span>
-                    <span
-                      className="text-lg sm:text-xl font-black font-mono"
-                      style={{ color: accentColor }}
-                    >
-                      {formatCurrency(order.total)}
-                    </span>
-                  </div>
-                  {invoiceSettings?.invoice_show_qr_code !== false && qrCodeDataUrl ? (
-                    <img
-                      src={qrCodeDataUrl}
-                      alt="Order QR Code"
-                      crossOrigin="anonymous"
-                      className="h-11 w-11 sm:h-13 sm:w-13 rounded-lg border border-gray-300 bg-white p-0.5 shrink-0"
-                      title={t.scanToTrack}
-                    />
-                  ) : null}
-                </div>
-              </div>
-
-              {/* Line Items Table with Custom Accent Header */}
-              <div className="rounded-xl border border-gray-200 overflow-x-auto">
-                <table className="w-full text-left text-xs min-w-[420px] sm:min-w-full">
-                  <thead
-                    className="text-white uppercase font-black text-[9px] sm:text-[10px] tracking-wider"
-                    style={{ backgroundColor: accentColor }}
-                  >
-                    <tr>
-                      <th className="px-3 sm:px-4 py-2 sm:py-2.5">{t.description}</th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-2.5 text-center w-14 sm:w-16">{t.qty}</th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-2.5 text-right w-20 sm:w-24">{t.price}</th>
-                      <th className="px-3 sm:px-4 py-2 sm:py-2.5 text-right w-24 sm:w-28">{t.total}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 text-[10px] sm:text-[11px]">
-                    {items.map((item: any, idx: number) => (
-                      <tr
-                        key={item.id || idx}
-                        className={idx % 2 === 1 ? "bg-gray-50/70" : "bg-white"}
-                      >
-                        <td className="px-3 sm:px-4 py-2.5 sm:py-3">
-                          <span className="font-bold text-gray-900 block">
-                            {item.product_name_snapshot}
-                          </span>
-                          {item.sku_snapshot && (
-                            <span className="font-mono text-[8.5px] sm:text-[9px] text-gray-400">
-                              SKU: {item.sku_snapshot}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-center font-black text-gray-800">
-                          {toBn(item.quantity)}
-                        </td>
-                        <td className="px-2 sm:px-4 py-2.5 sm:py-3 text-right font-medium text-gray-700 font-mono">
-                          {formatCurrency(item.unit_price)}
-                        </td>
-                        <td className="px-3 sm:px-4 py-2.5 sm:py-3 text-right font-black text-gray-900 font-mono">
-                          {formatCurrency(item.total)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Subtotal, Discount & Grand Total & Signature Block */}
-            <div className="pt-3 sm:pt-4 border-t border-gray-200 space-y-4">
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-4 sm:gap-6">
-                {/* Payment Method & Contact */}
-                <div className="space-y-2.5 sm:space-y-3 text-[10px] sm:text-[11px] w-full sm:max-w-sm">
-                  <div className="space-y-0.5">
-                    <span className="font-black text-gray-900 text-xs block uppercase tracking-wider">
-                      {t.paymentMethod}
-                    </span>
-                    <p className="text-gray-700 font-bold">
-                      {t.mode}{" "}
-                      <span className="uppercase" style={{ color: accentColor }}>
-                        {isCod
-                          ? lang === "bn"
-                            ? "ক্যাশ অন ডেলিভারি (COD)"
-                            : "Cash on Delivery (COD)"
-                          : order.payment_method}
-                      </span>
-                    </p>
-                    <p className="text-gray-500 text-[9.5px] sm:text-[10px]">
-                      {t.status} <strong className="uppercase text-gray-800">{order.payment_status}</strong>
-                    </p>
-                    <p className="text-gray-400 text-[9.5px] sm:text-[10px] italic leading-tight">{t.doorstepNotice}</p>
-                  </div>
-
-                  <div className="space-y-0.5 pt-2 border-t border-gray-200 text-[9.5px] sm:text-[10px] text-gray-600">
-                    <span className="font-black text-gray-900 block uppercase tracking-wider">
-                      {t.contactSupport}
-                    </span>
-                    <p>{invoiceSettings?.invoice_email || "support@blushandbudget.com"} • {invoiceSettings?.invoice_phone || "+880 1700-000000"}</p>
-                    <p>{invoiceSettings?.invoice_website || "https://blushandbudget.com"}</p>
-                  </div>
-                </div>
-
-                {/* Financial Totals */}
-                <div className="w-full sm:w-64 space-y-1.5 text-xs">
-                  <div className="flex justify-between py-1 border-b border-gray-100 text-gray-600 font-medium">
-                    <span>{t.subtotal}</span>
-                    <span className="font-bold text-gray-900 font-mono">
-                      {formatCurrency(order.subtotal || order.total)}
-                    </span>
-                  </div>
-
-                  {order.discount_amount > 0 && (
-                    <div className="flex justify-between py-1 border-b border-gray-100 text-emerald-600 font-bold">
-                      <span>{t.discount}</span>
-                      <span className="font-mono">-{formatCurrency(order.discount_amount)}</span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between py-1 border-b border-gray-100 text-gray-600 font-medium">
-                    <span>{t.deliveryCharge}</span>
-                    <span className="font-bold text-gray-900 font-mono">
-                      {order.shipping_amount === 0 ? t.free : formatCurrency(order.shipping_amount)}
-                    </span>
-                  </div>
-
-                  {/* Grand Total Solid Box */}
-                  <div
-                    className="text-white p-2.5 rounded-xl flex justify-between items-center text-sm font-black shadow-xs mt-1"
-                    style={{ backgroundColor: accentColor }}
-                  >
-                    <span className="uppercase tracking-wider">{t.grandTotal}</span>
-                    <span className="text-base font-mono font-black">
-                      {formatCurrency(order.total)}
-                    </span>
-                  </div>
-
-                  {/* Authorised Signature Line */}
-                  <div className="pt-4 sm:pt-5 text-right space-y-0.5">
-                    {invoiceSettings?.invoice_signature_image_url ? (
-                      <img
-                        src={invoiceSettings.invoice_signature_image_url}
-                        alt="Signature"
-                        crossOrigin="anonymous"
-                        className="h-8 w-auto ml-auto object-contain mb-0.5"
-                      />
-                    ) : (
-                      <p className="font-serif italic text-sm sm:text-base text-gray-800">{brandName}</p>
+                    {invoiceSettings?.invoice_show_barcode !== false && (
+                      <div className="pt-1 flex justify-end">
+                        <svg className="w-36 h-6" viewBox="0 0 140 22">
+                          <rect x="0" y="0" width="140" height="22" fill="#ffffff" />
+                          {[
+                            3, 7, 10, 15, 19, 23, 27, 32, 36, 40, 46, 50, 54, 59, 64, 69, 74, 79,
+                            84, 89, 94, 98, 103, 108, 113, 118, 123, 128, 133,
+                          ].map((x, i) => (
+                            <rect
+                              key={i}
+                              x={x}
+                              y="1"
+                              width={i % 2 === 0 ? 2 : 1.2}
+                              height="20"
+                              fill="#000000"
+                            />
+                          ))}
+                        </svg>
+                      </div>
                     )}
-                    <div className="w-36 ml-auto border-t border-gray-400 pt-0.5 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">
-                      {t.authSignature}
+                  </div>
+                </div>
+
+                {/* 3-Column Tinted Grey Metadata Banner */}
+                <div className="bg-gray-100/90 rounded-xl p-4 grid grid-cols-3 gap-4 text-xs border border-gray-200">
+                  {/* INVOICE TO (Customer) */}
+                  <div className="space-y-1">
+                    <span className="font-bold text-[10px] uppercase text-gray-500 tracking-wider block">
+                      {t.invoiceTo}
+                    </span>
+                    <p className="font-black text-sm text-gray-900 uppercase">
+                      {address.name || order.guest_name || "VALUED CUSTOMER"}
+                    </p>
+                    <p className="text-gray-600 font-medium text-[11px] leading-tight">
+                      {address.address || "Address on record"}
+                      {address.thana ? `, ${address.thana}` : ""}
+                      {address.district ? `, ${address.district}` : ""}
+                    </p>
+                    <p className="font-mono font-bold text-gray-800 text-[11px]">
+                      {toBn(address.phone || order.guest_phone || "")}
+                    </p>
+                  </div>
+
+                  {/* Date & Invoice No */}
+                  <div className="space-y-1 text-center text-[11px] border-x border-gray-200 px-2">
+                    <div>
+                      <span className="text-gray-500 font-medium">{t.date} </span>
+                      <span className="font-bold text-gray-900 font-mono">
+                        {toBn(
+                          new Date(order.created_at).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          })
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">{t.invoiceNo} </span>
+                      <span className="font-bold text-gray-900 font-mono">{order.order_number}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-500 font-medium">{t.courier} </span>
+                      <span className="font-bold text-emerald-700">{courier}</span>
+                    </div>
+                  </div>
+
+                  {/* TOTAL DUE Box with Offline Vector QR Code */}
+                  <div className="flex items-center justify-end gap-3 text-right">
+                    <div>
+                      <span className="font-bold text-[10px] uppercase text-gray-500 tracking-wider block">
+                        {t.totalDue}
+                      </span>
+                      <span
+                        className="text-xl font-black font-mono"
+                        style={{ color: accentColor }}
+                      >
+                        {formatCurrency(order.total)}
+                      </span>
+                    </div>
+                    {invoiceSettings?.invoice_show_qr_code !== false && qrCodeDataUrl ? (
+                      <img
+                        src={qrCodeDataUrl}
+                        alt="Order QR Code"
+                        crossOrigin="anonymous"
+                        className="h-13 w-13 rounded-lg border border-gray-300 bg-white p-0.5 shrink-0"
+                        title={t.scanToTrack}
+                      />
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Line Items Table with Custom Accent Header */}
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                  <table className="w-full text-left text-xs">
+                    <thead
+                      className="text-white uppercase font-black text-[10px] tracking-wider"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      <tr>
+                        <th className="px-4 py-2.5">{t.description}</th>
+                        <th className="px-4 py-2.5 text-center w-16">{t.qty}</th>
+                        <th className="px-4 py-2.5 text-right w-24">{t.price}</th>
+                        <th className="px-4 py-2.5 text-right w-28">{t.total}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 text-[11px]">
+                      {items.map((item: any, idx: number) => (
+                        <tr
+                          key={item.id || idx}
+                          className={idx % 2 === 1 ? "bg-gray-50/70" : "bg-white"}
+                        >
+                          <td className="px-4 py-3">
+                            <span className="font-bold text-gray-900 block">
+                              {item.product_name_snapshot}
+                            </span>
+                            {item.sku_snapshot && (
+                              <span className="font-mono text-[9px] text-gray-400">
+                                SKU: {item.sku_snapshot}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center font-black text-gray-800">
+                            {toBn(item.quantity)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium text-gray-700 font-mono">
+                            {formatCurrency(item.unit_price)}
+                          </td>
+                          <td className="px-4 py-3 text-right font-black text-gray-900 font-mono">
+                            {formatCurrency(item.total)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Subtotal, Discount & Grand Total & Signature Block */}
+              <div className="pt-4 border-t border-gray-200 space-y-4">
+                <div className="flex justify-between items-start gap-6">
+                  {/* Payment Method & Contact */}
+                  <div className="space-y-3 text-[11px] max-w-sm">
+                    <div className="space-y-0.5">
+                      <span className="font-black text-gray-900 text-xs block uppercase tracking-wider">
+                        {t.paymentMethod}
+                      </span>
+                      <p className="text-gray-700 font-bold">
+                        {t.mode}{" "}
+                        <span className="uppercase" style={{ color: accentColor }}>
+                          {isCod
+                            ? lang === "bn"
+                              ? "ক্যাশ অন ডেলিভারি (COD)"
+                              : "Cash on Delivery (COD)"
+                            : order.payment_method}
+                        </span>
+                      </p>
+                      <p className="text-gray-500 text-[10px]">
+                        {t.status} <strong className="uppercase text-gray-800">{order.payment_status}</strong>
+                      </p>
+                      <p className="text-gray-400 text-[10px] italic leading-tight">{t.doorstepNotice}</p>
+                    </div>
+
+                    <div className="space-y-0.5 pt-2 border-t border-gray-200 text-[10px] text-gray-600">
+                      <span className="font-black text-gray-900 block uppercase tracking-wider">
+                        {t.contactSupport}
+                      </span>
+                      <p>
+                        {invoiceSettings?.invoice_email || "support@blushandbudget.com"} •{" "}
+                        {invoiceSettings?.invoice_phone || "+880 1700-000000"}
+                      </p>
+                      <p>{invoiceSettings?.invoice_website || "https://blushandbudget.com"}</p>
+                    </div>
+                  </div>
+
+                  {/* Financial Totals */}
+                  <div className="w-64 space-y-1.5 text-xs">
+                    <div className="flex justify-between py-1 border-b border-gray-100 text-gray-600 font-medium">
+                      <span>{t.subtotal}</span>
+                      <span className="font-bold text-gray-900 font-mono">
+                        {formatCurrency(order.subtotal || order.total)}
+                      </span>
+                    </div>
+
+                    {order.discount_amount > 0 && (
+                      <div className="flex justify-between py-1 border-b border-gray-100 text-emerald-600 font-bold">
+                        <span>{t.discount}</span>
+                        <span className="font-mono">-{formatCurrency(order.discount_amount)}</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between py-1 border-b border-gray-100 text-gray-600 font-medium">
+                      <span>{t.deliveryCharge}</span>
+                      <span className="font-bold text-gray-900 font-mono">
+                        {order.shipping_amount === 0 ? t.free : formatCurrency(order.shipping_amount)}
+                      </span>
+                    </div>
+
+                    {/* Grand Total Solid Box */}
+                    <div
+                      className="text-white p-2.5 rounded-xl flex justify-between items-center text-sm font-black shadow-xs mt-1"
+                      style={{ backgroundColor: accentColor }}
+                    >
+                      <span className="uppercase tracking-wider">{t.grandTotal}</span>
+                      <span className="text-base font-mono font-black">
+                        {formatCurrency(order.total)}
+                      </span>
+                    </div>
+
+                    {/* Authorised Signature Line */}
+                    <div className="pt-5 text-right space-y-0.5">
+                      {invoiceSettings?.invoice_signature_image_url ? (
+                        <img
+                          src={invoiceSettings.invoice_signature_image_url}
+                          alt="Signature"
+                          crossOrigin="anonymous"
+                          className="h-8 w-auto ml-auto object-contain mb-0.5"
+                        />
+                      ) : (
+                        <p className="font-serif italic text-base text-gray-800">{brandName}</p>
+                      )}
+                      <div className="w-36 ml-auto border-t border-gray-400 pt-0.5 text-[9px] font-bold text-gray-500 uppercase tracking-widest text-center">
+                        {t.authSignature}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -717,171 +762,189 @@ export default function InvoicePrintClient({
       )}
 
       {/* ============================================================ */}
-      {/* 2. DARAZ-STYLE 4×6 POS THERMAL LABEL (Exact 100mm × 150mm)   */}
+      {/* 2. AUTHENTIC 4×6 POS THERMAL SHIPPING LABEL                  */}
       {/* ============================================================ */}
       {printMode === "thermal" && (
-        <div className="flex justify-center">
+        <div className="flex flex-col items-center justify-center w-full pb-12">
+          {/* Scaled 4x6 Thermal Document Viewport */}
           <div
-            ref={printRef}
-            className="print-area-thermal w-[100mm] h-[150mm] max-w-[100mm] max-h-[150mm] bg-white p-4 border-2 border-dashed border-gray-400 shadow-xl print:shadow-none print:border-none text-gray-900 space-y-2.5 font-sans relative overflow-hidden flex flex-col justify-between"
+            className="relative flex justify-center items-start print:w-auto print:h-auto"
+            style={{
+              width: `${378 * thermalScale}px`,
+              height: `${567 * thermalScale}px`,
+            }}
           >
-            <div className="space-y-2">
-              {/* Header Row with Logo, Hub & Offline Vector QR Code */}
-              <div className="border-b-2 border-black pb-2 flex items-center justify-between">
-                <div className="space-y-0.5">
-                  {invoiceSettings?.thermal_logo_url || logoSrc ? (
-                    <img
-                      src={logoDataUrl || invoiceSettings?.thermal_logo_url || logoSrc}
-                      alt={brandName}
-                      crossOrigin="anonymous"
-                      className="h-9 w-auto object-contain"
-                    />
-                  ) : (
-                    <span className="font-black text-sm uppercase tracking-wider block">
-                      {brandName}
+            <div
+              ref={printRef}
+              style={{
+                width: "378px",
+                minWidth: "378px",
+                maxWidth: "378px",
+                minHeight: "567px",
+                height: "567px",
+                transform: `scale(${thermalScale})`,
+                transformOrigin: "top left",
+              }}
+              className="print-area-thermal bg-white p-4 border-2 border-dashed border-gray-400 shadow-xl print:shadow-none print:border-none text-gray-900 space-y-2.5 font-sans relative overflow-hidden flex flex-col justify-between"
+            >
+              <div className="space-y-2">
+                {/* Header Row with Logo, Hub & Offline Vector QR Code */}
+                <div className="border-b-2 border-black pb-2 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    {invoiceSettings?.thermal_logo_url || logoSrc ? (
+                      <img
+                        src={logoDataUrl || invoiceSettings?.thermal_logo_url || logoSrc}
+                        alt={brandName}
+                        crossOrigin="anonymous"
+                        className="h-9 w-auto object-contain"
+                      />
+                    ) : (
+                      <span className="font-black text-sm uppercase tracking-wider block">
+                        {brandName}
+                      </span>
+                    )}
+                    <span className="text-[9px] font-bold text-gray-700 block uppercase font-mono">
+                      {invoiceSettings?.thermal_header_title || `${courier} Express`}
                     </span>
-                  )}
-                  <span className="text-[9px] font-bold text-gray-700 block uppercase font-mono">
-                    {invoiceSettings?.thermal_header_title || `${courier} Express`}
-                  </span>
+                  </div>
+
+                  <div className="text-right space-y-0.5">
+                    <span className="text-[8px] font-black uppercase text-gray-600 block">
+                      {t.orderDate} {toBn(new Date(order.created_at).toLocaleDateString("en-GB"))}
+                    </span>
+                    {invoiceSettings?.invoice_show_qr_code !== false && qrCodeDataUrl ? (
+                      <img
+                        src={qrCodeDataUrl}
+                        alt="QR Code"
+                        crossOrigin="anonymous"
+                        className="h-11 w-11 border border-black p-0.5 ml-auto bg-white"
+                      />
+                    ) : null}
+                  </div>
                 </div>
 
-                <div className="text-right space-y-0.5">
-                  <span className="text-[8px] font-black uppercase text-gray-600 block">
-                    {t.orderDate} {toBn(new Date(order.created_at).toLocaleDateString("en-GB"))}
+                {/* Primary Tracking Barcode Block */}
+                <div className="text-center py-0.5 border-b-2 border-black space-y-0.5">
+                  <span className="text-[9px] font-bold text-gray-600 uppercase block font-mono">
+                    {t.thermalTrackingNo}
                   </span>
-                  {invoiceSettings?.invoice_show_qr_code !== false && qrCodeDataUrl ? (
-                    <img
-                      src={qrCodeDataUrl}
-                      alt="QR Code"
-                      crossOrigin="anonymous"
-                      className="h-11 w-11 border border-black p-0.5 ml-auto bg-white"
-                    />
-                  ) : null}
+                  <p className="font-mono text-sm font-black tracking-wider text-black">
+                    {consignmentCode}
+                  </p>
+                  {/* High-Contrast Thermal SVG Barcode */}
+                  <div className="py-0.5 flex justify-center">
+                    <svg className="w-56 h-9" viewBox="0 0 200 36">
+                      <rect x="0" y="0" width="200" height="36" fill="#ffffff" />
+                      {[
+                        2, 6, 9, 14, 18, 22, 26, 31, 35, 38, 44, 48, 52, 57, 62, 66, 70, 75, 80, 84,
+                        88, 93, 98, 102, 106, 111, 116, 120, 125, 130, 134, 139, 144, 148, 153, 158,
+                        162, 167, 172, 176, 181, 186, 190, 195,
+                      ].map((x, i) => (
+                        <rect
+                          key={i}
+                          x={x}
+                          y="1"
+                          width={i % 3 === 0 ? 3 : i % 2 === 0 ? 2 : 1.2}
+                          height="34"
+                          fill="#000000"
+                        />
+                      ))}
+                    </svg>
+                  </div>
+                  {/* Prominent COD Badge */}
+                  <div>
+                    <span className="inline-block border-2 border-black px-2.5 py-0.5 font-black text-xs uppercase font-mono rounded bg-white text-black">
+                      {isCod
+                        ? `COD : ${formatCurrency(order.total)}`
+                        : lang === "bn"
+                        ? "পেইড (৳০)"
+                        : "Non-COD (PAID ৳0)"}
+                    </span>
+                  </div>
                 </div>
+
+                {/* 2-Column Delivery & Shipper Address Grid */}
+                <div className="grid grid-cols-2 gap-2 text-[9px] border-b-2 border-black pb-2">
+                  {/* Receiver (Deliver To) */}
+                  <div className="border-r-2 border-black pr-1.5 space-y-0.5">
+                    <span className="font-black uppercase tracking-wider block bg-black text-white px-1 py-0.2 rounded text-[7px] w-fit">
+                      {t.thermalDeliverTo}
+                    </span>
+                    <p className="font-black text-[11px] text-black">{address.name || order.guest_name}</p>
+                    <p className="font-black text-[11px] font-mono text-black">
+                      {toBn(address.phone || order.guest_phone || "")}
+                    </p>
+                    <p className="font-medium text-gray-900 leading-tight">{address.address}</p>
+                    <p className="font-black uppercase text-[9px] pt-0.5">
+                      {address.thana ? `${address.thana}, ` : ""}
+                      {address.district || "DHAKA"}
+                    </p>
+                  </div>
+
+                  {/* Sender (Shipper Hub) */}
+                  <div className="space-y-0.5 pl-0.5">
+                    <span className="font-black uppercase tracking-wider block bg-gray-200 text-black px-1 py-0.2 rounded text-[7px] w-fit">
+                      {t.thermalSender}
+                    </span>
+                    <p className="font-black text-[11px] text-black">{brandName}</p>
+                    <p className="text-gray-800 leading-tight">
+                      {invoiceSettings?.thermal_return_address || "House 42, Road 11, Banani"}
+                    </p>
+                    <p className="font-bold text-black">Dhaka, Bangladesh</p>
+                    <p className="font-mono text-[8px] text-gray-700">
+                      Phone: {invoiceSettings?.thermal_sender_phone || "+880 1700-000000"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Package Breakdown & Weight */}
+                {invoiceSettings?.thermal_show_item_breakdown !== false && (
+                  <div className="border-b-2 border-black pb-1.5 text-[9px] space-y-1">
+                    <div className="flex justify-between font-bold">
+                      <span>{t.weight} {toBn("0.5")} KG</span>
+                      <span>{t.totalItems} {toBn(totalQuantity)}</span>
+                    </div>
+                    <div className="space-y-1">
+                      {items.map((it: any) => (
+                        <div key={it.id} className="flex justify-between items-start text-gray-900 font-medium gap-2">
+                          <span className="leading-tight wrap-break-word flex-1">• {it.product_name_snapshot}</span>
+                          <span className="font-mono font-bold shrink-0">x{toBn(it.quantity)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Primary Tracking Barcode Block */}
-              <div className="text-center py-0.5 border-b-2 border-black space-y-0.5">
-                <span className="text-[9px] font-bold text-gray-600 uppercase block font-mono">
-                  {t.thermalTrackingNo}
+              {/* Secondary Carrier Routing Barcode & Instructions */}
+              <div className="text-center pt-1 space-y-0.5">
+                <span className="text-[8px] font-black uppercase text-gray-600 block font-mono">
+                  {courier.toUpperCase()} {t.routing}
                 </span>
-                <p className="font-mono text-sm font-black tracking-wider text-black">
-                  {consignmentCode}
-                </p>
-                {/* High-Contrast Thermal SVG Barcode */}
                 <div className="py-0.5 flex justify-center">
-                  <svg className="w-56 h-9" viewBox="0 0 200 36">
-                    <rect x="0" y="0" width="200" height="36" fill="#ffffff" />
+                  <svg className="w-48 h-7" viewBox="0 0 180 26">
+                    <rect x="0" y="0" width="180" height="26" fill="#ffffff" />
                     {[
-                      2, 6, 9, 14, 18, 22, 26, 31, 35, 38, 44, 48, 52, 57, 62, 66, 70, 75, 80, 84,
-                      88, 93, 98, 102, 106, 111, 116, 120, 125, 130, 134, 139, 144, 148, 153, 158,
-                      162, 167, 172, 176, 181, 186, 190, 195,
+                      3, 7, 11, 16, 21, 25, 30, 35, 39, 44, 49, 53, 58, 63, 67, 72, 77, 81, 86, 91,
+                      95, 100, 105, 109, 114, 119, 123, 128, 133, 137, 142, 147, 151, 156, 161, 165,
+                      170, 175,
                     ].map((x, i) => (
                       <rect
                         key={i}
                         x={x}
                         y="1"
-                        width={i % 3 === 0 ? 3 : i % 2 === 0 ? 2 : 1.2}
-                        height="34"
+                        width={i % 2 === 0 ? 2.5 : 1.2}
+                        height="24"
                         fill="#000000"
                       />
                     ))}
                   </svg>
                 </div>
-                {/* Prominent COD Badge */}
-                <div>
-                  <span className="inline-block border-2 border-black px-2.5 py-0.5 font-black text-xs uppercase font-mono rounded bg-white text-black">
-                    {isCod
-                      ? `COD : ${formatCurrency(order.total)}`
-                      : lang === "bn"
-                      ? "পেইড (৳০)"
-                      : "Non-COD (PAID ৳0)"}
-                  </span>
-                </div>
+                <p className="font-mono text-[9px] font-black uppercase">{order.order_number}</p>
+                <p className="text-[7px] font-black uppercase tracking-widest text-gray-600">
+                  {invoiceSettings?.thermal_instructions || t.doNotShip}
+                </p>
               </div>
-
-              {/* 2-Column Delivery & Shipper Address Grid */}
-              <div className="grid grid-cols-2 gap-2 text-[9px] border-b-2 border-black pb-2">
-                {/* Receiver (Deliver To) */}
-                <div className="border-r-2 border-black pr-1.5 space-y-0.5">
-                  <span className="font-black uppercase tracking-wider block bg-black text-white px-1 py-0.2 rounded text-[7px] w-fit">
-                    {t.thermalDeliverTo}
-                  </span>
-                  <p className="font-black text-[11px] text-black">{address.name || order.guest_name}</p>
-                  <p className="font-black text-[11px] font-mono text-black">
-                    {toBn(address.phone || order.guest_phone || "")}
-                  </p>
-                  <p className="font-medium text-gray-900 leading-tight">{address.address}</p>
-                  <p className="font-black uppercase text-[9px] pt-0.5">
-                    {address.thana ? `${address.thana}, ` : ""}
-                    {address.district || "DHAKA"}
-                  </p>
-                </div>
-
-                {/* Sender (Shipper Hub) */}
-                <div className="space-y-0.5 pl-0.5">
-                  <span className="font-black uppercase tracking-wider block bg-gray-200 text-black px-1 py-0.2 rounded text-[7px] w-fit">
-                    {t.thermalSender}
-                  </span>
-                  <p className="font-black text-[11px] text-black">{brandName}</p>
-                  <p className="text-gray-800 leading-tight">
-                    {invoiceSettings?.thermal_return_address || "House 42, Road 11, Banani"}
-                  </p>
-                  <p className="font-bold text-black">Dhaka, Bangladesh</p>
-                  <p className="font-mono text-[8px] text-gray-700">
-                    Phone: {invoiceSettings?.thermal_sender_phone || "+880 1700-000000"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Package Breakdown & Weight */}
-              {invoiceSettings?.thermal_show_item_breakdown !== false && (
-                <div className="border-b-2 border-black pb-1.5 text-[9px] space-y-1">
-                  <div className="flex justify-between font-bold">
-                    <span>{t.weight} {toBn("0.5")} KG</span>
-                    <span>{t.totalItems} {toBn(totalQuantity)}</span>
-                  </div>
-                  <div className="space-y-1">
-                    {items.map((it: any) => (
-                      <div key={it.id} className="flex justify-between items-start text-gray-900 font-medium gap-2">
-                        <span className="leading-tight wrap-break-word flex-1">• {it.product_name_snapshot}</span>
-                        <span className="font-mono font-bold shrink-0">x{toBn(it.quantity)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Secondary Carrier Routing Barcode & Instructions */}
-            <div className="text-center pt-1 space-y-0.5">
-              <span className="text-[8px] font-black uppercase text-gray-600 block font-mono">
-                {courier.toUpperCase()} {t.routing}
-              </span>
-              <div className="py-0.5 flex justify-center">
-                <svg className="w-48 h-7" viewBox="0 0 180 26">
-                  <rect x="0" y="0" width="180" height="26" fill="#ffffff" />
-                  {[
-                    3, 7, 11, 16, 21, 25, 30, 35, 39, 44, 49, 53, 58, 63, 67, 72, 77, 81, 86, 91,
-                    95, 100, 105, 109, 114, 119, 123, 128, 133, 137, 142, 147, 151, 156, 161, 165,
-                    170, 175,
-                  ].map((x, i) => (
-                    <rect
-                      key={i}
-                      x={x}
-                      y="1"
-                      width={i % 2 === 0 ? 2.5 : 1.2}
-                      height="24"
-                      fill="#000000"
-                    />
-                  ))}
-                </svg>
-              </div>
-              <p className="font-mono text-[9px] font-black uppercase">{order.order_number}</p>
-              <p className="text-[7px] font-black uppercase tracking-widest text-gray-600">
-                {invoiceSettings?.thermal_instructions || t.doNotShip}
-              </p>
             </div>
           </div>
         </div>
