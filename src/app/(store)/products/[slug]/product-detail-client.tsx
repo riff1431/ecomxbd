@@ -245,18 +245,6 @@ export function ProductDetailClient({
                 />
               </button>
             </div>
-
-            {/* Hover / Touch to Zoom Floating Pill Indicator */}
-            <div
-              className={cn(
-                "absolute bottom-3 left-1/2 -translate-x-1/2 z-10 rounded-full bg-gray-950/80 backdrop-blur-xs px-3.5 py-1 text-[10px] font-bold text-white shadow-sm pointer-events-none transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap",
-                isZoomed ? "opacity-0 scale-90" : "opacity-90 scale-100"
-              )}
-            >
-              <ZoomIn className="h-3 w-3 text-[#e91e63]" />
-              <span className="hidden sm:inline">Hover to Zoom 2.4x</span>
-              <span className="sm:hidden">Touch &amp; Pan to Zoom</span>
-            </div>
           </div>
 
           {/* Full Screen HD Lightbox Modal */}
