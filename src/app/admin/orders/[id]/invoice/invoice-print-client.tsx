@@ -145,6 +145,23 @@ export default function InvoicePrintClient({
     window.print();
   };
 
+  // Smart Back / Close Handler (Works in direct tabs, popups, and history navigation)
+  const handleBack = () => {
+    if (typeof window === "undefined") return;
+
+    // If opened in a new tab with no internal referrer or history, navigate to order page
+    const isAdminRoute = window.location.pathname.startsWith("/admin");
+    const fallbackUrl = isAdminRoute ? `/admin/orders/${order.id}` : `/account/orders`;
+
+    if (window.history.length > 1 && document.referrer && document.referrer.includes(window.location.host)) {
+      window.history.back();
+    } else if (window.opener) {
+      window.close();
+    } else {
+      window.location.href = fallbackUrl;
+    }
+  };
+
   // Infallible Direct Vector jsPDF Fallback Generator (with QR code, Logo, and Barcodes)
   const generateVectorPdfFallback = () => {
     const isThermal = printMode === "thermal";
@@ -1105,7 +1122,7 @@ export default function InvoicePrintClient({
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={() => window.history.back()}
+            onClick={handleBack}
             className="p-2 rounded-xl text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors shrink-0"
             title={t.closeWindow}
           >
