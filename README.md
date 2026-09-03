@@ -1,70 +1,70 @@
-# ecomXbangladesh
+# Blush & Budget (ecomXbd)
 
-A full-featured, scalable E-Commerce web application built with **Next.js 15 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Supabase (PostgreSQL, Auth, Storage, RLS)**, tailored for the Bangladesh market.
+A modern, high-performance E-Commerce platform built with **Next.js 16 (App Router)**, **TypeScript**, **Tailwind CSS**, and **Supabase (PostgreSQL, Auth, RLS)**, engineered specifically for the Bangladesh market.
 
 ---
 
-## 🚀 Features
+## ✨ Features
 
-- **Storefront**: High-performance customer-facing catalog, search, filter, product detail pages, and dynamic responsive layouts.
-- **Cart & Checkout**: Multi-step checkout with Cash on Delivery (COD) and Bangladesh payment gateways (SSLCommerz, bKash).
-- **Courier & Logistics Integration**: Pre-integrated hooks for local courier services (Steadfast, Pathao).
-- **User Authentication**: Supabase Auth for customer accounts and role-based admin access with Row-Level Security (RLS).
-- **Admin Dashboard**: Product management, inventory tracking, order status workflows, categories, banners, and analytics.
-- **Media Storage**: Cloudinary & Supabase Storage for optimized image hosting.
-- **SEO & Social Sharing**: Dynamic metadata, OpenGraph cards, JSON-LD structured data, dynamic `sitemap.xml`, and `robots.txt`.
+- **Storefront**: Ultra-fast catalog browsing, brand mega-menu, instant search, filters, wishlist, and dynamic routine finder.
+- **Cart & Fast Checkout**: Streamlined checkout with Cash on Delivery (COD), order notes, and SMS notifications.
+- **A4 & 4×6 Thermal Invoicing**: Dedicated isolated print engine for 1-page A4 Tax Invoices and 4×6 POS thermal shipping labels.
+- **Admin Control Center**:
+  - Live **Invoice & Thermal Label Customizer** (branding, colors, barcode, QR code, signatory).
+  - Product, inventory, category, and brand management.
+  - Order workflows, courier consignment generation, and fraud prevention.
+  - Dynamic store, checkout, and SEO settings.
+- **Logistics Integration**: Integrated with SteadFast and Pathao Courier APIs.
+- **Authentication & Security**: Supabase Auth with server-action rate-limit bypass, pre-confirmed registration, and strict Row-Level Security (RLS).
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router, Server Actions)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **Database & Auth**: [Supabase](https://supabase.com/) (PostgreSQL with RLS)
 - **Styling**: Tailwind CSS & Lucide Icons
-- **Image Management**: Cloudinary
-- **State Management**: React Context & Hooks
+- **Database & Auth**: Supabase (PostgreSQL with RLS)
+- **Media**: Cloudinary & Supabase Storage
+- **PDF & Barcodes**: jsPDF, html2canvas, qrcode
 
 ---
 
-## ⚙️ Getting Started
+## 🚀 Quick Start
 
-### 1. Clone & Install Dependencies
-
+### 1. Install Dependencies
 ```bash
-git clone https://github.com/riff1431/ecomxbd.git
-cd ecomxbd
 npm install
 ```
 
-### 2. Configure Environment Variables
-
-Copy `.env.example` to `.env.local` and add your credentials:
-
+### 2. Configure Environment
+Copy `.env.example` to `.env`:
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
+Ensure your `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set.
 
-Fill in:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- Cloudinary credentials & other service keys
-
-### 3. Setup Database
-
-Run migrations found in `supabase/migrations/` in your Supabase SQL Editor.
-
-### 4. Run Development Server
-
+### 3. Run Development Server
 ```bash
 npm run dev
 ```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Visit [http://localhost:3000](http://localhost:3000) in your browser.
+---
+
+## 📦 Key Routes
+
+| Route | Description |
+|---|---|
+| `/` | Storefront Homepage |
+| `/products` | Catalog & Product Browsing |
+| `/login` / `/register` | Customer Authentication |
+| `/account` | Customer Dashboard & Orders |
+| `/orders/[id]/invoice` | Dedicated A4 & Thermal Print Page |
+| `/admin` | Admin Dashboard |
+| `/admin/settings/invoice` | Invoice & Thermal Customizer |
 
 ---
 
 ## 📜 License
-
-Private / Proprietary. All rights reserved.
+Private & Proprietary. All rights reserved.
