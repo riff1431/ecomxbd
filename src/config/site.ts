@@ -29,6 +29,7 @@ export const adminNavItems = [
     icon: "ShoppingBag",
     children: [
       { title: "All Orders", href: "/admin/orders" },
+      { title: "Invoice & Thermal", href: "/admin/settings/invoice" },
       { title: "Incomplete Orders", href: "/admin/orders/incomplete" },
       { title: "Fraud & Blocklist", href: "/admin/orders/fraud" },
       { title: "Order Tracking", href: "/admin/orders/tracking" },
@@ -153,6 +154,7 @@ export const adminNavItems = [
       { title: "Feature Modules", href: "/admin/settings/modules" },
       { title: "Feature Flags", href: "/admin/settings/features" },
       { title: "Store Settings", href: "/admin/settings/store" },
+      { title: "Invoice & Thermal", href: "/admin/settings/invoice" },
       { title: "Checkout Settings", href: "/admin/settings/checkout" },
       { title: "SEO Settings", href: "/admin/settings/seo" },
       { title: "System Health", href: "/admin/settings/system-health" },
