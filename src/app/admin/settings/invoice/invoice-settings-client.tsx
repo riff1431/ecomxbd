@@ -10,19 +10,12 @@ import {
   Tag,
   Sliders,
   RotateCcw,
-  Sparkles,
   QrCode,
   Eye,
-  Layers,
-  Image as ImageIcon,
-  ShieldCheck,
-  Truck,
-  ExternalLink,
 } from "lucide-react";
 import { ModuleHeader } from "@/components/admin/module-settings/module-header";
 import { Button } from "@/components/shared/ui/button";
 import { saveInvoiceSettings, type InvoiceSettings } from "@/features/settings/actions";
-import Link from "next/link";
 
 interface InvoiceSettingsClientProps {
   initialSettings: InvoiceSettings;
@@ -224,7 +217,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         placeholder="https://your-domain.com/logo.png"
                         value={formData.invoice_logo_url || ""}
                         onChange={(e) => updateField("invoice_logo_url", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
                     <p className="text-[11px] text-text-muted mt-1">
@@ -239,7 +232,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         type="text"
                         value={formData.invoice_brand_name || ""}
                         onChange={(e) => updateField("invoice_brand_name", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
                     <div>
@@ -249,7 +242,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         placeholder="BIN: 002349182-0101"
                         value={formData.invoice_tax_id_or_bin || ""}
                         onChange={(e) => updateField("invoice_tax_id_or_bin", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
                   </div>
@@ -260,7 +253,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                       type="text"
                       value={formData.invoice_tagline || ""}
                       onChange={(e) => updateField("invoice_tagline", e.target.value)}
-                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                     />
                   </div>
 
@@ -270,7 +263,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                       rows={2}
                       value={formData.invoice_address || ""}
                       onChange={(e) => updateField("invoice_address", e.target.value)}
-                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                     />
                   </div>
 
@@ -281,7 +274,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         type="text"
                         value={formData.invoice_phone || ""}
                         onChange={(e) => updateField("invoice_phone", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
                     <div>
@@ -290,7 +283,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         type="email"
                         value={formData.invoice_email || ""}
                         onChange={(e) => updateField("invoice_email", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
                     <div>
@@ -299,7 +292,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         type="text"
                         value={formData.invoice_website || ""}
                         onChange={(e) => updateField("invoice_website", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
                   </div>
@@ -323,7 +316,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         type="text"
                         value={formData.invoice_title || ""}
                         onChange={(e) => updateField("invoice_title", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none uppercase"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none uppercase"
                       />
                     </div>
                     <div>
@@ -339,7 +332,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                           type="text"
                           value={formData.invoice_accent_color || "#e91e63"}
                           onChange={(e) => updateField("invoice_accent_color", e.target.value)}
-                          className="flex-1 rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                          className="flex-1 rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                         />
                       </div>
                     </div>
@@ -353,7 +346,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                       rows={3}
                       value={formData.invoice_footer_notes || ""}
                       onChange={(e) => updateField("invoice_footer_notes", e.target.value)}
-                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                     />
                   </div>
 
@@ -366,7 +359,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         type="text"
                         value={formData.invoice_authorized_signatory_text || ""}
                         onChange={(e) => updateField("invoice_authorized_signatory_text", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
                     <div>
@@ -378,7 +371,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         placeholder="https://your-domain.com/signature.png"
                         value={formData.invoice_signature_image_url || ""}
                         onChange={(e) => updateField("invoice_signature_image_url", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
                   </div>
@@ -445,7 +438,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         type="text"
                         value={formData.thermal_header_title || ""}
                         onChange={(e) => updateField("thermal_header_title", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none uppercase"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none uppercase"
                       />
                     </div>
                     <div>
@@ -456,7 +449,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         type="text"
                         value={formData.thermal_sender_phone || ""}
                         onChange={(e) => updateField("thermal_sender_phone", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
                   </div>
@@ -469,7 +462,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                       type="text"
                       value={formData.thermal_return_address || ""}
                       onChange={(e) => updateField("thermal_return_address", e.target.value)}
-                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                     />
                   </div>
 
@@ -481,7 +474,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                       rows={2}
                       value={formData.thermal_instructions || ""}
                       onChange={(e) => updateField("thermal_instructions", e.target.value)}
-                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                     />
                   </div>
 
@@ -493,7 +486,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                       type="text"
                       value={formData.thermal_footer_tagline || ""}
                       onChange={(e) => updateField("thermal_footer_tagline", e.target.value)}
-                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                     />
                   </div>
 
@@ -548,7 +541,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         updateField("default_print_mode", e.target.value);
                         setPreviewMode(e.target.value as any);
                       }}
-                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                     >
                       <option value="invoice">Corporate A4 Tax Invoice</option>
                       <option value="thermal">4×6 Inch POS Thermal Shipping Label</option>
@@ -562,7 +555,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                     <select
                       value={formData.default_language || "en"}
                       onChange={(e) => updateField("default_language", e.target.value)}
-                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                     >
                       <option value="en">English (Default)</option>
                       <option value="bn">Bangla (বাংলা)</option>
@@ -619,7 +612,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3 shadow-inner flex justify-center overflow-hidden">
             {previewMode === "invoice" ? (
               /* A4 Mini Preview */
-              <div className="w-full max-w-[340px] bg-white rounded-lg border border-gray-300 shadow-md p-3.5 text-[9px] text-gray-800 space-y-3 font-sans scale-95 origin-top">
+              <div className="w-full max-w-85 bg-white rounded-lg border border-gray-300 shadow-md p-3.5 text-[9px] text-gray-800 space-y-3 font-sans scale-95 origin-top">
                 {/* Header */}
                 <div className="flex justify-between items-start border-b border-gray-100 pb-2">
                   <div>
@@ -637,7 +630,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                     <span className="text-[7.5px] font-bold text-gray-500 uppercase block">
                       {formData.invoice_tagline || "Authentic Skincare"}
                     </span>
-                    <span className="text-[7px] text-gray-400 block truncate max-w-[140px]">
+                    <span className="text-[7px] text-gray-400 block truncate max-w-35">
                       {formData.invoice_address || "Banani, Dhaka"}
                     </span>
                   </div>
@@ -674,12 +667,12 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                     <span>Total</span>
                   </div>
                   <div className="flex justify-between text-[8px] py-0.5">
-                    <span className="truncate max-w-[150px]">COSRX Snail Mucin 96% Power Essence</span>
+                    <span className="truncate max-w-37.5">COSRX Snail Mucin 96% Power Essence</span>
                     <span className="font-mono">1</span>
                     <span className="font-bold">৳1,450</span>
                   </div>
                   <div className="flex justify-between text-[8px] py-0.5">
-                    <span className="truncate max-w-[150px]">Beauty of Joseon Sun Relief SPF50+</span>
+                    <span className="truncate max-w-37.5">Beauty of Joseon Sun Relief SPF50+</span>
                     <span className="font-mono">1</span>
                     <span className="font-bold">৳1,250</span>
                   </div>
@@ -719,7 +712,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
               </div>
             ) : (
               /* 4x6 Thermal Mini Preview */
-              <div className="w-full max-w-[280px] bg-white rounded border-2 border-black p-3 text-[8.5px] text-black space-y-2 font-mono scale-95 origin-top shadow-md">
+              <div className="w-full max-w-70 bg-white rounded border-2 border-black p-3 text-[8.5px] text-black space-y-2 font-mono scale-95 origin-top shadow-md">
                 {/* Header */}
                 <div className="border-b-2 border-black pb-1.5 text-center">
                   <div className="font-black text-[10px] tracking-wider uppercase">
@@ -769,7 +762,7 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
 
                 {/* Barcode Mock */}
                 <div className="pt-0.5 text-center">
-                  <div className="h-6 w-full bg-gradient-to-r from-black via-gray-400 to-black opacity-80 rounded-xs" />
+                  <div className="h-6 w-full bg-linear-to-r from-black via-gray-400 to-black opacity-80 rounded-xs" />
                   <span className="text-[7px] font-bold tracking-widest block pt-0.5">
                     *BB-ORD-8941-SF*
                   </span>
