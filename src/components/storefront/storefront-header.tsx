@@ -394,15 +394,15 @@ export function StorefrontHeader() {
           {/* Center: Signature Pink-Border Pill Search Bar */}
           <div ref={searchContainerRef} className="relative flex-1 max-w-xl mx-2">
             <form onSubmit={handleSearchSubmit} className="relative">
-              <div className="relative flex items-center rounded-full border-2 border-sg-pink bg-sg-gray focus-within:bg-white shadow-xs transition-all">
-                <Search className="h-4 w-4 ml-4 text-gray-400 shrink-0" />
+              <div className="relative flex items-center rounded-full border-2 border-sg-pink bg-white shadow-xs transition-all">
+                <Search className="h-4 w-4 ml-4 text-text-muted shrink-0" />
                 <input
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onFocus={() => setShowSearchDropdown(true)}
                   placeholder={searchPlaceholders[placeholderIndex] || "Search products..."}
-                  className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none rounded-full"
+                  className="w-full bg-transparent px-3 py-2 text-xs sm:text-sm text-text placeholder:text-text-muted focus:outline-none rounded-full"
                 />
                 {searchQuery && (
                   <button
@@ -542,15 +542,15 @@ export function StorefrontHeader() {
         {/* Mobile Full-Width Pink-Bordered Pill Search Input */}
         <div ref={searchContainerRef} className="lg:hidden mt-1">
           <form onSubmit={handleSearchSubmit} className="relative">
-            <div className="relative flex items-center rounded-full border-2 border-sg-pink bg-sg-gray shadow-xs px-3.5 py-2">
-              <Search className="h-4 w-4 mr-2 text-gray-700 shrink-0" />
+            <div className="relative flex items-center rounded-full border-2 border-sg-pink bg-white shadow-xs px-3.5 py-2">
+              <Search className="h-4 w-4 mr-2 text-text-secondary shrink-0" />
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setShowSearchDropdown(true)}
                 placeholder={searchPlaceholders[placeholderIndex] || "Search products..."}
-                className="w-full bg-transparent text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                className="w-full bg-transparent text-sm text-text placeholder:text-text-muted focus:outline-none"
               />
               {searchQuery && (
                 <button
