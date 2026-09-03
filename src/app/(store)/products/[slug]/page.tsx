@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProductDetailClient } from "./product-detail-client";
+import { getFrequentlyBoughtTogetherBundle } from "@/features/products/combo-actions";
 
 export async function generateMetadata({
   params,
@@ -61,13 +62,16 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  // Fetch related products
-  const { data: related } = await supabase
-    .from("products")
-    .select("id, name, slug, regular_price, sale_price, og_image_url, brands(name)")
-    .neq("id", product.id)
-    .eq("status", "active")
-    .limit(4);
+  // Fetch related products and frequently bought together combo bundle
+  const [{ data: related }, bundleData] = await Promise.all([
+    supabase
+      .from("products")
+      .select("id, name, slug, regular_price, sale_price, og_image_url, brands(name)")
+      .neq("id", product.id)
+      .eq("status", "active")
+      .limit(4),
+    getFrequentlyBoughtTogetherBundle(product.id),
+  ]);
 
   return (
     <div className="container-main py-4 sm:py-6 space-y-4">
@@ -98,7 +102,11 @@ export default async function ProductDetailPage({
       </nav>
 
       {/* Product Interactive Client Section */}
-      <ProductDetailClient product={product} relatedProducts={related || []} />
+      <ProductDetailClient
+        product={product}
+        relatedProducts={related || []}
+        bundleData={bundleData}
+      />
     </div>
   );
 }

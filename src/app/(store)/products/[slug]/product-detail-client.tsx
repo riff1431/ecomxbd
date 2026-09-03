@@ -30,15 +30,18 @@ import { useWishlist } from "@/context/wishlist-context";
 import { useCart } from "@/context/cart-context";
 import { triggerMicroRipple } from "@/lib/ui-effects";
 import { ProductReviewsQA } from "@/components/storefront/product-reviews-qa";
+import { FrequentlyBoughtTogether } from "@/components/storefront/frequently-bought-together";
 
 interface ProductDetailClientProps {
   product: any;
   relatedProducts: any[];
+  bundleData?: any;
 }
 
 export function ProductDetailClient({
   product,
   relatedProducts,
+  bundleData,
 }: ProductDetailClientProps) {
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
@@ -494,7 +497,10 @@ export function ProductDetailClient({
         </div>
       </div>
 
-      {/* 2. Structured Information Tabs */}
+      {/* 2. Frequently Bought Together (Combo Bundle Section) */}
+      <FrequentlyBoughtTogether bundleData={bundleData} />
+
+      {/* 3. Structured Information Tabs */}
       <div className="rounded-3xl border border-border bg-white shadow-xs overflow-hidden">
         <div className="flex border-b border-border overflow-x-auto no-scrollbar bg-surface-secondary/40">
           {[

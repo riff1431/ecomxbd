@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import {
   Save, Loader2, ArrowLeft, Package, FileText,
   DollarSign, Ruler, Image as ImageIcon, Search,
-  Box, Layers, Upload, Trash2, Plus, Check,
+  Box, Layers, Upload, Trash2, Plus, Check, Sparkles, Tag, Truck
 } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
 import { generateSlug, cn } from "@/lib/utils";
-import { createProduct, updateProduct } from "@/features/products/actions";
+import { createProduct, updateProduct, getProducts } from "@/features/products/actions";
 import { getCategories } from "@/features/categories/actions";
 import { getBrands } from "@/features/brands/actions";
 import { getAttributes } from "@/features/attributes/actions";
+import { getProductComboConfig, saveProductComboConfig } from "@/features/products/combo-actions";
 import { RichTextEditor } from "@/components/shared/rich-text-editor";
 
 interface AttributeOption {
@@ -63,6 +64,18 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
   const [selectedValuesByAttr, setSelectedValuesByAttr] = useState<Record<string, string[]>>({});
   const [generatedVariants, setGeneratedVariants] = useState<VariantItem[]>([]);
 
+  // Frequently Bought Together Combo Bundle State
+  const [catalogProducts, setCatalogProducts] = useState<Array<{ id: string; name: string; regular_price: number; sale_price?: number | null; og_image_url?: string | null }>>([]);
+  const [bundleSearch, setBundleSearch] = useState("");
+  const [comboConfig, setComboConfig] = useState({
+    enabled: true,
+    title: "Frequently Bought Together",
+    discount_type: "percentage" as "percentage" | "fixed" | "free_shipping",
+    discount_value: 10,
+    bundle_product_ids: [] as string[],
+    badge_text: "Combo Special • Save 10%",
+  });
+
   const [form, setForm] = useState({
     name: (initialData?.name as string) ?? "",
     slug: (initialData?.slug as string) ?? "",
@@ -105,12 +118,51 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
   });
 
   useEffect(() => {
-    Promise.all([getCategories(), getBrands(), getAttributes()]).then(([cats, brs, attrs]) => {
+    Promise.all([getCategories(), getBrands(), getAttributes(), getProducts()]).then(([cats, brs, attrs, prods]) => {
       setCategories(cats as Array<{ id: string; name: string; parent_id: string | null }>);
       setBrands(brs as Array<{ id: string; name: string }>);
       setAvailableAttributes(attrs as unknown as AttributeOption[]);
+      if (prods) {
+        setCatalogProducts(
+          (prods as any[])
+            .filter((p) => p.id !== initialData?.id)
+            .map((p) => ({
+              id: p.id,
+              name: p.name,
+              regular_price: p.regular_price,
+              sale_price: p.sale_price,
+              og_image_url: p.og_image_url,
+            }))
+        );
+      }
     });
-  }, []);
+
+    if (initialData?.id) {
+      getProductComboConfig(initialData.id as string).then((cfg) => {
+        if (cfg) {
+          setComboConfig({
+            enabled: cfg.enabled ?? true,
+            title: cfg.title || "Frequently Bought Together",
+            discount_type: cfg.discount_type || "percentage",
+            discount_value: cfg.discount_value ?? 10,
+            bundle_product_ids: cfg.bundle_product_ids || [],
+            badge_text: cfg.badge_text || "Combo Special • Save 10%",
+          });
+        }
+      });
+    }
+  }, [initialData?.id]);
+
+  const toggleBundleProduct = (id: string) => {
+    setComboConfig((prev) => ({
+      ...prev,
+      bundle_product_ids: prev.bundle_product_ids.includes(id)
+        ? prev.bundle_product_ids.filter((pId) => pId !== id)
+        : prev.bundle_product_ids.length < 3
+        ? [...prev.bundle_product_ids, id]
+        : prev.bundle_product_ids,
+    }));
+  };
 
   const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -337,6 +389,20 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
       return;
     }
 
+    // Save Frequently Bought Together Combo Config
+    const targetId = isEditing ? (initialData!.id as string) : (result as any).data?.id;
+    if (targetId) {
+      await saveProductComboConfig({
+        product_id: targetId,
+        enabled: comboConfig.enabled,
+        title: comboConfig.title,
+        discount_type: comboConfig.discount_type,
+        discount_value: Number(comboConfig.discount_value) || 0,
+        bundle_product_ids: comboConfig.bundle_product_ids,
+        badge_text: comboConfig.badge_text,
+      });
+    }
+
     router.push("/admin/products");
     router.refresh();
   };
@@ -345,6 +411,7 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
     { id: "basic", label: "Basic Info", icon: Package },
     { id: "content", label: "Content", icon: FileText },
     { id: "pricing", label: "Pricing", icon: DollarSign },
+    { id: "combo", label: "Combo Bundles", icon: Sparkles },
     ...(form.product_type === "variable"
       ? [{ id: "variants", label: "Variants", icon: Layers }]
       : []),
@@ -863,6 +930,172 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
                   Sets initial available stock. Ongoing changes should be made in the Inventory Manager.
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* 9. Frequently Bought Together (Combo Bundles) Tab */}
+          {activeTab === "combo" && (
+            <div className="rounded-xl border border-border bg-white p-6 shadow-card space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-text flex items-center gap-2">
+                    <Sparkles className="h-5 w-5 text-[#e91e63]" /> Frequently Bought Together (Combo Bundles)
+                  </h2>
+                  <p className="text-xs text-text-muted">
+                    Configure complementary cross-sell products and exclusive combo discounts or free shipping for this item.
+                  </p>
+                </div>
+
+                {/* Enable / Disable Toggle */}
+                <label className="flex items-center gap-2 text-sm font-bold text-gray-800 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={comboConfig.enabled}
+                    onChange={(e) => setComboConfig((prev) => ({ ...prev, enabled: e.target.checked }))}
+                    className="h-4 w-4 rounded text-[#e91e63] accent-[#e91e63] focus:ring-[#e91e63]"
+                  />
+                  Enable Combo on Storefront
+                </label>
+              </div>
+
+              {comboConfig.enabled && (
+                <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Section Title */}
+                    <div className="space-y-2">
+                      <Label>Section Title</Label>
+                      <Input
+                        value={comboConfig.title}
+                        onChange={(e) => setComboConfig((prev) => ({ ...prev, title: e.target.value }))}
+                        placeholder="Frequently Bought Together"
+                      />
+                    </div>
+
+                    {/* Badge Text */}
+                    <div className="space-y-2">
+                      <Label>Highlight Badge Text</Label>
+                      <Input
+                        value={comboConfig.badge_text}
+                        onChange={(e) => setComboConfig((prev) => ({ ...prev, badge_text: e.target.value }))}
+                        placeholder="Combo Special • Save 15%"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Offer Type & Value */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-pink-50/50 p-4 rounded-xl border border-pink-100">
+                    <div className="space-y-2">
+                      <Label>Offer Type</Label>
+                      <select
+                        value={comboConfig.discount_type}
+                        onChange={(e) =>
+                          setComboConfig((prev) => ({
+                            ...prev,
+                            discount_type: e.target.value as any,
+                            badge_text:
+                              e.target.value === "free_shipping"
+                                ? "Free Shipping Combo"
+                                : prev.badge_text,
+                          }))
+                        }
+                        className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium"
+                      >
+                        <option value="percentage">Percentage Discount (%)</option>
+                        <option value="fixed">Fixed BDT Discount (৳)</option>
+                        <option value="free_shipping">Free Nationwide Shipping (৳0)</option>
+                      </select>
+                    </div>
+
+                    {comboConfig.discount_type !== "free_shipping" && (
+                      <div className="space-y-2">
+                        <Label>
+                          {comboConfig.discount_type === "percentage" ? "Discount Percentage (%)" : "Discount Amount (৳)"}
+                        </Label>
+                        <Input
+                          type="number"
+                          min="1"
+                          max={comboConfig.discount_type === "percentage" ? 90 : 5000}
+                          value={comboConfig.discount_value}
+                          onChange={(e) =>
+                            setComboConfig((prev) => ({
+                              ...prev,
+                              discount_value: Number(e.target.value) || 0,
+                            }))
+                          }
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-1 text-xs text-gray-600 flex flex-col justify-center">
+                      <span className="font-bold text-text">Combo Benefit:</span>
+                      <span>
+                        {comboConfig.discount_type === "percentage" && `${comboConfig.discount_value}% off when buying bundle.`}
+                        {comboConfig.discount_type === "fixed" && `৳${comboConfig.discount_value} flat savings on bundle.`}
+                        {comboConfig.discount_type === "free_shipping" && "Delivery fee is 100% waived on combo checkout."}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Complementary Products Selector */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-bold">
+                        Select Complementary Bundle Items ({comboConfig.bundle_product_ids.length}/3 selected)
+                      </Label>
+                      <span className="text-xs text-text-muted">
+                        Pick 1 to 3 items (or leave empty for smart auto-recommendations)
+                      </span>
+                    </div>
+
+                    <Input
+                      placeholder="Search catalog products..."
+                      value={bundleSearch}
+                      onChange={(e) => setBundleSearch(e.target.value)}
+                      className="max-w-md"
+                    />
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 max-h-72 overflow-y-auto p-1 border border-border rounded-xl bg-surface-secondary/20">
+                      {catalogProducts
+                        .filter((p) => p.name.toLowerCase().includes(bundleSearch.toLowerCase()))
+                        .map((prod) => {
+                          const isPicked = comboConfig.bundle_product_ids.includes(prod.id);
+                          return (
+                            <div
+                              key={prod.id}
+                              onClick={() => toggleBundleProduct(prod.id)}
+                              className={cn(
+                                "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer select-none",
+                                isPicked
+                                  ? "border-[#e91e63] bg-pink-50/70 shadow-xs"
+                                  : "border-border bg-white hover:bg-surface-secondary/60"
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isPicked}
+                                onChange={() => {}}
+                                className="h-4 w-4 rounded text-[#e91e63] accent-[#e91e63]"
+                              />
+                              <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden shrink-0">
+                                {prod.og_image_url ? (
+                                  <img src={prod.og_image_url} alt={prod.name} className="h-full w-full object-contain" />
+                                ) : (
+                                  <Package className="h-5 w-5 text-gray-400" />
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs font-bold text-gray-900 truncate">{prod.name}</p>
+                                <p className="text-[11px] font-mono font-bold text-[#e91e63]">
+                                  ৳{prod.sale_price ?? prod.regular_price}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
