@@ -145,9 +145,24 @@ export default function InvoicePrintClient({
     window.print();
   };
 
-  // Infallible Direct Vector jsPDF Fallback Generator (with QR code and Logo)
+  // Infallible Direct Vector jsPDF Fallback Generator (with QR code, Logo, and Barcodes)
   const generateVectorPdfFallback = () => {
     const isThermal = printMode === "thermal";
+
+    // Barcode drawing helper
+    const drawBarcode = (doc: any, startX: number, startY: number, totalW: number, totalH: number) => {
+      const bars = [3, 1, 2, 1, 4, 1, 2, 3, 1, 2, 1, 3, 2, 1, 1, 4, 2, 1, 3, 1, 2, 3, 1, 2, 1, 4, 2, 1, 2, 1, 3, 2];
+      const sum = bars.reduce((a, b) => a + b, 0);
+      const unit = totalW / sum;
+      let curX = startX;
+      doc.setFillColor(0, 0, 0);
+      bars.forEach((b, idx) => {
+        if (idx % 2 === 0) {
+          doc.rect(curX, startY, b * unit, totalH, "F");
+        }
+        curX += b * unit;
+      });
+    };
 
     if (isThermal) {
       const doc = new jsPDF({
@@ -156,96 +171,143 @@ export default function InvoicePrintClient({
         format: [100, 150],
       });
 
-      // Top Logo & QR code
+      // 1. Header: Brand Logo & Info (Left), QR Code (Right)
       if (logoDataUrl) {
         try {
-          doc.addImage(logoDataUrl, "PNG", 8, 7, 26, 8);
+          doc.addImage(logoDataUrl, "PNG", 6, 5, 30, 9);
         } catch {
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(12);
-          doc.text(brandName.toUpperCase(), 8, 12);
+          doc.setFontSize(11);
+          doc.text(brandName.toUpperCase(), 6, 11);
         }
       } else {
         doc.setFont("helvetica", "bold");
-        doc.setFontSize(12);
-        doc.text(brandName.toUpperCase(), 8, 12);
+        doc.setFontSize(11);
+        doc.text(brandName.toUpperCase(), 6, 11);
       }
 
       doc.setFontSize(7.5);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(60, 60, 60);
+      doc.text(invoiceSettings?.thermal_header_title || `${courier.toUpperCase()} EXPRESS`, 6, 18);
+
+      doc.setFontSize(6.5);
       doc.setFont("helvetica", "normal");
-      doc.text(courier.toUpperCase() + " EXPRESS", 8, 17);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`DATE: ${new Date(order.created_at).toLocaleDateString("en-GB")}`, 6, 22);
 
-      doc.setFontSize(7);
-      doc.text(`DATE: ${new Date(order.created_at).toLocaleDateString("en-GB")}`, 72, 18);
-
-      // Thermal QR Code
+      // Thermal QR Code (Isolated on the right without overlapping text)
       if (qrCodeDataUrl) {
         try {
-          doc.addImage(qrCodeDataUrl, "PNG", 75, 5, 17, 17);
+          doc.addImage(qrCodeDataUrl, "PNG", 74, 5, 20, 20);
         } catch (e) {
           console.error("QR embed error:", e);
         }
       }
 
+      // Divider Line 1
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.6);
-      doc.line(8, 22, 92, 22);
+      doc.line(6, 26, 94, 26);
 
-      // Tracking No & Code
+      // 2. Tracking Number & Primary High-Contrast Barcode
+      doc.setTextColor(0, 0, 0);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(8);
-      doc.text("TRACKING NUMBER:", 50, 27, { align: "center" });
+      doc.setFontSize(7.5);
+      doc.text(t.thermalTrackingNo.toUpperCase(), 50, 30, { align: "center" });
+
       doc.setFontSize(12);
-      doc.text(consignmentCode, 50, 33, { align: "center" });
+      doc.text(consignmentCode, 50, 35.5, { align: "center" });
+
+      // Draw Primary Barcode
+      drawBarcode(doc, 10, 38, 80, 10);
 
       // COD Box
-      doc.rect(25, 37, 50, 8);
-      doc.setFontSize(10);
-      doc.text(isCod ? `COD : BDT ${order.total}` : "PAID (BDT 0)", 50, 42.5, { align: "center" });
+      doc.rect(20, 50, 60, 8.5);
+      doc.setFontSize(10.5);
+      doc.text(isCod ? `COD : BDT ${order.total}` : "NON-COD (PAID)", 50, 56, { align: "center" });
 
-      doc.line(8, 49, 92, 49);
+      // Divider Line 2
+      doc.line(6, 61, 94, 61);
 
-      // Deliver To
-      doc.setFontSize(8);
-      doc.text("DELIVER TO:", 8, 55);
+      // 3. Deliver To & Sender Address Grid
+      // Deliver To (Receiver)
+      doc.setFontSize(7.5);
+      doc.setFillColor(0, 0, 0);
+      doc.setTextColor(255, 255, 255);
+      doc.rect(6, 63, 24, 4, "F");
+      doc.text(t.thermalDeliverTo, 7, 66);
+
+      doc.setTextColor(0, 0, 0);
       doc.setFontSize(9);
-      doc.text(address.name || order.guest_name || "Customer", 8, 60);
-      doc.text(address.phone || order.guest_phone || "", 8, 65);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.text(`${address.address || ""}`, 8, 70);
-      doc.text(`${address.thana ? address.thana + ", " : ""}${address.district || "Dhaka"}`, 8, 75);
-
-      // Sender
       doc.setFont("helvetica", "bold");
-      doc.text("SENDER (HUB):", 54, 55);
+      doc.text(address.name || order.guest_name || "Customer", 6, 72);
+      doc.setFontSize(8.5);
+      doc.text(address.phone || order.guest_phone || "", 6, 76.5);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.text(doc.splitTextToSize(address.address || "Address on record", 42), 6, 81);
+      doc.setFont("helvetica", "bold");
+      doc.text(`${address.thana ? address.thana + ", " : ""}${address.district || "DHAKA"}`, 6, 91);
+
+      // Vertical Divider between addresses
+      doc.setLineWidth(0.4);
+      doc.line(50, 63, 50, 93);
+
+      // Sender (Hub)
+      doc.setFillColor(220, 220, 220);
+      doc.setTextColor(0, 0, 0);
+      doc.rect(53, 63, 24, 4, "F");
+      doc.setFontSize(7.5);
+      doc.text(t.thermalSender, 54, 66);
+
       doc.setFontSize(9);
-      doc.text(brandName, 54, 60);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.text(invoiceSettings?.thermal_return_address || "House 42, Road 11, Banani", 54, 65);
-      doc.text("Dhaka, Bangladesh", 54, 70);
-
-      doc.line(8, 79, 92, 79);
-
-      // Items summary
       doc.setFont("helvetica", "bold");
-      doc.text(`TOTAL ITEMS: ${totalQuantity}`, 8, 85);
-      doc.text(`WEIGHT: 0.5 KG`, 92, 85, { align: "right" });
+      doc.text(brandName, 53, 72);
 
-      let itemY = 91;
       doc.setFont("helvetica", "normal");
-      items.slice(0, 4).forEach((it: any) => {
-        doc.text(`• ${it.product_name_snapshot?.substring(0, 35)}`, 8, itemY);
-        doc.text(`x${it.quantity}`, 92, itemY, { align: "right" });
-        itemY += 5;
+      doc.setFontSize(7.5);
+      doc.text(invoiceSettings?.thermal_return_address || "House 42, Road 11, Banani", 53, 77);
+      doc.text("Dhaka, Bangladesh", 53, 81.5);
+      doc.text(`Phone: ${invoiceSettings?.thermal_sender_phone || "+880 1700-000000"}`, 53, 86);
+
+      // Divider Line 3
+      doc.setLineWidth(0.6);
+      doc.line(6, 95, 94, 95);
+
+      // 4. Items Summary & Weight
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text(`TOTAL ITEMS: ${totalQuantity}`, 6, 100);
+      doc.text(`WEIGHT: 0.5 KG`, 94, 100, { align: "right" });
+
+      let itemY = 105;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      items.slice(0, 3).forEach((it: any) => {
+        doc.text(`• ${it.product_name_snapshot?.substring(0, 42)}`, 6, itemY);
+        doc.text(`x${it.quantity}`, 94, itemY, { align: "right" });
+        itemY += 4.5;
       });
 
-      doc.line(8, 120, 92, 120);
+      // Divider Line 4
+      doc.line(6, 122, 94, 122);
+
+      // 5. Carrier Routing & Bottom Barcode
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
-      doc.text("DO NOT SHIP IF DAMAGED • RETURN TO HUB", 50, 128, { align: "center" });
-      doc.text(`ORDER NO: ${order.order_number}`, 50, 134, { align: "center" });
+      doc.text(`${courier.toUpperCase()} ROUTING & SORTING`, 50, 126, { align: "center" });
+
+      // Draw Routing Barcode
+      drawBarcode(doc, 15, 128, 70, 8);
+
+      doc.setFontSize(8);
+      doc.text(order.order_number, 50, 139, { align: "center" });
+
+      doc.setFontSize(6.5);
+      doc.setTextColor(80, 80, 80);
+      doc.text(invoiceSettings?.thermal_instructions || "DO NOT SHIP IF DAMAGED • RETURN TO HUB", 50, 143, { align: "center" });
 
       doc.save(`${order.order_number}_4x6_Thermal_Label.pdf`);
       return;
