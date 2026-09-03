@@ -148,22 +148,12 @@ export default function InvoicePrintClient({
     if (!printRef.current) return;
     setDownloadingPdf(true);
 
-    const el = printRef.current;
-    const prevTransform = el.style.transform;
-    const prevPosition = el.style.position;
-    const prevTop = el.style.top;
-    const prevLeft = el.style.left;
-
     try {
       const isThermal = printMode === "thermal";
       const targetWidth = isThermal ? 378 : 794;
       const targetHeight = isThermal ? 567 : 1123;
 
-      // Temporarily remove transform so html2canvas renders exact 1:1 pixels
-      el.style.transform = "none";
-      el.style.position = "static";
-
-      const canvas = await html2canvas(el, {
+      const canvas = await html2canvas(printRef.current, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
@@ -175,13 +165,35 @@ export default function InvoicePrintClient({
         height: targetHeight,
         windowWidth: targetWidth,
         windowHeight: targetHeight,
-      });
+        onclone: (clonedDoc) => {
+          // Remove cross-origin stylesheets that trigger SecurityError in html2canvas
+          clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach((node) => {
+            if (
+              node.textContent?.includes("@import") ||
+              (node as HTMLLinkElement).href?.includes("fonts.googleapis.com")
+            ) {
+              node.remove();
+            }
+          });
 
-      // Restore position & transform immediately
-      el.style.transform = prevTransform;
-      el.style.position = prevPosition;
-      el.style.top = prevTop;
-      el.style.left = prevLeft;
+          // Reset target element in cloned DOM to exact unscaled static dimensions
+          const target = clonedDoc.querySelector(
+            isThermal ? ".print-area-thermal" : ".print-area-invoice"
+          ) as HTMLElement;
+          if (target) {
+            target.style.position = "static";
+            target.style.transform = "none";
+            target.style.margin = "0";
+            target.style.width = `${targetWidth}px`;
+            target.style.minWidth = `${targetWidth}px`;
+            target.style.maxWidth = `${targetWidth}px`;
+            target.style.height = `${targetHeight}px`;
+            target.style.minHeight = `${targetHeight}px`;
+            target.style.maxHeight = `${targetHeight}px`;
+            target.style.boxShadow = "none";
+          }
+        },
+      });
 
       const imgData = canvas.toDataURL("image/jpeg", 0.98);
 
@@ -204,12 +216,8 @@ export default function InvoicePrintClient({
         pdf.addImage(imgData, "JPEG", 0, 0, 210, 297, undefined, "FAST");
         pdf.save(`${order.order_number}_A4_Tax_Invoice.pdf`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("PDF Download error:", err);
-      el.style.transform = prevTransform;
-      el.style.position = prevPosition;
-      el.style.top = prevTop;
-      el.style.left = prevLeft;
       alert("Failed to generate PDF. Please use the Print button -> Save as PDF.");
     } finally {
       setDownloadingPdf(false);
@@ -310,10 +318,8 @@ export default function InvoicePrintClient({
     <div className="min-h-screen bg-gray-100 p-2 sm:p-6 lg:p-8 print:p-0 print:m-0 print:bg-white text-gray-900 font-sans">
       {/* Global Print Isolation CSS */}
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap');
-
         body {
-          font-family: 'Inter', 'Hind Siliguri', sans-serif;
+          font-family: 'Inter', system-ui, -apple-system, sans-serif;
         }
 
         @media print {
