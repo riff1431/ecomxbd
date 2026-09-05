@@ -142,7 +142,7 @@ export function RichArticleEditor({
       : "";
     const html = `
 <figure class="my-6">
-  <img src="${imageUrl.trim()}" alt="${alt}" class="w-full max-h-[480px] object-cover rounded-2xl border border-gray-200 shadow-sm" />
+  <img src="${imageUrl.trim()}" alt="${alt}" class="w-full max-h-120 object-cover rounded-2xl border border-gray-200 shadow-sm" />
   ${captionHtml}
 </figure>
 <p></p>`;
@@ -673,7 +673,7 @@ export function RichArticleEditor({
             ref={visualEditorRef}
             contentEditable
             onInput={handleVisualInput}
-            className="prose prose-pink max-w-none p-6 text-sm text-gray-900 focus:outline-none leading-relaxed min-h-[380px] [&_h2]:text-xl [&_h2]:font-black [&_h2]:text-gray-900 [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-base [&_h3]:font-black [&_h3]:text-gray-800 [&_h3]:mt-5 [&_h3]:mb-2 [&_h4]:text-sm [&_h4]:font-bold [&_h4]:text-gray-800 [&_p]:text-gray-700 [&_p]:leading-relaxed [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_li]:mb-1 [&_blockquote]:border-l-4 [&_blockquote]:border-[#e91e63] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-600 [&_blockquote]:my-4"
+            className="prose prose-pink max-w-none p-6 text-sm text-gray-900 focus:outline-none leading-relaxed min-h-95 [&_h2]:text-xl [&_h2]:font-black [&_h2]:text-gray-900 [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-base [&_h3]:font-black [&_h3]:text-gray-800 [&_h3]:mt-5 [&_h3]:mb-2 [&_h4]:text-sm [&_h4]:font-bold [&_h4]:text-gray-800 [&_p]:text-gray-700 [&_p]:leading-relaxed [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-4 [&_li]:mb-1 [&_blockquote]:border-l-4 [&_blockquote]:border-[#e91e63] [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-gray-600 [&_blockquote]:my-4"
           />
         )}
 
@@ -683,14 +683,14 @@ export function RichArticleEditor({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             rows={18}
-            className="w-full p-6 text-xs font-mono text-gray-900 bg-gray-900 text-gray-100 focus:outline-none leading-relaxed resize-none h-full min-h-[380px]"
+            className="w-full p-6 text-xs font-mono bg-gray-900 text-gray-100 focus:outline-none leading-relaxed resize-none h-full min-h-95"
             placeholder="<p>Enter clean HTML content here...</p>"
           />
         )}
 
         {/* Split View (Visual + Code or Live Render) */}
         {viewMode === "split" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200 min-h-[380px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-gray-200 min-h-95">
             {/* Left: Code or Editable Area */}
             <div className="p-4 bg-gray-50 flex flex-col">
               <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 mb-2">
@@ -705,7 +705,7 @@ export function RichArticleEditor({
             </div>
 
             {/* Right: Real-time Live Render Preview */}
-            <div className="p-6 overflow-y-auto max-h-[500px] bg-white">
+            <div className="p-6 overflow-y-auto max-h-125 bg-white">
               <span className="text-[10px] font-black uppercase tracking-wider text-[#e91e63] mb-3 block">
                 Live Storefront Render Preview
               </span>

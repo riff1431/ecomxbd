@@ -33,7 +33,7 @@ export default async function AdminBlogListPage() {
             </Button>
           </Link>
           <Link href="/admin/blog/create">
-            <Button size="sm" className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs">
+            <Button size="sm" className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-bold text-xs rounded-xl shadow-xs">
               <Plus className="h-3.5 w-3.5 mr-1.5" /> Write New Article
             </Button>
           </Link>

@@ -678,7 +678,7 @@ export function ProductDetailClient({
 
           {/* Authenticity & Batch Code Verification Card */}
           {featureSettings?.enable_authenticity_verification !== false && (
-            <div className="rounded-2xl border border-pink-200 bg-gradient-to-r from-pink-50/50 to-purple-50/30 p-4 space-y-3">
+            <div className="rounded-2xl border border-pink-200 bg-linear-to-r from-pink-50/50 to-purple-50/30 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-[#e91e63]" />
@@ -989,7 +989,7 @@ export function ProductDetailClient({
                 disabled={isOutOfStock}
                 onClick={handleBuyNow}
                 size="sm"
-                className="rounded-xl h-10 px-4 bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-black shadow-md active:scale-95"
+                className="rounded-xl h-10 px-4 bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-black shadow-md active:scale-95"
               >
                 {t("product", "buyNow")}
               </Button>

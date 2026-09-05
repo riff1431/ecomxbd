@@ -192,7 +192,7 @@ export function TeamClient({ initialUsers }: TeamClientProps) {
                     )}
                   </td>
 
-                  <td className="px-4 py-3 text-text-secondary text-[11px] max-w-[280px]">
+                  <td className="px-4 py-3 text-text-secondary text-[11px] max-w-70">
                     {user.permissions}
                   </td>
 

@@ -38,7 +38,7 @@ export function FlashSaleBanner() {
   };
 
   return (
-    <div className="rounded-2xl border border-accent-200 bg-gradient-to-r from-accent-500 via-rose-600 to-amber-600 p-6 sm:p-8 text-white shadow-lg overflow-hidden relative">
+    <div className="rounded-2xl border border-accent-200 bg-linear-to-r from-accent-500 via-rose-600 to-amber-600 p-6 sm:p-8 text-white shadow-lg overflow-hidden relative">
       <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 h-48 w-48 rounded-full bg-white/10 blur-2xl pointer-events-none" />
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 relative z-10">

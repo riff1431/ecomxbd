@@ -46,7 +46,7 @@ export function BlogPostClient({
           </>
         )}
         <ChevronRight className="h-3 w-3 shrink-0 text-zinc-400" />
-        <span className="text-text font-bold truncate max-w-[200px] sm:max-w-md">
+        <span className="text-text font-bold truncate max-w-50 sm:max-w-md">
           {post.title}
         </span>
       </nav>
@@ -124,7 +124,7 @@ export function BlogPostClient({
 
       {/* Featured Banner Image */}
       {post.featured_image && (
-        <div className="rounded-3xl overflow-hidden border border-border shadow-card bg-zinc-100 aspect-16/9 relative">
+        <div className="rounded-3xl overflow-hidden border border-border shadow-card bg-zinc-100 aspect-video relative">
           <img
             src={post.featured_image}
             alt={post.title}

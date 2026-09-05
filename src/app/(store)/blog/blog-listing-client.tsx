@@ -86,7 +86,7 @@ export function BlogListingClient({
       {featuredPost && (
         <div className="rounded-3xl border border-border bg-white overflow-hidden shadow-card hover:shadow-xl transition-all group">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
-            <div className="lg:col-span-7 relative min-h-[300px] sm:min-h-[400px] overflow-hidden bg-zinc-100">
+            <div className="lg:col-span-7 relative min-h-75 sm:min-h-100 overflow-hidden bg-zinc-100">
               {featuredPost.featured_image ? (
                 <img
                   src={featuredPost.featured_image}
@@ -146,7 +146,7 @@ export function BlogListingClient({
                     )}
                     <div>
                       <p className="text-xs font-bold text-text">{featuredPost.author.name}</p>
-                      <p className="text-[10px] text-text-muted truncate max-w-[150px]">
+                      <p className="text-[10px] text-text-muted truncate max-w-37.5">
                         {featuredPost.author.job_title}
                       </p>
                     </div>

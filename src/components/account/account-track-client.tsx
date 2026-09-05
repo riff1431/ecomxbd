@@ -188,7 +188,7 @@ export default function AccountTrackClient({ initialOrders }: { initialOrders: a
                             )}
                           </div>
                           <span
-                            className={`mt-2 text-[11px] font-bold max-w-[70px] sm:max-w-none leading-tight ${
+                            className={`mt-2 text-[11px] font-bold max-w-17.5 sm:max-w-none leading-tight ${
                               isCompleted ? "text-gray-900" : "text-gray-400"
                             }`}
                           >
@@ -242,7 +242,7 @@ export default function AccountTrackClient({ initialOrders }: { initialOrders: a
                   <div className="divide-y divide-gray-100">
                     {activeOrder.order_items.map((it: any) => (
                       <div key={it.id} className="py-2 flex items-center justify-between text-xs">
-                        <span className="text-gray-800 font-medium truncate max-w-[280px] sm:max-w-md">
+                        <span className="text-gray-800 font-medium truncate max-w-70 sm:max-w-md">
                           {it.product_name_snapshot}
                         </span>
                         <span className="text-gray-500 font-bold shrink-0">

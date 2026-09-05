@@ -215,7 +215,7 @@ export default function AdminMetaSettingsPage() {
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs shrink-0"
+          className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-bold text-xs rounded-xl shadow-xs shrink-0"
         >
           <Save className="h-3.5 w-3.5 mr-1.5" />
           {saving ? "Saving Changes..." : "Save Configuration"}
@@ -457,7 +457,7 @@ export default function AdminMetaSettingsPage() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs"
+                className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-bold text-xs rounded-xl shadow-xs"
               >
                 <Save className="h-3.5 w-3.5 mr-1.5" />
                 {saving ? "Saving Changes..." : "Save Meta Settings"}
@@ -638,7 +638,7 @@ export default function AdminMetaSettingsPage() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs"
+                className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-bold text-xs rounded-xl shadow-xs"
               >
                 <Save className="h-3.5 w-3.5 mr-1.5" />
                 {saving ? "Saving Changes..." : "Save TikTok Settings"}
@@ -691,7 +691,7 @@ export default function AdminMetaSettingsPage() {
             </div>
 
             <div className="pt-3 border-t border-border space-y-2">
-              <h3 className="text-xs font-bold text-text uppercase tracking-wider text-text-muted">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted">
                 Active Enhanced Ecommerce DataLayer Events
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
@@ -722,7 +722,7 @@ export default function AdminMetaSettingsPage() {
             <Button
               type="submit"
               disabled={saving}
-              className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs"
+              className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-bold text-xs rounded-xl shadow-xs"
             >
               <Save className="h-3.5 w-3.5 mr-1.5" />
               {saving ? "Saving Changes..." : "Save GTM Settings"}

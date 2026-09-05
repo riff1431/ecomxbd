@@ -140,7 +140,7 @@ export default async function ProductDetailPage({
           </>
         )}
         <ChevronRight className="h-3 w-3 shrink-0 text-zinc-400" />
-        <span className="text-text font-bold truncate max-w-[200px] sm:max-w-md">
+        <span className="text-text font-bold truncate max-w-50 sm:max-w-md">
           {product.name}
         </span>
       </nav>

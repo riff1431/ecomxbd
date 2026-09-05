@@ -217,7 +217,7 @@ export function DuesClient({ initialDues }: DuesClientProps) {
                           {due.entity}
                         </div>
                         {due.notes && (
-                          <span className="text-[11px] text-text-muted block max-w-[260px] truncate">
+                          <span className="text-[11px] text-text-muted block max-w-65 truncate">
                             {due.notes}
                           </span>
                         )}

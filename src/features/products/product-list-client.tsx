@@ -75,7 +75,7 @@ export default function ProductListClient() {
             <Package className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="font-medium text-text truncate max-w-[220px]">{row.name}</p>
+            <p className="font-medium text-text truncate max-w-55">{row.name}</p>
             <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5">
               <span className="capitalize">{row.product_type}</span>
               {row.is_featured && (

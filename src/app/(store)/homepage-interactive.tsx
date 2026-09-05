@@ -122,7 +122,7 @@ export function HomepageInteractive({
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="relative w-full aspect-[16/7] sm:aspect-[1920/650] max-h-[500px] bg-white flex items-center justify-center">
+        <div className="relative w-full aspect-16/7 sm:aspect-1920/650 max-h-125 bg-white flex items-center justify-center">
           {heroSlides.map((slide, idx) => (
             <Link
               key={slide.id || idx}
@@ -183,7 +183,7 @@ export function HomepageInteractive({
       {/* 1.5 HOMEPAGE AUTHENTICITY TRUST BAR */}
       {/* ============================================================ */}
       <section className="container-main py-1.5 sm:py-2">
-        <div className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50/70 to-pink-50 border border-pink-200/80 px-4 py-2 sm:py-2.5 text-center shadow-xs">
+        <div className="flex items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-pink-50 via-rose-50/70 to-pink-50 border border-pink-200/80 px-4 py-2 sm:py-2.5 text-center shadow-xs">
           <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-[#e91e63] shrink-0" />
           <span className="text-xs sm:text-sm md:text-base font-black text-gray-900 tracking-normal">
             {language === "bn"
@@ -199,7 +199,7 @@ export function HomepageInteractive({
       <section className="container-main">
         <Link
           href={stripBanner.href || "/products?search=ponds"}
-          className="group relative block overflow-hidden rounded-xl shadow-xs transition-all hover:shadow-md aspect-[1200/180] bg-white btn-soft-fill"
+          className="group relative block overflow-hidden rounded-xl shadow-xs transition-all hover:shadow-md aspect-1200/180 bg-white btn-soft-fill"
         >
           <img
             src={stripBanner.image || "/banners/strip_ponds.svg"}
@@ -228,7 +228,7 @@ export function HomepageInteractive({
             <Link
               key={deal.id || idx}
               href={deal.href}
-              className="group relative block aspect-square overflow-hidden rounded-2xl shadow-xs border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] bg-white flex items-center justify-center btn-soft-fill"
+              className="group relative aspect-square overflow-hidden rounded-2xl shadow-xs border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:scale-[1.02] bg-white flex items-center justify-center btn-soft-fill"
             >
               <img
                 src={deal.image}
@@ -259,7 +259,7 @@ export function HomepageInteractive({
             <Link
               key={brand.id || idx}
               href={brand.href}
-              className="group relative block overflow-hidden rounded-2xl shadow-xs border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:scale-[1.01] aspect-[800/350] bg-white flex items-center justify-center btn-soft-fill"
+              className="group relative overflow-hidden rounded-2xl shadow-xs border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:scale-[1.01] aspect-[800/350] bg-white flex items-center justify-center btn-soft-fill"
             >
               <img
                 src={brand.image}
@@ -273,24 +273,15 @@ export function HomepageInteractive({
       </section>
 
       {/* ============================================================ */}
-      {/* 5. LIMITED TIME OFFERS (4 Wavy/Curved Pink Badges) */}
+      {/* 5. VIBRANT PROMOTIONAL CARDS */}
       {/* ============================================================ */}
       <section className="container-main">
-        <div className="text-center mb-4 sm:mb-6">
-          <h2 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wide text-gray-900">
-            {language === "bn" ? t("home", "limitedOffersTitle") : "LIMITED TIME OFFERS"}
-          </h2>
-          {language === "bn" && (
-            <p className="text-xs sm:text-sm md:text-base font-semibold text-gray-600 mt-1">{t("home", "limitedOffersSubtitle")}</p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           {limitedOffers.map((offer, idx) => (
             <Link
               key={offer.id || idx}
               href={offer.href}
-              className="group relative overflow-hidden bg-gradient-to-br from-[#ec4899] via-[#db2777] to-[#be185d] p-4 sm:p-6 shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center aspect-[4/3] sm:aspect-square btn-soft-fill"
+              className="group relative overflow-hidden bg-linear-to-br from-primary-400 via-[#db2777] to-[#be185d] p-4 sm:p-6 shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center aspect-4/3 sm:aspect-square btn-soft-fill"
               style={{
                 borderRadius: "32px 14px 32px 14px",
               }}
@@ -327,7 +318,7 @@ export function HomepageInteractive({
             <Link
               key={cat.id || idx}
               href={`/products?category=${cat.slug}`}
-              className="group relative flex flex-col items-center justify-between overflow-hidden rounded-[24px] sm:rounded-[30px] border border-gray-200/90 bg-gradient-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-[#e91e63] aspect-square btn-soft-fill"
+              className="group relative flex flex-col items-center justify-between overflow-hidden rounded-3xl sm:rounded-[30px] border border-gray-200/90 bg-linear-to-b from-[#38bdf8] via-[#0284c7] to-[#0369a1] shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl hover:border-[#e91e63] aspect-square btn-soft-fill"
             >
               {/* Model Photo Background */}
               <img
@@ -338,7 +329,7 @@ export function HomepageInteractive({
               />
 
               {/* Dual Vignette Gradient Overlays for High Legibility */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-sky-900/60 pointer-events-none" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-sky-900/60 pointer-events-none" />
 
               {/* Sparkle Star Accents */}
               <Sparkles className="absolute top-8 left-2.5 h-3.5 w-3.5 text-pink-300 opacity-90 drop-shadow-xs pointer-events-none" />

@@ -146,7 +146,7 @@ export function SupplierListClient({ initialSuppliers }: SupplierListClientProps
       key: "notes",
       header: "Procurement Scope",
       cell: (row) => (
-        <p className="max-w-[280px] text-xs text-text-secondary leading-relaxed">
+        <p className="max-w-70 text-xs text-text-secondary leading-relaxed">
           {row.notes}
         </p>
       ),

@@ -133,7 +133,7 @@ export default function AccountReturnsPage() {
 
         <Button
           onClick={() => setShowModal(true)}
-          className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-bold rounded-xl self-start sm:self-auto shadow-md"
+          className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-bold rounded-xl self-start sm:self-auto shadow-md"
         >
           <Plus className="h-4 w-4 mr-1.5" /> Request New Return
         </Button>
@@ -324,7 +324,7 @@ export default function AccountReturnsPage() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-black shadow-md"
+                  className="flex-1 rounded-xl bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-black shadow-md"
                 >
                   {submitting ? "Verifying..." : "Submit Return Request"}
                 </Button>

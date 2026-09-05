@@ -113,7 +113,7 @@ export function AuthorManagerClient({ initialAuthors }: AuthorManagerProps) {
 
         <Button
           onClick={handleCreateNew}
-          className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs shrink-0"
+          className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-bold text-xs rounded-xl shadow-xs shrink-0"
         >
           <Plus className="h-3.5 w-3.5 mr-1.5" /> Add New Author
         </Button>
@@ -296,7 +296,7 @@ export function AuthorManagerClient({ initialAuthors }: AuthorManagerProps) {
               <Button
                 type="submit"
                 disabled={saving}
-                className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs"
+                className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-bold text-xs rounded-xl shadow-xs"
               >
                 <Save className="h-3.5 w-3.5 mr-1.5" />
                 {saving ? "Saving..." : "Save Author"}

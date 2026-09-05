@@ -212,7 +212,7 @@ export function CostsClient({ initialExpenses }: CostsClientProps) {
                         {exp.category}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-medium text-text max-w-[340px]">
+                    <td className="px-4 py-3 font-medium text-text max-w-85">
                       {exp.description}
                     </td>
                     <td className="px-4 py-3 text-text-secondary whitespace-nowrap">

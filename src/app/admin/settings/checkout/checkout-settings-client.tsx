@@ -403,7 +403,7 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
           <Button
             type="submit"
             disabled={saving}
-            className="rounded-2xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold px-8 py-3 text-xs shadow-lg transition-all active:scale-95"
+            className="rounded-2xl bg-[#e91e63] hover:bg-sg-pink-hover text-white font-extrabold px-8 py-3 text-xs shadow-lg transition-all active:scale-95"
           >
             <Save className="h-4 w-4 mr-1.5" />
             {saving ? "Saving Changes..." : "Save All Checkout & Anti-Fraud Rules"}

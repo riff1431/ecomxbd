@@ -262,7 +262,7 @@ export function ImageUploadDropzone({
                   ? "border-[#e91e63] bg-pink-50/70 scale-[0.99] shadow-sm"
                   : "border-gray-300 bg-gray-50/60 hover:bg-pink-50/30 hover:border-[#e91e63]/60",
                 previewShape === "circle" ? "h-36 w-36 rounded-full mx-auto" : "w-full",
-                previewShape === "banner" ? "min-h-[140px]" : "min-h-[120px]"
+                previewShape === "banner" ? "min-h-35" : "min-h-30"
               )}
             >
               {isUploading ? (

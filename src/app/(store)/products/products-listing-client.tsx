@@ -792,7 +792,7 @@ export function ProductsListingClient({
               </div>
               <Button
                 onClick={clearAllFilters}
-                className="rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-xs"
+                className="rounded-xl bg-[#e91e63] hover:bg-sg-pink-hover text-white font-extrabold text-xs"
               >
                 {t("catalog", "resetFilters")}
               </Button>
@@ -841,7 +841,7 @@ export function ProductsListingClient({
             <div className="border-t border-gray-100 pt-4 space-y-2">
               <Button
                 onClick={() => setMobileFilterOpen(false)}
-                className="w-full rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-xs"
+                className="w-full rounded-xl bg-[#e91e63] hover:bg-sg-pink-hover text-white font-extrabold text-xs"
               >
                 {language === "bn"
                   ? `${toBn(products.length)} টি প্রোডাক্ট দেখুন`

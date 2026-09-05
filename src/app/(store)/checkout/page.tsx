@@ -360,7 +360,7 @@ export default function CheckoutPage() {
           {t("cartPage", "emptyStateDesc")}
         </p>
         <Link href="/products">
-          <Button className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-bold rounded-xl mt-2">
+          <Button className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-bold rounded-xl mt-2">
             {t("cartPage", "continueShopping")}
           </Button>
         </Link>
@@ -758,7 +758,7 @@ export default function CheckoutPage() {
             {/* Cart Items Preview */}
             <div className="space-y-3 max-h-60 overflow-y-auto no-scrollbar divide-y divide-border">
               {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 pt-2 first:pt-0">
+                <div key={item.id} className="flex items-center gap-3 pt-2">
                   <img
                     src={(item as any).image_url || "/images/product-placeholder.png"}
                     alt={item.name}
@@ -815,7 +815,7 @@ export default function CheckoutPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-2xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-black text-sm shadow-md transition-all active:scale-98"
+              className="w-full h-12 rounded-2xl bg-[#e91e63] hover:bg-sg-pink-hover text-white font-black text-sm shadow-md transition-all active:scale-98"
             >
               {loading ? (
                 <>
@@ -889,7 +889,7 @@ export default function CheckoutPage() {
               <Button
                 type="submit"
                 disabled={otpLoading || otpCode.length < 4}
-                className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs shadow-md"
+                className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-sg-pink-hover text-white font-bold text-xs shadow-md"
               >
                 {otpLoading ? t("checkout", "otpVerifying") : t("checkout", "verifyOtp")}
               </Button>

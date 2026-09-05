@@ -319,7 +319,7 @@ function BlogCreateForm() {
           {/* RICH ARTICLE CONTENT FORMATTING ENGINE */}
           {/* ======================================================= */}
           <div>
-            <label className="block text-xs font-bold text-text mb-1.5 flex items-center justify-between">
+            <label className="text-xs font-bold text-text mb-1.5 flex items-center justify-between">
               <span className="flex items-center gap-1.5">
                 <Sparkles className="h-3.5 w-3.5 text-[#e91e63]" />
                 Article Content (Visual Rich Text, Headings, Lists, Images &amp; HTML)

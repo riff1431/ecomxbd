@@ -150,7 +150,7 @@ export function AbandonedCheckoutsClient({ initialCheckouts }: AbandonedCheckout
           <span className="font-bold text-gray-900 flex items-center gap-1">
             <MapPin className="h-3.5 w-3.5 text-[#e91e63]" /> {row.district || "Dhaka City"}
           </span>
-          <span className="text-gray-500 text-[11px] block truncate max-w-[200px]" title={row.address}>
+          <span className="text-gray-500 text-[11px] block truncate max-w-50" title={row.address}>
             {row.address || "Address captured"}
           </span>
         </div>
@@ -174,7 +174,7 @@ export function AbandonedCheckoutsClient({ initialCheckouts }: AbandonedCheckout
               const lineTotal = (item.price || 0) * (item.quantity || 1);
               return (
                 <div key={idx} className="flex items-center justify-between gap-3 text-[11px] bg-gray-50/80 px-2 py-1 rounded-lg border border-gray-100">
-                  <span className="font-medium text-gray-800 truncate max-w-[180px]">
+                  <span className="font-medium text-gray-800 truncate max-w-45">
                     <strong className="text-gray-900">{item.quantity}×</strong> {item.name}
                   </span>
                   <span className="font-bold text-gray-900 whitespace-nowrap text-[11px]">
@@ -221,7 +221,7 @@ export function AbandonedCheckoutsClient({ initialCheckouts }: AbandonedCheckout
               size="sm"
               onClick={() => handleConvertToOrder(row)}
               disabled={convertingId === row.id}
-              className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-[11px] font-black rounded-xl h-7 px-2.5 shadow-xs"
+              className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-[11px] font-black rounded-xl h-7 px-2.5 shadow-xs"
               title="Convert Incomplete Lead into a Confirmed Order"
             >
               {convertingId === row.id ? (

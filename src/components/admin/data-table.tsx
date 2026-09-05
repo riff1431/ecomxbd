@@ -302,7 +302,7 @@ export function RowActions({ children }: { children: React.ReactNode }) {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-50 mt-1 min-w-[160px] rounded-lg border border-border bg-white p-1 shadow-dropdown">
+          <div className="absolute right-0 z-50 mt-1 min-w-40 rounded-lg border border-border bg-white p-1 shadow-dropdown">
             {React.Children.map(children, (child) =>
               React.isValidElement(child) ? React.cloneElement(child as React.ReactElement<{ onClick?: () => void }>, {
                 onClick: () => {
