@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ShieldCheck,
   ShoppingBag,
@@ -47,11 +47,13 @@ import { useLanguage } from "@/context/language-context";
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { language, t, toBn, formatPriceBn } = useLanguage();
   const { items, subtotal, discount, coupon, clearCart } = useCart();
 
+  const urlError = searchParams?.get("error");
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(urlError || null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cod");
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -279,7 +281,36 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Order created successfully!
+      // If bKash Online Payment is selected, initiate bKash PGW session
+      if (selectedPaymentMethod === "bkash") {
+        clearCart();
+        try {
+          const bkashRes = await fetch("/api/payments/bkash/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId: res.orderId }),
+          });
+          const bkashData = await bkashRes.json();
+          if (bkashData.success && bkashData.bkashURL) {
+            window.location.href = bkashData.bkashURL;
+            return;
+          } else {
+            // If bKash gateway is temporarily unavailable or credentials invalid
+            setErrorMsg(
+              bkashData.error ||
+                "Could not open bKash payment gateway. You can complete your order using Cash on Delivery."
+            );
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Fallback to confirmation page if bKash call errors
+          router.push(`/orders/${res.orderId}/confirmation`);
+          return;
+        }
+      }
+
+      // Default (Cash on Delivery or other offline methods)
       clearCart();
       router.push(`/orders/${res.orderId}/confirmation`);
     } catch (err: any) {

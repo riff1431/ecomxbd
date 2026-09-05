@@ -182,6 +182,44 @@ export async function testPaymentGatewayConnection(gatewayKey: string) {
     };
   }
 
+  if (gatewayKey === "bkash") {
+    const { grantBkashToken, getBkashConfig } = await import("@/lib/payments/bkash");
+    const cfg = await getBkashConfig();
+    const startTime = Date.now();
+    const tokenRes = await grantBkashToken(cfg);
+    const latencyMs = Date.now() - startTime;
+    const mode = cfg.environment === "live" ? "Production Live Gateway" : "Sandbox Test Gateway";
+
+    if (!tokenRes.success) {
+      await logIntegrationEvent({
+        provider: "BKASH",
+        moduleKey: "bkash",
+        event: "test_connection",
+        status: "error",
+        message: `bKash API Handshake Failed (${mode}, ${latencyMs}ms): ${tokenRes.error || tokenRes.statusMessage}`,
+      });
+      return {
+        success: false,
+        message: `bKash Handshake Failed: ${tokenRes.error || tokenRes.statusMessage} (${mode}, ${latencyMs}ms response)`,
+        latencyMs,
+      };
+    }
+
+    await logIntegrationEvent({
+      provider: "BKASH",
+      moduleKey: "bkash",
+      event: "test_connection",
+      status: "success",
+      message: `bKash Token Grant Successful (HTTP 200 OK, latency: ${latencyMs}ms, mode: ${mode}).`,
+    });
+
+    return {
+      success: true,
+      message: `bKash Tokenized Gateway handshake verified! Token granted successfully (${mode}, ${latencyMs}ms response).`,
+      latencyMs,
+    };
+  }
+
   const startTime = Date.now();
   await new Promise((resolve) => setTimeout(resolve, 180));
   const latencyMs = Date.now() - startTime;

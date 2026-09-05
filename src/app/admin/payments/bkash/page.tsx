@@ -94,10 +94,10 @@ export default function AdminBkashPage() {
 
   const handleFillSandbox = () => {
     setFormData({
-      app_key: "sandbox_bkash_key_ecomxbd",
-      app_secret: "sandbox_bkash_secret_99882233",
-      username: "sandbox_merchant_ecomx",
-      password: "sandbox_pass_sec_4455",
+      app_key: "4f6o0cjiki2rfm34kfdadl1eqq",
+      app_secret: "2is7hdktrekvrbljjh44ll3d9l1dtjo4pasmjvs5vl5qr3fug4b",
+      username: "sandboxTokenizedUser02",
+      password: "sandboxTokenizedUser02@12345",
       environment: "sandbox",
       tokenized: true,
     });
@@ -341,6 +341,32 @@ export default function AdminBkashPage() {
                   description="Password for token grant endpoint."
                 />
               </div>
+
+              {formData.environment === "sandbox" && (
+                <div className="rounded-xl border border-pink-200 bg-pink-50/60 p-4 space-y-2 mt-4 text-[11px] text-pink-950">
+                  <div className="font-bold flex items-center gap-1.5 text-xs text-[#e91e63]">
+                    <Sparkles className="h-4 w-4 shrink-0" />
+                    Official bKash Developer Portal Sandbox Testing Credentials
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-mono text-[11px]">
+                    <div className="bg-white/90 rounded-lg p-2.5 border border-pink-200/80 shadow-2xs">
+                      <span className="text-gray-500 block text-[10px] uppercase font-sans font-semibold">Test Wallet No</span>
+                      <span className="font-bold text-gray-900 tracking-wider">01770618575</span>
+                    </div>
+                    <div className="bg-white/90 rounded-lg p-2.5 border border-pink-200/80 shadow-2xs">
+                      <span className="text-gray-500 block text-[10px] uppercase font-sans font-semibold">Test OTP</span>
+                      <span className="font-bold text-gray-900 tracking-wider">123456</span>
+                    </div>
+                    <div className="bg-white/90 rounded-lg p-2.5 border border-pink-200/80 shadow-2xs">
+                      <span className="text-gray-500 block text-[10px] uppercase font-sans font-semibold">Test PIN</span>
+                      <span className="font-bold text-gray-900 tracking-wider">12121</span>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-pink-800 font-sans mt-1">
+                    API Standard: Tokenized Checkout (v1.2.0-beta). Handshake communicates directly with bKash Sandbox PGW without deducting actual customer funds.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
