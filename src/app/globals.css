@@ -101,8 +101,8 @@ html, body {
 html[lang="bn"],
 html.lang-bn {
   --font-sans: var(--font-bengali), "Hind Siliguri", -apple-system, BlinkMacSystemFont, sans-serif;
-  font-size: 103%; /* Optical height compensation: prevents Hind Siliguri from appearing smaller than Inter */
-  line-height: 1.55;
+  font-size: 106%; /* Optical height compensation: prevents Hind Siliguri from appearing smaller than Inter */
+  line-height: 1.6;
 }
 
 html[lang="bn"],
@@ -127,6 +127,26 @@ html[lang="bn"] [class*="tracking-"],
 html.lang-bn [class*="tracking-"] {
   letter-spacing: 0.01em !important;
 }
+
+/* Optical scale protection: ensure Bengali text never looks tiny or cramped */
+html[lang="bn"] .text-xs,
+html.lang-bn .text-xs {
+  font-size: 0.8125rem; /* ~13px minimum legible size for Bengali characters */
+  line-height: 1.35;
+}
+
+html[lang="bn"] [class*="text-[9px]"],
+html.lang-bn [class*="text-[9px]"],
+html[lang="bn"] [class*="text-[10px]"],
+html.lang-bn [class*="text-[10px]"] {
+  font-size: 0.725rem !important; /* ~11.6px optical minimum */
+  line-height: 1.3 !important;
+}
+
+html[lang="bn"] h1, html.lang-bn h1 { font-weight: 800; }
+html[lang="bn"] h2, html.lang-bn h2 { font-weight: 800; }
+html[lang="bn"] h3, html.lang-bn h3 { font-weight: 800; }
+html[lang="bn"] h4, html.lang-bn h4 { font-weight: 700; }
 
 /* English Typography: Strictly Inter / Standard Sans (Never Hind Siliguri) */
 html[lang="en"],

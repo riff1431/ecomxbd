@@ -180,21 +180,18 @@ export function HomepageInteractive({
       </section>
 
       {/* ============================================================ */}
-      {/* 1.5 HOMEPAGE QUICK LANGUAGE & AUTHENTICITY BAR */}
+      {/* 1.5 HOMEPAGE AUTHENTICITY TRUST BAR */}
       {/* ============================================================ */}
-      {isSwitcherEnabled && showHomepageBar && (
-        <section className="container-main flex items-center justify-between gap-3 py-1 flex-wrap">
-          <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
-            <Sparkles className="h-4 w-4 text-[#e91e63] shrink-0" />
-            <span>
-              {language === "bn"
-                ? "১০০% খাঁটি ও অথেনটিক প্রসাধনী — সারা দেশে দ্রুত ডেলিভারি"
-                : "100% Genuine & Authentic Beauty Products — Fast Nationwide Delivery"}
-            </span>
-          </div>
-          <LanguageSwitcher variant="homepage-pill" />
-        </section>
-      )}
+      <section className="container-main py-1.5 sm:py-2">
+        <div className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50/70 to-pink-50 border border-pink-200/80 px-4 py-2 sm:py-2.5 text-center shadow-xs">
+          <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-[#e91e63] shrink-0" />
+          <span className="text-xs sm:text-sm md:text-base font-black text-gray-900 tracking-normal">
+            {language === "bn"
+              ? "১০০% খাঁটি ও অথেনটিক প্রসাধনী — সারা দেশে দ্রুত ডেলিভারি"
+              : "100% Genuine & Authentic Beauty Products — Fast Nationwide Delivery"}
+          </span>
+        </div>
+      </section>
 
       {/* ============================================================ */}
       {/* 2. POND'S MIRACLE ME SLIM STRIP BANNER */}
@@ -217,12 +214,12 @@ export function HomepageInteractive({
       {/* 3. DEALS YOU CANNOT MISS (Section 1: 4 Square Image Banners) */}
       {/* ============================================================ */}
       <section className="container-main">
-        <div className="text-center mb-4">
-          <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wide text-gray-900">
             {language === "bn" ? t("home", "dealsTitle") : "DEALS YOU CANNOT MISS"}
           </h2>
           {language === "bn" && (
-            <p className="text-xs text-gray-500 mt-1">{t("home", "dealsSubtitle")}</p>
+            <p className="text-xs sm:text-sm md:text-base font-semibold text-gray-600 mt-1">{t("home", "dealsSubtitle")}</p>
           )}
         </div>
 
@@ -248,12 +245,12 @@ export function HomepageInteractive({
       {/* 4. TOP BRANDS & OFFERS (Section 2: Separate 6 Brand Promo Cards) */}
       {/* ============================================================ */}
       <section className="container-main space-y-3">
-        <div className="text-center mb-4">
-          <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wide text-gray-900">
             {language === "bn" ? t("home", "topBrandsTitle") : "TOP BRANDS & OFFERS"}
           </h2>
           {language === "bn" && (
-            <p className="text-xs text-gray-500 mt-1">{t("home", "topBrandsSubtitle")}</p>
+            <p className="text-xs sm:text-sm md:text-base font-semibold text-gray-600 mt-1">{t("home", "topBrandsSubtitle")}</p>
           )}
         </div>
 
@@ -279,12 +276,12 @@ export function HomepageInteractive({
       {/* 5. LIMITED TIME OFFERS (4 Wavy/Curved Pink Badges) */}
       {/* ============================================================ */}
       <section className="container-main">
-        <div className="text-center mb-4">
-          <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wide text-gray-900">
             {language === "bn" ? t("home", "limitedOffersTitle") : "LIMITED TIME OFFERS"}
           </h2>
           {language === "bn" && (
-            <p className="text-xs text-gray-500 mt-1">{t("home", "limitedOffersSubtitle")}</p>
+            <p className="text-xs sm:text-sm md:text-base font-semibold text-gray-600 mt-1">{t("home", "limitedOffersSubtitle")}</p>
           )}
         </div>
 
@@ -299,7 +296,7 @@ export function HomepageInteractive({
               }}
             >
               {/* Slanted Navy Blue Ribbon Badge */}
-              <div className="bg-[#1e1b4b] text-white text-[9px] sm:text-[11px] font-black px-3.5 py-1 rounded-sm shadow-xs -rotate-3 uppercase tracking-wider mb-2 transform transition-transform group-hover:rotate-0">
+              <div className="bg-[#1e1b4b] text-white text-[10px] sm:text-xs font-black px-3.5 py-1 rounded-sm shadow-xs -rotate-3 uppercase tracking-wider mb-2 transform transition-transform group-hover:rotate-0">
                 {offer.ribbonText}
               </div>
 
@@ -316,12 +313,12 @@ export function HomepageInteractive({
       {/* 6. SHOP BEAUTY PRODUCTS BY CATEGORY (Girl Model Cards - Shajgoj Style) */}
       {/* ============================================================ */}
       <section className="container-main">
-        <div className="text-center mb-4">
-          <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wide text-gray-900">
             {language === "bn" ? t("home", "shopByCategoryTitle") : "SHOP BEAUTY PRODUCTS BY CATEGORY"}
           </h2>
           {language === "bn" && (
-            <p className="text-xs text-gray-500 mt-1">{t("home", "shopByCategorySubtitle")}</p>
+            <p className="text-xs sm:text-sm md:text-base font-semibold text-gray-600 mt-1">{t("home", "shopByCategorySubtitle")}</p>
           )}
         </div>
 
@@ -349,14 +346,14 @@ export function HomepageInteractive({
 
               {/* Top Category Title */}
               <div className="relative z-10 pt-3 sm:pt-4 px-2 text-center w-full">
-                <span className="font-black text-xs sm:text-sm md:text-base text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
+                <span className="font-black text-sm sm:text-base md:text-lg text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
                   {cat.name}
                 </span>
               </div>
 
               {/* Bottom Subtle Pill */}
               <div className="relative z-10 pb-2.5 px-2 text-center w-full">
-                <span className="inline-block rounded-full bg-white/25 backdrop-blur-xs px-2.5 py-0.5 text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider group-hover:bg-[#e91e63] group-hover:text-white transition-colors shadow-xs">
+                <span className="inline-block rounded-full bg-white/25 backdrop-blur-xs px-2.5 py-0.5 text-xs font-bold text-white uppercase tracking-wider group-hover:bg-[#e91e63] group-hover:text-white transition-colors shadow-xs">
                   {language === "bn" ? "কিনুন" : "SHOP NOW"}
                 </span>
               </div>
@@ -395,16 +392,16 @@ export function HomepageInteractive({
       <section className="container-main space-y-4">
         <div className="flex items-center justify-between border-b border-gray-200 pb-2">
           <div>
-            <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
+            <h2 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wide text-gray-900">
               {language === "bn" ? t("home", "trendingTitle") : trendingTitle}
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs sm:text-sm font-semibold text-gray-600 mt-0.5">
               {language === "bn" ? t("home", "trendingSubtitle") : trendingSubtitle}
             </p>
           </div>
           <Link
             href="/products"
-            className="text-xs sm:text-sm font-bold text-[#e91e63] hover:underline flex items-center gap-1 group"
+            className="text-xs sm:text-sm md:text-base font-bold text-[#e91e63] hover:underline flex items-center gap-1 group"
           >
             <span>{language === "bn" ? t("home", "trendingViewAll") : trendingViewAllText}</span>
           </Link>
@@ -439,8 +436,8 @@ export function HomepageInteractive({
               >
                 {renderTrustIcon(tp.iconName, tp.imageUrl)}
                 <div>
-                  <h4 className="text-xs sm:text-sm font-black text-gray-900">{title}</h4>
-                  <p className="text-[11px] sm:text-xs text-gray-500">{subtitle}</p>
+                  <h4 className="text-xs sm:text-sm md:text-base font-black text-gray-900">{title}</h4>
+                  <p className="text-[11px] sm:text-xs md:text-sm text-gray-500">{subtitle}</p>
                 </div>
               </div>
             );

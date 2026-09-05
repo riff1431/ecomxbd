@@ -250,7 +250,7 @@ export function ProductCard({
             style={{ position: "absolute", bottom: "0px", left: "0px", right: "0px", zIndex: 10 }}
             className="bg-[#e91e63] py-1 text-center shadow-xs pointer-events-none"
           >
-            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white">
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-white">
               {language === "bn" ? "ফ্রি ডেলিভারি" : (cardSettings?.freeShippingText || "FREE SHIPPING")}
             </span>
           </div>
@@ -269,7 +269,7 @@ export function ProductCard({
         {/* Product Title */}
         <Link
           href={`/products/${product.slug}`}
-          className="line-clamp-2 text-xs sm:text-sm font-bold text-gray-900 leading-tight hover:text-[#e91e63] transition-colors min-h-8"
+          className="line-clamp-2 text-xs sm:text-sm font-bold text-gray-900 leading-snug hover:text-[#e91e63] transition-colors min-h-8"
           title={product.name}
         >
           {product.name}
@@ -287,7 +287,7 @@ export function ProductCard({
                 <Star className="h-3 w-3 fill-current" />
                 <Star className="h-3 w-3 fill-current text-amber-200" />
               </div>
-              <span className="text-[10px] text-gray-500 font-semibold">
+              <span className="text-[11px] text-gray-600 font-bold">
                 ({toBn(product.rating ? product.rating.toFixed(1) : "4.3")})
               </span>
             </div>
@@ -295,7 +295,7 @@ export function ProductCard({
 
           {/* Size / Volume Pill Badge */}
           {cardSettings?.showSizeBadge !== false && detectedSize && (
-            <span className="rounded-md bg-pink-50 border border-pink-100 px-1.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-[#e91e63] whitespace-nowrap">
+            <span className="rounded-md bg-pink-50 border border-pink-100 px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-[#e91e63] whitespace-nowrap">
               {detectedSize}
             </span>
           )}

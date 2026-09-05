@@ -29,7 +29,7 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { itemCount, openCart } = useCart();
   const { wishlistCount } = useWishlist();
-  const { t, toBn } = useLanguage();
+  const { language, t, toBn } = useLanguage();
 
   // Don't show in admin dashboard or checkout
   if (pathname.startsWith("/admin") || pathname.startsWith("/checkout")) return null;
@@ -95,8 +95,9 @@ export function MobileBottomNav() {
               </div>
               <span
                 className={cn(
-                  "mt-1 text-[10px] sm:text-[11px] font-bold transition-colors leading-tight",
-                  item.isActive ? "text-[#e91e63]" : "text-gray-600"
+                  "mt-1 font-extrabold transition-colors leading-tight",
+                  language === "bn" ? "text-[11.5px]" : "text-[10px] sm:text-[11px]",
+                  item.isActive ? "text-[#e91e63]" : "text-gray-700"
                 )}
               >
                 {item.label}

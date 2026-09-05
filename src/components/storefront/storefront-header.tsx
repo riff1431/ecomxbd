@@ -433,10 +433,10 @@ export function StorefrontHeader() {
           {/* Mobile Single-Line Compact View (< 640px) */}
           <div className="flex items-center justify-between gap-2 sm:hidden w-full">
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
-              <span className="shrink-0 rounded-full bg-sg-pink px-2 py-0.5 text-[8.5px] font-black text-white uppercase tracking-wider">
+              <span className="shrink-0 rounded-full bg-sg-pink px-2 py-0.5 text-[9.5px] font-black text-white uppercase tracking-wider">
                 {t("header", "announcementBadge")}
               </span>
-              <span className="truncate text-zinc-300 font-medium text-[10.5px]">
+              <span className="truncate text-zinc-200 font-semibold text-[11.5px] sm:text-xs">
                 {t("header", "announcementText")}
               </span>
             </div>
@@ -449,10 +449,10 @@ export function StorefrontHeader() {
 
           {/* Desktop & Tablet View (>= 640px) */}
           <div className="hidden sm:flex items-center gap-2 flex-1">
-            <span className="rounded-full bg-sg-pink px-2 py-0.5 text-[9px] font-black text-white uppercase tracking-wider">
+            <span className="rounded-full bg-sg-pink px-2.5 py-0.5 text-[10px] font-black text-white uppercase tracking-wider">
               {t("header", "announcementBadge")}
             </span>
-            <span className="text-zinc-300 font-medium text-[11px] sm:text-xs">
+            <span className="text-zinc-200 font-semibold text-xs sm:text-sm">
               {t("header", "announcementText")}
             </span>
           </div>
