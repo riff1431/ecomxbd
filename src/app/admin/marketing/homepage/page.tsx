@@ -23,6 +23,8 @@ import {
   UserCheck,
   FileText,
   Banknote,
+  HelpCircle,
+  PanelBottom,
 } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import {
@@ -39,6 +41,8 @@ import {
   DEFAULT_HOMEPAGE_CONFIG,
 } from "@/features/marketing/homepage-types";
 import { ImageUploadDropzone } from "@/components/shared/image-upload-dropzone";
+import { HomepageSeoFaqEditor } from "@/components/admin/marketing/homepage-seo-faq-editor";
+import { HomepageFooterEditor } from "@/components/admin/marketing/homepage-footer-editor";
 
 export default function AdminHomepageManagerPage() {
   const [loading, setLoading] = useState(true);
@@ -54,6 +58,8 @@ export default function AdminHomepageManagerPage() {
     | "beforeAfter"
     | "trending"
     | "trust"
+    | "seoFaq"
+    | "footer"
     | "campaignPills"
     | "header"
     | "customerRules"
@@ -72,12 +78,21 @@ export default function AdminHomepageManagerPage() {
 
   useEffect(() => {
     Promise.all([getHomepageConfig(), getCheckoutSettings()]).then(([data, checkoutData]) => {
-      const merged = {
+      const merged: HomepageFullConfig = {
         ...DEFAULT_HOMEPAGE_CONFIG,
         ...(data || {}),
         headerConfig: {
           ...DEFAULT_HOMEPAGE_CONFIG.headerConfig,
           ...(data?.headerConfig || {}),
+        },
+        faqSection: {
+          ...DEFAULT_HOMEPAGE_CONFIG.faqSection!,
+          ...(data?.faqSection || {}),
+          faqs: data?.faqSection?.faqs?.length ? data.faqSection.faqs : DEFAULT_HOMEPAGE_CONFIG.faqSection!.faqs,
+        },
+        footerConfig: {
+          ...DEFAULT_HOMEPAGE_CONFIG.footerConfig!,
+          ...(data?.footerConfig || {}),
         },
       };
       setConfig(merged);
@@ -210,6 +225,8 @@ export default function AdminHomepageManagerPage() {
           { id: "beforeAfter", label: "Before/After Beauty Tech", icon: ArrowLeftRight },
           { id: "trending", label: "Trending Products Header", icon: ShoppingBag },
           { id: "trust", label: "Trust Pillars", icon: ShieldCheck },
+          { id: "seoFaq", label: "SEO Guide & FAQs", icon: HelpCircle },
+          { id: "footer", label: "Footer & Contact", icon: PanelBottom },
           { id: "campaignPills", label: "Header Campaign Badges", icon: Sliders },
           { id: "header", label: "Header, Logo & Mega Menu", icon: Type },
           { id: "customerRules", label: "Customer Login & Checkout Rules", icon: UserCheck },
@@ -2132,6 +2149,16 @@ export default function AdminHomepageManagerPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* 13. SEO & HUMANIZED FAQ SECTION */}
+        {activeTab === "seoFaq" && (
+          <HomepageSeoFaqEditor config={config} onChange={setConfig} />
+        )}
+
+        {/* 14. FOOTER & CONTACT CONTROLS */}
+        {activeTab === "footer" && (
+          <HomepageFooterEditor config={config} onChange={setConfig} />
         )}
 
         {/* Floating Save Button */}

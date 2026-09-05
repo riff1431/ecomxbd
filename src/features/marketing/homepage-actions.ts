@@ -26,6 +26,15 @@ export async function getHomepageConfig(): Promise<HomepageFullConfig> {
         shopByCategories: parsed.shopByCategories?.length > 0 ? parsed.shopByCategories : DEFAULT_HOMEPAGE_CONFIG.shopByCategories,
         campaignPills: parsed.campaignPills?.length > 0 ? parsed.campaignPills : DEFAULT_HOMEPAGE_CONFIG.campaignPills,
         trustPillars: parsed.trustPillars?.length > 0 ? parsed.trustPillars : DEFAULT_HOMEPAGE_CONFIG.trustPillars,
+        faqSection: {
+          ...DEFAULT_HOMEPAGE_CONFIG.faqSection,
+          ...(parsed.faqSection || {}),
+          faqs: parsed.faqSection?.faqs?.length > 0 ? parsed.faqSection.faqs : DEFAULT_HOMEPAGE_CONFIG.faqSection?.faqs,
+        },
+        footerConfig: {
+          ...DEFAULT_HOMEPAGE_CONFIG.footerConfig,
+          ...(parsed.footerConfig || {}),
+        },
       };
     }
   } catch {

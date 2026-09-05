@@ -109,11 +109,85 @@ const CMS_PAGES: Record<
       </div>
     ),
   },
+  faq: {
+    title: "Frequently Asked Questions (FAQ)",
+    subtitle: "Quick Answers on Orders, Authenticity, Delivery & Returns",
+    lastUpdated: "August 2026",
+    content: (
+      <div className="space-y-6 text-sm text-text-secondary leading-relaxed">
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-xs">
+          <h4 className="font-bold text-text text-base">১. আপনাদের প্রোডাক্ট কি ১০০% আসল ও অরিজিনাল?</h4>
+          <p className="text-xs text-text-muted mt-2 leading-relaxed">
+            হ্যাঁ, আমাদের প্রতিটি প্রোডাক্ট সরাসরি ব্র্যান্ড বা অনুমোদিত আন্তর্জাতিক ডিস্ট্রিবিউটর (কোরিয়া, ইউকে, ইউএসএ) থেকে আমদানি করা। নকল প্রমাণিত হলে ৩০০% মানিব্যাক গ্যারান্টি।
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-xs">
+          <h4 className="font-bold text-text text-base">২. ডেলিভারি পেতে কত সময় লাগে?</h4>
+          <p className="text-xs text-text-muted mt-2 leading-relaxed">
+            ঢাকা সিটির ভেতরে ২৪ থেকে ৪৮ ঘণ্টার মধ্যে এবং ঢাকার বাইরে ৩ থেকে ৫ কার্যদিবসের মধ্যে SteadFast / Pathao কুরিয়ারের মাধ্যমে ডেলিভারি সম্পন্ন করা হয়।
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-xs">
+          <h4 className="font-bold text-text text-base">৩. ডেলিভারির সময় কি চেক করে নেওয়া যাবে?</h4>
+          <p className="text-xs text-text-muted mt-2 leading-relaxed">
+            অবশ্যই! ক্যাশ অন ডেলিভারিতে রাইডারের সামনে পার্সেলটি চেক করে মূল্য পরিশোধ করতে পারবেন।
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-xs">
+          <h4 className="font-bold text-text text-base">৪. সমস্যা হলে রিটার্ন বা পরিবর্তন কীভাবে করব?</h4>
+          <p className="text-xs text-text-muted mt-2 leading-relaxed">
+            ডেলিভারি পাওয়ার ৭ দিনের মধ্যে আমাদের সাপোর্ট নম্বরে (+880 1700-000000) অথবা ফেসবুক পেজে আনবক্সিং ভিডিও সহ মেসেজ দিন। আমাদের কুরিয়ার প্রতিনিধি সরাসরি আপনার বাসা থেকে পার্সেলটি পিকআপ করে নিবেন।
+          </p>
+        </div>
+      </div>
+    ),
+  },
+  contact: {
+    title: "Contact & Customer Care",
+    subtitle: "We are here to assist you 7 days a week",
+    lastUpdated: "August 2026",
+    content: (
+      <div className="space-y-6 text-sm text-text-secondary leading-relaxed">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="rounded-2xl border border-border bg-white p-5 text-center shadow-xs">
+            <h4 className="font-bold text-text text-base">Hotline</h4>
+            <p className="text-xs text-text-muted mt-1">+880 1700-000000</p>
+            <p className="text-[11px] text-text-muted mt-0.5">10:00 AM - 10:00 PM</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-white p-5 text-center shadow-xs">
+            <h4 className="font-bold text-text text-base">Email Support</h4>
+            <p className="text-xs text-text-muted mt-1">support@example.com</p>
+            <p className="text-[11px] text-text-muted mt-0.5">Response within 2 hours</p>
+          </div>
+          <div className="rounded-2xl border border-border bg-white p-5 text-center shadow-xs">
+            <h4 className="font-bold text-text text-base">Headquarters</h4>
+            <p className="text-xs text-text-muted mt-1">Gulshan, Dhaka, Bangladesh</p>
+            <p className="text-[11px] text-text-muted mt-0.5">Nationwide Express Delivery</p>
+          </div>
+        </div>
+      </div>
+    ),
+  },
+};
+
+// Aliases mapping so alternate slugs like return-policy, privacy-policy, terms-and-conditions all resolve
+const SLUG_ALIASES: Record<string, string> = {
+  "return-policy": "returns",
+  "returns-policy": "returns",
+  "privacy-policy": "privacy",
+  "terms-and-conditions": "terms",
+  "terms-conditions": "terms",
+  "about-us": "about",
+  "help": "faq",
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const page = CMS_PAGES[slug];
+  const resolvedSlug = SLUG_ALIASES[slug] || slug;
+  const page = CMS_PAGES[resolvedSlug];
   if (!page) return { title: "Page Not Found" };
   return {
     title: `${page.title} — Blush & Budget`,
@@ -123,7 +197,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function CmsPublicPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const page = CMS_PAGES[slug];
+  const resolvedSlug = SLUG_ALIASES[slug] || slug;
+  const page = CMS_PAGES[resolvedSlug];
 
   if (!page) {
     notFound();

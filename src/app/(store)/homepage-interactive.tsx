@@ -21,6 +21,7 @@ import {
 } from "@/features/marketing/homepage-types";
 import { useLanguage } from "@/context/language-context";
 import { LanguageSwitcher } from "@/components/storefront/language-switcher";
+import { HomepageSeoFaq } from "@/components/storefront/homepage-seo-faq";
 
 interface HomepageInteractiveProps {
   products: ProductCardData[];
@@ -435,6 +436,13 @@ export function HomepageInteractive({
           })}
         </div>
       </section>
+
+      {/* ============================================================ */}
+      {/* 10. HOMEPAGE SEO & HUMANIZED FAQ SECTION (Admin Controlled) */}
+      {/* ============================================================ */}
+      {config?.faqSection?.enabled !== false && (
+        <HomepageSeoFaq config={config?.faqSection} />
+      )}
     </div>
   );
 }

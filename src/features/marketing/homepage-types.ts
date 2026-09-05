@@ -97,6 +97,71 @@ export interface BeforeAfterConfig {
   buttonHref: string;
 }
 
+export interface HomepageFaqItem {
+  id: string;
+  question: string;
+  questionBn?: string;
+  answer: string;
+  answerBn?: string;
+  category?: string;
+}
+
+export interface HomepageFaqSectionConfig {
+  enabled: boolean;
+  heading: string;
+  headingBn?: string;
+  subtitle: string;
+  subtitleBn?: string;
+  seoDescriptionHtml?: string;
+  seoDescriptionHtmlBn?: string;
+  faqs: HomepageFaqItem[];
+}
+
+export interface FooterLinkItem {
+  label: string;
+  labelBn?: string;
+  href: string;
+  badge?: string;
+  isHighlight?: boolean;
+}
+
+export interface FooterConfig {
+  brandText?: string;
+  logoImageUrl?: string;
+  aboutText?: string;
+  aboutTextBn?: string;
+  copyrightText?: string;
+  supportPhone?: string;
+  supportEmail?: string;
+  supportAddress?: string;
+  supportAddressBn?: string;
+  supportWhatsapp?: string;
+  newsletterTitle?: string;
+  newsletterTitleBn?: string;
+  newsletterSubtitle?: string;
+  newsletterSubtitleBn?: string;
+  showTrustPillars?: boolean;
+  showNewsletter?: boolean;
+  showPaymentBadges?: boolean;
+  showSocialLinks?: boolean;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    youtube?: string;
+    tiktok?: string;
+    whatsapp?: string;
+  };
+  acceptedPaymentMethods?: {
+    bkash?: boolean;
+    nagad?: boolean;
+    visa?: boolean;
+    mastercard?: boolean;
+    cod?: boolean;
+  };
+  categoryLinks?: FooterLinkItem[];
+  customerCareLinks?: FooterLinkItem[];
+}
+
 export interface HomepageFullConfig {
   headerConfig: HeaderConfig;
   announcementBadgeText: string;
@@ -122,6 +187,8 @@ export interface HomepageFullConfig {
   trendingViewAllText: string;
   cardSettings: ProductCardConfig;
   trustPillars: TrustPillarItem[];
+  faqSection?: HomepageFaqSectionConfig;
+  footerConfig?: FooterConfig;
   footerBrandText?: string;
   footerLogoImageUrl?: string;
   footerAboutText?: string;
@@ -475,9 +542,130 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
     { id: "tp-4", title: "Easy Returns", subtitle: "7-Day Return Policy", iconName: "rotate" },
   ],
 
-  // 9. Footer
+  // 9. SEO & Humanized FAQ Section (Inspired by Beauty Booth & Ogerio)
+  faqSection: {
+    enabled: true,
+    heading: "Frequently Asked Questions & Beauty Guide",
+    headingBn: "প্রয়োজনীয় প্রশ্নোত্তর ও বিউটি শপিং গাইড",
+    subtitle: "Everything you need to know about authentic cosmetics, delivery, and skincare in Bangladesh",
+    subtitleBn: "বাংলাদেশে ১০০% অথেনটিক কসমেটিকস, দ্রুত ডেলিভারি ও স্কিনকেয়ার সম্পর্কিত সাধারণ তথ্যাবলী",
+    seoDescriptionHtml:
+      "Welcome to <strong>Blush &amp; Budget</strong>, your premier destination for 100% authentic international skincare, hair care, and beauty products in Bangladesh. We bring you the most beloved Korean, Japanese, UK, and USA brands directly from authorized distributors. From cult-favorite snail mucin essences and soothing centella serums to dermatologist-tested cleansers and sunscreens, every item is guaranteed original with nationwide Cash on Delivery and dedicated customer support.",
+    seoDescriptionHtmlBn:
+      "<strong>ব্লাশ অ্যান্ড বাজেট (Blush &amp; Budget)</strong>-এ আপনাকে স্বাগতম। আমরা বাংলাদেশে ১০০% খাঁটি ও সার্টিফাইড আন্তর্জাতিক স্কিনকেয়ার, হেয়ার কেয়ার এবং মেকআপের নির্ভরযোগ্য প্ল্যাটফর্ম। কোরিয়ান গ্লাস স্কিন রুটিন থেকে শুরু করে ইউকে এবং ইউএসএ-এর স্বনামধন্য ডার্মাটোলজিক্যাল ব্র্যান্ডগুলো সরাসরি অনুমোদিত ডিস্ট্রিবিউটর থেকে সংগ্রহ করে সারা বাংলাদেশে ক্যাশ অন ডেলিভারিতে দ্রুত পৌঁছে দেওয়া হয়।",
+    faqs: [
+      {
+        id: "faq-1",
+        category: "Authenticity & Quality",
+        question: "How can I be sure that the products on Blush & Budget are 100% authentic?",
+        questionBn: "আপনাদের প্রোডাক্টগুলো যে ১০০% আসল ও অরিজিনাল, তা কীভাবে নিশ্চিত হব?",
+        answer:
+          "Every product in our inventory is directly procured from official brand partners or authorized global distributors in Seoul, London, and Dubai. Every item features original manufacturer batch codes verifiable on international batch checkers like CheckFresh, hygiene seals, and authentic hologram stickers. If proven non-authentic, we offer an unconditional 300% money-back guarantee.",
+        answerBn:
+          "আমাদের প্রতিটি পণ্য সরাসরি ব্র্যান্ড অথবা আন্তর্জাতিক অনুমোদিত ডিস্ট্রিবিউটর থেকে সরাসরি আমদানি করা হয়। প্রতিটি বক্সে আসল ব্যাচ কোড, সিল ও হলোগ্রাম স্টিকার থাকে যা CheckFresh বা ব্র্যান্ড অ্যাপে ভেরিফাই করা যায়। কোনো পণ্য নকল প্রমাণিত হলে আমরা ৩০০% মানিব্যাক গ্যারান্টি প্রদান করি।",
+      },
+      {
+        id: "faq-2",
+        category: "Delivery & Courier",
+        question: "How fast is delivery, and do you offer Cash on Delivery across all 64 districts?",
+        questionBn: "ডেলিভারি পেতে কত দিন সময় লাগে এবং সারা বাংলাদেশে কি ক্যাশ অন ডেলিভারি আছে?",
+        answer:
+          "Yes! We offer nationwide Cash on Delivery (COD) across all 64 districts in Bangladesh via SteadFast and Pathao Courier. Delivery within Dhaka City takes 24 to 48 hours, while deliveries outside Dhaka typically arrive within 3 to 5 business days with real-time SMS tracking updates.",
+        answerBn:
+          "হ্যাঁ! সমগ্র বাংলাদেশের ৬৪টি জেলা ও থানা পর্যায়ে SteadFast এবং Pathao কুরিয়ারের মাধ্যমে হোম ডেলিভারি ক্যাশ অন ডেলিভারি (COD) সুবিধা রয়েছে। ঢাকা সিটির মধ্যে ২৪-৪৮ ঘণ্টা এবং ঢাকার বাইরে ৩-৫ কার্যদিবসের মধ্যে আপনার দোরগোড়ায় পার্সেল পৌঁছে দেওয়া হয়।",
+      },
+      {
+        id: "faq-3",
+        category: "Doorstep Inspection",
+        question: "Can I inspect the parcel before paying the delivery rider?",
+        questionBn: "ডেলিভারিম্যানের সামনে পার্সেলটি কি খুলে চেক করে নেওয়া যাবে?",
+        answer:
+          "Absolutely! We encourage all our valued customers to inspect the outer packaging and ensure the ordered items are intact before handing over the payment to the delivery rider.",
+        answerBn:
+          "অবশ্যই! আমাদের সম্মানিত গ্রাহকদের সুবিধার্থে ক্যাশ অন ডেলিভারিতে ডেলিভারিম্যানের সামনে পার্সেলটি ভালো করে চেক করে মূল্য পরিশোধ করার সম্পূর্ণ স্বাধীনতা রয়েছে।",
+      },
+      {
+        id: "faq-4",
+        category: "Returns & Exchanges",
+        question: "What is your return or replacement policy if I receive a damaged product?",
+        questionBn: "প্রোডাক্টে কোনো সমস্যা হলে রিটার্ন বা পরিবর্তনের নিয়ম কী?",
+        answer:
+          "We provide a hassle-free 7-day replacement guarantee. If your product is damaged during transit, leaked, or has a manufacturing defect, simply contact our support hotline or WhatsApp with an unboxing video within 7 days. We will arrange a free courier pickup from your home and dispatch a fresh replacement immediately.",
+        answerBn:
+          "আমাদের রয়েছে সহজ ৭ দিনের রিটার্ন ও রিপ্লেসমেন্ট সুবিধা। কোনো কারণে ক্ষতিগ্রস্ত পার্সেল বা ভুল প্রোডাক্ট পৌঁছালে আনবক্সিং ভিডিও সহ আমাদের সাপোর্ট নম্বরে জানান। আমাদের কুরিয়ার প্রতিনিধি সরাসরি আপনার বাসা থেকে পার্সেল নিয়ে আসবেন এবং সম্পূর্ণ ফ্রিতে নতুন প্রোডাক্ট পাঠানো হবে।",
+      },
+      {
+        id: "faq-5",
+        category: "Skincare Advice",
+        question: "Can I get customized skincare consultation for my skin type?",
+        questionBn: "আমার ত্বকের ধরন অনুযায়ী কি ফ্রি স্কিনকেয়ার পরামর্শ পেতে পারি?",
+        answer:
+          "Yes! Our trained beauty advisors are available on WhatsApp, live chat, and hotline to help you choose the right cleanser, toner, serum, or moisturizer for acne, pigmentation, dryness, or anti-aging based on your unique skin profile.",
+        answerBn:
+          "অবশ্যই! আপনার ত্বকের সমস্যা (যেমন: ব্রণের দাগ, রোদে পোড়া ভাব, বয়সের ছাপ বা শুষ্কতা) অনুযায়ী সঠিক প্রোডাক্ট বেছে নিতে আমাদের বিউটি এক্সপার্টরা হোয়াটসঅ্যাপ ও লাইভ সাপোর্টে সম্পূর্ণ বিনামূল্যে পরামর্শ দিয়ে থাকেন।",
+      },
+    ],
+  },
+
+  // 10. Footer Comprehensive Configuration
+  footerConfig: {
+    brandText: "Blush & Budget",
+    logoImageUrl: "",
+    aboutText:
+      "Bangladesh's most trusted beauty and personal care destination for 100% authentic international skincare, hair care, and cosmetics with nationwide Cash on Delivery.",
+    aboutTextBn:
+      "বাংলাদেশের সবচেয়ে নির্ভরযোগ্য বিউটি ও স্কিনকেয়ার গন্তব্য। ১০০% অরিজিনাল কোরিয়ান ও ওয়েস্টার্ন কসমেটিকস সারা দেশে ক্যাশ অন ডেলিভারিতে দ্রুত পৌঁছানো হয়।",
+    copyrightText: "© 2026 Blush & Budget. All rights reserved. 100% Genuine Certified Cosmetics.",
+    supportPhone: "+880 1700-000000",
+    supportEmail: "support@example.com",
+    supportAddress: "Gulshan, Dhaka, Bangladesh",
+    supportAddressBn: "গুলশান, ঢাকা, বাংলাদেশ",
+    supportWhatsapp: "+880 1700-000000",
+    newsletterTitle: "Get Exclusive Deals & Beauty Tips",
+    newsletterTitleBn: "এক্সক্লুসিভ অফার ও বিউটি টিপস পান",
+    newsletterSubtitle: "Subscribe for new arrivals, flash sale coupons & skincare routine guides.",
+    newsletterSubtitleBn: "নতুন প্রোডাক্ট রিলিজ, ডিসকাউন্ট ভাউচার ও স্কিনকেয়ার গাইড পেতে সাবস্ক্রাইব করুন।",
+    showTrustPillars: true,
+    showNewsletter: true,
+    showPaymentBadges: true,
+    showSocialLinks: true,
+    socialLinks: {
+      facebook: "https://facebook.com",
+      instagram: "https://instagram.com",
+      youtube: "https://youtube.com",
+      tiktok: "https://tiktok.com",
+      whatsapp: "https://wa.me/8801700000000",
+    },
+    acceptedPaymentMethods: {
+      bkash: true,
+      nagad: true,
+      visa: true,
+      mastercard: true,
+      cod: true,
+    },
+    categoryLinks: [
+      { label: "Skin Care", labelBn: "স্কিন কেয়ার", href: "/products?category=skin-care" },
+      { label: "Hair Care", labelBn: "হেয়ার কেয়ার", href: "/products?category=hair-care" },
+      { label: "Makeup", labelBn: "মেকআপ", href: "/products?category=makeup" },
+      { label: "Body Care", labelBn: "বডি কেয়ার", href: "/products?category=body-care" },
+      { label: "Top Brands", labelBn: "শীর্ষ ব্র্যান্ডসমূহ", href: "/brands" },
+      { label: "Beauty Journal & Guides", labelBn: "বিউটি জার্নাল ও গাইড", href: "/blog", isHighlight: true },
+      { label: "Special Offers", labelBn: "স্পেশাল অফার", href: "/products?discount=true", isHighlight: true },
+    ],
+    customerCareLinks: [
+      { label: "My Account", labelBn: "আমার অ্যাকাউন্ট", href: "/account" },
+      { label: "Track Order", labelBn: "অর্ডার ট্র্যাক", href: "/track-order", isHighlight: true },
+      { label: "Wishlist", labelBn: "উইশলিস্ট", href: "/wishlist" },
+      { label: "Return Policy", labelBn: "রিটার্ন পলিসি", href: "/page/returns" },
+      { label: "Terms & Conditions", labelBn: "শর্তাবলী ও নিয়মাবলী", href: "/page/terms" },
+      { label: "Privacy Policy", labelBn: "গোপনীয়তা নীতি", href: "/page/privacy" },
+      { label: "FAQ & Help Center", labelBn: "প্রশ্নোত্তর ও হেল্প সেন্টার", href: "/page/faq" },
+    ],
+  },
+
   footerBrandText: "Blush & Budget",
   footerLogoImageUrl: "",
-  footerAboutText: "Bangladesh's most trusted beauty and personal care destination for 100% authentic international skincare, hair care, and cosmetics with nationwide Cash on Delivery.",
+  footerAboutText:
+    "Bangladesh's most trusted beauty and personal care destination for 100% authentic international skincare, hair care, and cosmetics with nationwide Cash on Delivery.",
   footerCopyright: "© 2026 Blush & Budget. All rights reserved. 100% Genuine Certified Cosmetics.",
 };
