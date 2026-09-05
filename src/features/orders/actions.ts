@@ -127,6 +127,16 @@ export async function createOrder(input: CreateOrderInput) {
 
     const supabaseAdmin = createAdminClient();
 
+    // 0. Validate Genuine Bangladeshi Mobile Number
+    const { validateBdPhoneNumber } = await import("@/lib/validation/bangladesh-phone");
+    const phoneCheck = validateBdPhoneNumber(input.customer.phone);
+    if (!phoneCheck.isValid) {
+      return {
+        error: phoneCheck.errorMessage || "Please provide a valid 11-digit Bangladeshi mobile number.",
+      };
+    }
+    const verifiedPhone = phoneCheck.cleanPhone;
+
     // 1. Calculate and re-verify Subtotal
     let subtotal = 0;
     const validatedItems: any[] = [];
@@ -225,7 +235,7 @@ export async function createOrder(input: CreateOrderInput) {
         order_number: orderNumber,
         user_id: user?.id || null,
         guest_name: input.customer.name,
-        guest_phone: input.customer.phone,
+        guest_phone: verifiedPhone,
         guest_email: input.customer.email || null,
         is_guest: !user,
         subtotal,
@@ -238,7 +248,7 @@ export async function createOrder(input: CreateOrderInput) {
         shipping_method: input.shipping.method,
         shipping_address_snapshot: {
           name: input.customer.name,
-          phone: input.customer.phone,
+          phone: verifiedPhone,
           email: input.customer.email || null,
           district: input.customer.district,
           thana: input.customer.thana,

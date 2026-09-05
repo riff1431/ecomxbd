@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -15,12 +15,15 @@ import {
   AlertCircle,
   UserCheck,
   Phone,
+  Smartphone,
   MapPin,
   Sparkles,
   KeyRound,
   ShieldAlert,
   Clock,
+  Check,
 } from "lucide-react";
+import { validateBdPhoneNumber, cleanBdPhoneNumber } from "@/lib/validation/bangladesh-phone";
 import { useCart } from "@/context/cart-context";
 import { formatPrice, cn } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
@@ -84,6 +87,11 @@ export default function CheckoutPage() {
     address: "",
     notes: "",
   });
+
+  // Real-Time Live Bangladeshi Phone Number Validation & Fake Detection
+  const phoneValidation = useMemo(() => {
+    return validateBdPhoneNumber(formData.phone, (language === "bn" ? "bn" : "en"));
+  }, [formData.phone, language]);
 
   // OTP Verification Modal State
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -328,8 +336,13 @@ export default function CheckoutPage() {
       setErrorMsg("Please enter your Full Name.");
       return;
     }
-    if (!formData.phone.trim()) {
-      setErrorMsg("Please enter your 11-digit mobile number.");
+    if (!phoneValidation.isValid) {
+      setErrorMsg(
+        phoneValidation.errorMessage ||
+          (language === "bn"
+            ? "অর্ডার সম্পন্ন করতে অনুগ্রহ করে একটি সঠিক ১১ ডিজিটের বাংলাদেশি মোবাইল নম্বর দিন।"
+            : "Please enter a valid 11-digit Bangladeshi mobile number before placing your order.")
+      );
       return;
     }
     if (!formData.address.trim()) {
@@ -493,9 +506,16 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <label className="block font-bold text-text mb-1">
-                    {t("checkout", "phone")} <span className="text-red-500">*</span>
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block font-bold text-text">
+                      {t("checkout", "phone")} <span className="text-red-500">*</span>
+                    </label>
+                    {phoneValidation.operatorName && (
+                      <span className="text-[10px] font-black uppercase text-[#e91e63] bg-pink-50 px-2 py-0.5 rounded-md border border-pink-200 animate-in fade-in-0">
+                        {phoneValidation.operatorName}
+                      </span>
+                    )}
+                  </div>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted font-bold text-xs">
                       +88
@@ -504,11 +524,66 @@ export default function CheckoutPage() {
                       type="tel"
                       required
                       placeholder="017XXXXXXXX"
+                      maxLength={14}
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full rounded-xl border border-border pl-12 pr-3.5 py-2.5 text-xs font-mono text-text focus:outline-none focus:border-primary-500 font-bold"
+                      onChange={(e) => {
+                        const cleaned = cleanBdPhoneNumber(e.target.value);
+                        setFormData({ ...formData, phone: cleaned.slice(0, 11) });
+                      }}
+                      className={cn(
+                        "w-full rounded-xl border pl-12 pr-10 py-2.5 text-xs font-mono text-text focus:outline-none font-bold transition-all duration-200",
+                        phoneValidation.status === "valid" &&
+                          "border-emerald-500 bg-emerald-50/20 ring-2 ring-emerald-500/20 text-emerald-950",
+                        phoneValidation.status === "invalid" &&
+                          "border-red-500 bg-red-50/20 ring-2 ring-red-500/20 text-red-950",
+                        phoneValidation.status === "typing" &&
+                          "border-blue-400 bg-blue-50/10 ring-1 ring-blue-400/20",
+                        phoneValidation.status === "empty" &&
+                          "border-border focus:border-primary-500"
+                      )}
                     />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      {phoneValidation.status === "valid" && (
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xs animate-in zoom-in-50">
+                          <Check className="h-3 w-3 stroke-[3]" />
+                        </div>
+                      )}
+                      {phoneValidation.status === "invalid" && (
+                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-xs animate-in zoom-in-50">
+                          <AlertCircle className="h-3.5 w-3.5" />
+                        </div>
+                      )}
+                      {phoneValidation.status === "typing" && (
+                        <span className="text-[10px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                          {formData.phone.length}/11
+                        </span>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Real-time Dynamic Feedback Banner */}
+                  {phoneValidation.status === "valid" && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50/90 border border-emerald-200 px-2.5 py-1.5 rounded-xl mt-1.5 animate-in fade-in-0 shadow-2xs">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                      <span>{phoneValidation.successMessage}</span>
+                    </div>
+                  )}
+
+                  {phoneValidation.status === "invalid" && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-bold text-red-700 bg-red-50/90 border border-red-200 px-2.5 py-1.5 rounded-xl mt-1.5 animate-in fade-in-0 shadow-2xs">
+                      <AlertCircle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                      <span>{phoneValidation.errorMessage}</span>
+                    </div>
+                  )}
+
+                  {phoneValidation.status === "typing" && (
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-blue-700 bg-blue-50/60 border border-blue-200 px-2.5 py-1 rounded-xl mt-1.5">
+                      <span className="flex items-center gap-1">
+                        <Smartphone className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                        {phoneValidation.errorMessage}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -883,17 +958,35 @@ export default function CheckoutPage() {
             {/* Place Order CTA */}
             <Button
               type="submit"
-              disabled={loading}
-              className="w-full h-12 rounded-2xl bg-[#e91e63] hover:bg-sg-pink-hover text-white font-black text-sm shadow-md transition-all active:scale-98"
+              disabled={loading || !phoneValidation.isValid}
+              className={cn(
+                "w-full h-12 rounded-2xl text-white font-black text-sm shadow-md transition-all active:scale-98",
+                phoneValidation.isValid && !loading
+                  ? "bg-[#e91e63] hover:bg-sg-pink-hover cursor-pointer"
+                  : "bg-gray-400 cursor-not-allowed opacity-75"
+              )}
             >
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" /> {t("checkout", "placingOrder")}
                 </>
+              ) : !phoneValidation.isValid ? (
+                language === "bn" ? "সঠিক মোবাইল নম্বর দিন" : "Enter Valid Phone Number"
               ) : (
                 `${t("checkout", "placeOrder")} — ${formatPriceBn(finalTotal)}`
               )}
             </Button>
+
+            {!phoneValidation.isValid && formData.phone.length > 0 && (
+              <p className="text-[11px] font-bold text-red-600 text-center animate-in fade-in-0 flex items-center justify-center gap-1 mt-1">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  {language === "bn"
+                    ? "সঠিক ১১ ডিজিটের সচল মোবাইল নম্বর ছাড়া অর্ডার সম্পন্ন করা যাবে না।"
+                    : "Order cannot be placed without a valid 11-digit mobile number."}
+                </span>
+              </p>
+            )}
 
             <div className="flex items-center justify-center gap-4 text-[11px] text-text-muted pt-2 text-center">
               <span className="flex items-center gap-1">
