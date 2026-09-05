@@ -59,11 +59,61 @@ const DEFAULT_TEMPLATES: SmsTemplate[] = [
   },
 ];
 
-export async function getSmsTemplates() {
-  const supabase = createAdminClient();
-  const { data } = await supabase.from("sms_templates").select("*");
-  if (data && data.length > 0) return data;
-  return DEFAULT_TEMPLATES;
+export async function getSmsTemplates(): Promise<SmsTemplate[]> {
+  const { getSetting } = await import("@/lib/settings/config-service");
+  const saved = await getSetting<SmsTemplate[]>("sms", "templates", DEFAULT_TEMPLATES);
+  return saved || DEFAULT_TEMPLATES;
+}
+
+export async function saveSmsTemplate(template: {
+  id?: string;
+  name: string;
+  event_type: string;
+  template: string;
+  variables: string[];
+}): Promise<SmsTemplate[]> {
+  const { updateGroupSettings } = await import("@/lib/settings/config-service");
+  const current = await getSmsTemplates();
+  let updated: SmsTemplate[];
+
+  if (template.id) {
+    updated = current.map((t) =>
+      t.id === template.id
+        ? {
+            ...t,
+            name: template.name.trim(),
+            event_type: template.event_type.trim(),
+            template: template.template.trim(),
+            variables: template.variables,
+          }
+        : t
+    );
+  } else {
+    const newTpl: SmsTemplate = {
+      id: `tpl-${Date.now()}`,
+      name: template.name.trim(),
+      event_type: template.event_type.trim(),
+      template: template.template.trim(),
+      variables: template.variables,
+      status: "active",
+    };
+    updated = [...current, newTpl];
+  }
+
+  await updateGroupSettings("sms", { templates: updated });
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/admin/communication/sms/templates");
+  return updated;
+}
+
+export async function deleteSmsTemplate(id: string): Promise<SmsTemplate[]> {
+  const { updateGroupSettings } = await import("@/lib/settings/config-service");
+  const current = await getSmsTemplates();
+  const updated = current.filter((t) => t.id !== id);
+  await updateGroupSettings("sms", { templates: updated });
+  const { revalidatePath } = await import("next/cache");
+  revalidatePath("/admin/communication/sms/templates");
+  return updated;
 }
 
 export async function getSmsLogs() {
