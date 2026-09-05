@@ -148,64 +148,64 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
       {/* 1. Value Props / Trust Pillars Strip (Responsive Grid) */}
       {/* ============================================================ */}
       {showTrustPillars && (
-        <div className="border-b border-zinc-800/80 bg-black/50 py-6 sm:py-8 lg:py-10">
+        <div className="border-b border-zinc-800/80 bg-black/60 py-6 sm:py-8 lg:py-10">
           <div className="container-main px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
               {/* Badge 1 */}
-              <div className="flex items-center gap-2.5 sm:gap-4 p-2.5 sm:p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 hover:border-pink-500/30 transition-colors">
-                <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-pink-500/15 text-[#e91e63] border border-pink-500/30 shadow-2xs">
+              <div className="flex items-center gap-2.5 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-pink-500/40 transition-all shadow-xs">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-pink-500/25 text-pink-400 border border-pink-500/40 shadow-xs">
                   <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 stroke-2" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm lg:text-base font-black text-white truncate">
                     {t("footer", "authenticTitle")}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-zinc-400 mt-0.5 line-clamp-1 sm:line-clamp-2">
+                  <p className="text-[10px] sm:text-xs text-zinc-300 mt-0.5 line-clamp-1 sm:line-clamp-2">
                     {t("footer", "authenticDesc")}
                   </p>
                 </div>
               </div>
 
               {/* Badge 2 */}
-              <div className="flex items-center gap-2.5 sm:gap-4 p-2.5 sm:p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 hover:border-pink-500/30 transition-colors">
-                <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-pink-500/15 text-[#e91e63] border border-pink-500/30 shadow-2xs">
+              <div className="flex items-center gap-2.5 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-pink-500/40 transition-all shadow-xs">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-pink-500/25 text-pink-400 border border-pink-500/40 shadow-xs">
                   <Truck className="h-5 w-5 sm:h-6 sm:w-6 stroke-2" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm lg:text-base font-black text-white truncate">
                     {t("footer", "deliveryTitle")}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-zinc-400 mt-0.5 line-clamp-1 sm:line-clamp-2">
+                  <p className="text-[10px] sm:text-xs text-zinc-300 mt-0.5 line-clamp-1 sm:line-clamp-2">
                     {t("footer", "deliveryDesc")}
                   </p>
                 </div>
               </div>
 
               {/* Badge 3 */}
-              <div className="flex items-center gap-2.5 sm:gap-4 p-2.5 sm:p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 hover:border-pink-500/30 transition-colors">
-                <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-pink-500/15 text-[#e91e63] border border-pink-500/30 shadow-2xs">
+              <div className="flex items-center gap-2.5 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-pink-500/40 transition-all shadow-xs">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-pink-500/25 text-pink-400 border border-pink-500/40 shadow-xs">
                   <RotateCcw className="h-5 w-5 sm:h-6 sm:w-6 stroke-2" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm lg:text-base font-black text-white truncate">
                     {t("footer", "returnTitle")}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-zinc-400 mt-0.5 line-clamp-1 sm:line-clamp-2">
+                  <p className="text-[10px] sm:text-xs text-zinc-300 mt-0.5 line-clamp-1 sm:line-clamp-2">
                     {t("footer", "returnDesc")}
                   </p>
                 </div>
               </div>
 
               {/* Badge 4 */}
-              <div className="flex items-center gap-2.5 sm:gap-4 p-2.5 sm:p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/60 hover:border-pink-500/30 transition-colors">
-                <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-pink-500/15 text-[#e91e63] border border-pink-500/30 shadow-2xs">
+              <div className="flex items-center gap-2.5 sm:gap-4 p-3 sm:p-4 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-pink-500/40 transition-all shadow-xs">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-pink-500/25 text-pink-400 border border-pink-500/40 shadow-xs">
                   <Clock className="h-5 w-5 sm:h-6 sm:w-6 stroke-2" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs sm:text-sm lg:text-base font-black text-white truncate">
                     {t("footer", "codTitle")}
                   </p>
-                  <p className="text-[10px] sm:text-xs text-zinc-400 mt-0.5 line-clamp-1 sm:line-clamp-2">
+                  <p className="text-[10px] sm:text-xs text-zinc-300 mt-0.5 line-clamp-1 sm:line-clamp-2">
                     {t("footer", "codDesc")}
                   </p>
                 </div>
@@ -304,7 +304,8 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Facebook"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-[#1877f2] hover:border-transparent transition-all"
+                      title="Facebook"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800/90 border border-slate-700/80 text-[#1877f2] hover:bg-[#1877f2] hover:text-white hover:border-[#1877f2] shadow-xs transition-all duration-200 hover:scale-105 active:scale-95"
                     >
                       <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24">
                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -317,7 +318,8 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="Instagram"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-pink-600 hover:border-transparent transition-all"
+                      title="Instagram"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800/90 border border-slate-700/80 text-pink-400 hover:bg-linear-to-tr hover:from-[#f09433] hover:via-[#dc2743] hover:to-[#bc1888] hover:text-white hover:border-transparent shadow-xs transition-all duration-200 hover:scale-105 active:scale-95"
                     >
                       <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24">
                         <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
@@ -330,7 +332,8 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="YouTube"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-red-600 hover:border-transparent transition-all"
+                      title="YouTube"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800/90 border border-slate-700/80 text-red-500 hover:bg-[#ff0000] hover:text-white hover:border-[#ff0000] shadow-xs transition-all duration-200 hover:scale-105 active:scale-95"
                     >
                       <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24">
                         <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
@@ -339,13 +342,32 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
                   )}
                   {fc.socialLinks.whatsapp && (
                     <a
-                      href={fc.socialLinks.whatsapp}
+                      href={
+                        fc.socialLinks.whatsapp.startsWith("http")
+                          ? fc.socialLinks.whatsapp
+                          : `https://wa.me/${fc.socialLinks.whatsapp.replace(/[^0-9]/g, "")}`
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="WhatsApp"
-                      className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:bg-emerald-600 hover:border-transparent transition-all"
+                      title="WhatsApp"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800/90 border border-slate-700/80 text-emerald-400 hover:bg-[#25d366] hover:text-white hover:border-[#25d366] shadow-xs transition-all duration-200 hover:scale-105 active:scale-95"
                     >
                       <MessageCircle className="h-4 w-4" />
+                    </a>
+                  )}
+                  {fc.socialLinks.tiktok && (
+                    <a
+                      href={fc.socialLinks.tiktok}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="TikTok"
+                      title="TikTok"
+                      className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-800/90 border border-slate-700/80 text-cyan-400 hover:bg-black hover:text-white hover:border-cyan-400 shadow-xs transition-all duration-200 hover:scale-105 active:scale-95"
+                    >
+                      <svg className="h-4 w-4 fill-currentColor" viewBox="0 0 24 24">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.86 4.46V10.7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.13z" />
+                      </svg>
                     </a>
                   )}
                 </div>
@@ -403,35 +425,43 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
               <h3 className="mb-4 text-xs sm:text-sm lg:text-base font-black uppercase tracking-wider text-white">
                 {language === "bn" ? "যোগাযোগ করুন" : "Contact Us"}
               </h3>
-              <div className="space-y-3 text-xs sm:text-sm text-zinc-300 font-medium">
+              <div className="space-y-3.5 text-xs sm:text-sm text-zinc-300 font-medium">
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#e91e63] shrink-0 mt-0.5" />
-                  <span>{supportAddress}</span>
+                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-pink-500/15 border border-pink-500/30 text-pink-400 mt-0.5 shadow-2xs">
+                    <MapPin className="h-4 w-4" />
+                  </div>
+                  <span className="text-zinc-200 font-medium leading-relaxed">{supportAddress}</span>
                 </div>
                 <a
                   href={`tel:${supportPhone}`}
                   onClick={() => trackContact("phone", supportPhone)}
-                  className="flex items-center gap-3 hover:text-white transition-colors"
+                  className="flex items-center gap-3 hover:text-white transition-colors group"
                 >
-                  <Phone className="h-4 w-4 sm:h-5 sm:w-5 text-[#e91e63] shrink-0" />
-                  <span className="font-bold">{supportPhone}</span>
+                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-pink-500/15 border border-pink-500/30 text-pink-400 group-hover:bg-[#e91e63] group-hover:text-white transition-all shadow-2xs">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <span className="font-bold text-zinc-200 group-hover:text-white transition-colors">{supportPhone}</span>
                 </a>
                 <a
                   href={`mailto:${supportEmail}`}
                   onClick={() => trackContact("email", supportEmail)}
-                  className="flex items-center gap-3 hover:text-white transition-colors"
+                  className="flex items-center gap-3 hover:text-white transition-colors group"
                 >
-                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-[#e91e63] shrink-0" />
-                  <span className="font-bold">{supportEmail}</span>
+                  <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-pink-500/15 border border-pink-500/30 text-pink-400 group-hover:bg-[#e91e63] group-hover:text-white transition-all shadow-2xs">
+                    <Mail className="h-4 w-4" />
+                  </div>
+                  <span className="font-bold text-zinc-200 group-hover:text-white transition-colors">{supportEmail}</span>
                 </a>
                 {supportWhatsapp && (
                   <a
                     href={`https://wa.me/${supportWhatsapp.replace(/[^0-9]/g, "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-emerald-400 hover:text-emerald-300 transition-colors"
+                    className="flex items-center gap-3 text-emerald-400 hover:text-emerald-300 transition-colors group"
                   >
-                    <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-400 shrink-0" />
+                    <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-2xs">
+                      <MessageCircle className="h-4 w-4" />
+                    </div>
                     <span className="font-bold">WhatsApp: {supportWhatsapp}</span>
                   </a>
                 )}

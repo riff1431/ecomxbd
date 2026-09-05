@@ -93,6 +93,14 @@ export default function AdminHomepageManagerPage() {
         footerConfig: {
           ...DEFAULT_HOMEPAGE_CONFIG.footerConfig!,
           ...(data?.footerConfig || {}),
+          categoryLinks:
+            data?.footerConfig?.categoryLinks?.length
+              ? data.footerConfig.categoryLinks
+              : DEFAULT_HOMEPAGE_CONFIG.footerConfig!.categoryLinks,
+          customerCareLinks:
+            data?.footerConfig?.customerCareLinks?.length
+              ? data.footerConfig.customerCareLinks
+              : DEFAULT_HOMEPAGE_CONFIG.footerConfig!.customerCareLinks,
         },
       };
       setConfig(merged);

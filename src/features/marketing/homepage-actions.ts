@@ -34,6 +34,14 @@ export async function getHomepageConfig(): Promise<HomepageFullConfig> {
         footerConfig: {
           ...DEFAULT_HOMEPAGE_CONFIG.footerConfig,
           ...(parsed.footerConfig || {}),
+          categoryLinks:
+            parsed.footerConfig?.categoryLinks?.length > 0
+              ? parsed.footerConfig.categoryLinks
+              : DEFAULT_HOMEPAGE_CONFIG.footerConfig?.categoryLinks,
+          customerCareLinks:
+            parsed.footerConfig?.customerCareLinks?.length > 0
+              ? parsed.footerConfig.customerCareLinks
+              : DEFAULT_HOMEPAGE_CONFIG.footerConfig?.customerCareLinks,
         },
       };
     }
