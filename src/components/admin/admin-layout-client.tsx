@@ -164,45 +164,65 @@ function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   );
 }
 
+import { AdminNotificationsPopover } from "@/components/admin/admin-notifications-popover";
+import { AdminUserMenu } from "@/components/admin/admin-user-menu";
+import { AdminQuickSearchDialog } from "@/components/admin/admin-quick-search-dialog";
+
 function AdminTopBar({ onMenuClick }: { onMenuClick: () => void }) {
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Global ⌘K / Ctrl+K shortcut listener
+  React.useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-white px-4 lg:px-6">
-      <div className="flex items-center gap-4">
-        <button
-          onClick={onMenuClick}
-          className="rounded-lg p-2 hover:bg-surface-secondary lg:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+    <>
+      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-white px-4 lg:px-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onMenuClick}
+            className="rounded-lg p-2 hover:bg-surface-secondary lg:hidden"
+            aria-label="Toggle Menu"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
 
-        {/* Global Search */}
-        <div className="hidden items-center gap-2 rounded-lg border border-border bg-surface-secondary px-3 py-1.5 text-sm text-text-muted md:flex">
-          <Search className="h-4 w-4" />
-          <span>Search... </span>
-          <kbd className="ml-4 rounded bg-white px-1.5 py-0.5 text-xs font-medium text-text-secondary shadow-sm border border-border">
-            ⌘K
-          </kbd>
+          {/* Global Search Button */}
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="hidden items-center gap-2 rounded-xl border border-border bg-surface-secondary px-3 py-1.5 text-sm text-text-muted hover:border-border-hover hover:text-text md:flex transition-colors cursor-pointer"
+          >
+            <Search className="h-4 w-4" />
+            <span>Search menus, orders, products... </span>
+            <kbd className="ml-4 rounded-md bg-white px-1.5 py-0.5 text-xs font-semibold text-text-secondary shadow-xs border border-border">
+              ⌘K
+            </kbd>
+          </button>
         </div>
-      </div>
 
-      <div className="flex items-center gap-2">
-        {/* Notifications */}
-        <button className="relative rounded-lg p-2 hover:bg-surface-secondary">
-          <Bell className="h-5 w-5 text-text-secondary" />
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger-500 text-[10px] font-bold text-white">
-            3
-          </span>
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Functional Notifications Popover */}
+          <AdminNotificationsPopover />
 
-        {/* User menu */}
-        <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-surface-secondary">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700">
-            A
-          </div>
-          <span className="hidden text-sm font-medium md:inline">Admin</span>
-        </button>
-      </div>
-    </header>
+          {/* Functional User Menu Dropdown */}
+          <AdminUserMenu />
+        </div>
+      </header>
+
+      {/* Quick Search / Command Dialog */}
+      <AdminQuickSearchDialog
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
+    </>
   );
 }
 
