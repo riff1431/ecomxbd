@@ -337,7 +337,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
                           {faq.category}
                         </span>
                       )}
-                      <span className="text-xs sm:text-sm md:text-base font-bold text-zinc-900 leading-snug break-words block">
+                      <span className="text-xs sm:text-sm md:text-base font-bold text-zinc-900 leading-snug wrap-break-word block">
                         {q}
                       </span>
                     </div>
@@ -358,7 +358,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
                     id={`faq-answer-${faq.id}`}
                     className="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 text-xs sm:text-sm text-zinc-600 leading-relaxed border-t border-pink-50 animate-in fade-in-50 duration-150"
                   >
-                    <p className="whitespace-pre-line leading-relaxed break-words">{a}</p>
+                    <p className="whitespace-pre-line leading-relaxed wrap-break-word">{a}</p>
                   </div>
                 )}
               </div>

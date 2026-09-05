@@ -463,7 +463,7 @@ export function PaymentLogsClient({ initialItems, rawLogs }: PaymentLogsClientPr
                                 </button>
                               </div>
                               {item.customerEmail && item.customerEmail !== "N/A" && (
-                                <div className="flex items-center gap-1 text-[11px] text-text-muted mt-0.5 truncate max-w-[180px]">
+                                <div className="flex items-center gap-1 text-[11px] text-text-muted mt-0.5 truncate max-w-45">
                                   <Mail className="h-3 w-3 text-text-muted" />
                                   <span className="truncate">{item.customerEmail}</span>
                                 </div>
@@ -518,7 +518,7 @@ export function PaymentLogsClient({ initialItems, rawLogs }: PaymentLogsClientPr
                                     </button>
                                   </div>
                                   {item.paymentId && (
-                                    <div className="text-[10px] font-mono text-text-muted truncate max-w-[170px]">
+                                    <div className="text-[10px] font-mono text-text-muted truncate max-w-42.5">
                                       ID: {item.paymentId}
                                     </div>
                                   )}

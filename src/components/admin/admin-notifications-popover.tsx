@@ -277,7 +277,7 @@ export function AdminNotificationsPopover() {
           </div>
 
           {/* Notifications Scroll List */}
-          <div className="max-h-[380px] overflow-y-auto divide-y divide-border/60">
+          <div className="max-h-95 overflow-y-auto divide-y divide-border/60">
             {filteredNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-secondary text-text-muted mb-2">

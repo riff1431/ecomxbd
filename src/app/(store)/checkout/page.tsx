@@ -650,7 +650,7 @@ export default function CheckoutPage() {
                     <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
                       {phoneValidation.status === "valid" && (
                         <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-xs animate-in zoom-in-50">
-                          <Check className="h-3 w-3 stroke-[3]" />
+                          <Check className="h-3 w-3 stroke-3" />
                         </div>
                       )}
                       {phoneValidation.status === "invalid" && (

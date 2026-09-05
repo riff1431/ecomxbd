@@ -260,7 +260,7 @@ export function HomepageInteractive({
             <Link
               key={brand.id || idx}
               href={brand.href}
-              className="group relative overflow-hidden rounded-2xl shadow-xs border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:scale-[1.01] aspect-[800/350] bg-white flex items-center justify-center btn-soft-fill"
+              className="group relative overflow-hidden rounded-2xl shadow-xs border border-gray-100 transition-all duration-300 hover:shadow-card-hover hover:scale-[1.01] aspect-800/350 bg-white flex items-center justify-center btn-soft-fill"
             >
               <img
                 src={brand.image}
