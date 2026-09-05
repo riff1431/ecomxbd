@@ -158,7 +158,7 @@ export function RichArticleEditor({
 <div class="my-6 rounded-2xl bg-pink-50/80 border-l-4 border-[#e91e63] p-5 shadow-xs">
   <div class="flex items-center gap-2 text-xs font-black uppercase text-[#e91e63] mb-1">
     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.439a11.955 11.955 0 01-4.5 0m4.5 0a1.5 1.5 0 01-1.5 1.5h-1.5a1.5 1.5 0 01-1.5-1.5m3-13.5a6 6 0 10-6 0c0 2.22 1.206 4.157 3 5.195V12h6v-.555c1.794-1.038 3-2.975 3-5.195z"/></svg>
-    <span>Dermatologist Pro Tip</span>
+    <span>Beauty Expert Pro Tip</span>
   </div>
   <p class="text-xs text-gray-800 font-medium leading-relaxed m-0">
     Always apply hyaluronic acid or snail mucin on damp skin before sealing with a barrier repair moisturizer to maximize hydration retention!
@@ -247,14 +247,14 @@ export function RichArticleEditor({
   <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-500/10 text-[#e91e63] font-black text-sm">#5</div>
   <div class="space-y-1">
     <h4 class="text-sm font-black text-gray-900 m-0">Broad-Spectrum SPF 50+ PA++++ Sunscreen</h4>
-    <p class="text-xs text-gray-600 leading-relaxed m-0">Apply two finger-lengths of non-greasy sunscreen to prevent hyperpigmentation, melasma, and photo-aging.</p>
+    <p class="text-xs text-gray-600 leading-relaxed m-0">Apply two finger-lengths of non-greasy sunscreen to prevent sun tan, dark spots, and early signs of aging.</p>
   </div>
 </div>
 
 <div class="my-6 rounded-2xl bg-pink-50/80 border-l-4 border-[#e91e63] p-5 shadow-xs">
   <div class="flex items-center gap-2 text-xs font-black uppercase text-[#e91e63] mb-1">
     <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.439a11.955 11.955 0 01-4.5 0m4.5 0a1.5 1.5 0 01-1.5 1.5h-1.5a1.5 1.5 0 01-1.5-1.5m3-13.5a6 6 0 10-6 0c0 2.22 1.206 4.157 3 5.195V12h6v-.555c1.794-1.038 3-2.975 3-5.195z"/></svg>
-    <span>Dermatologist Pro Tip</span>
+    <span>Beauty Expert Pro Tip</span>
   </div>
   <p class="text-xs text-gray-800 font-medium leading-relaxed m-0">
     Reapply sunscreen every 2 to 3 hours if you are outdoors or sitting near windows during peak daylight hours (10 AM - 4 PM).

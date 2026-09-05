@@ -553,7 +553,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
       "১০০% খাঁটি আন্তর্জাতিক স্কিনকেয়ার ও মেকআপ কালেকশন — সারা দেশে ক্যাশ অন ডেলিভারি, পার্সেল চেক করার সুবিধা ও ফ্রি বিউটি পরামর্শ।",
     seoDescriptionHtml: `<div class="space-y-4 text-zinc-700 leading-relaxed text-sm sm:text-base">
   <p>
-    Finding a trustworthy <strong>cosmetics shop in Bangladesh</strong> is no longer just about hunting for a low price or picking a random bottle off a shelf. When it comes to your skin, face, and hair, authenticity is everything. At <strong>Blush &amp; Budget</strong>, we started with a clear mission: every beauty lover in Bangladesh deserves 100% genuine, dermatologist-approved skincare and makeup without paying inflated prices or worrying about counterfeit products. We believe shopping for beauty should feel transparent, comforting, and inspiring.
+    Finding a trustworthy <strong>cosmetics shop in Bangladesh</strong> is no longer just about hunting for a low price or picking a random bottle off a shelf. When it comes to your skin, face, and hair, authenticity is everything. At <strong>Blush &amp; Budget</strong>, we started with a clear mission: every beauty lover in Bangladesh deserves 100% genuine, certified gentle skincare and makeup without paying inflated prices or worrying about counterfeit products. We believe shopping for beauty should feel transparent, comforting, and inspiring.
   </p>
 
   <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
@@ -711,7 +711,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
       {
         id: "faq-6",
         category: "Skincare Advisory",
-        question: "Can I get personalized skincare consultation for my skin concerns before buying?",
+        question: "Can I get personalized product recommendations for my skin routine before buying?",
         questionBn: "অর্ডার করার আগে কি আমার ত্বকের ধরন অনুযায়ী ফ্রি পরামর্শ পেতে পারি?",
         answer:
           "Yes, completely free! If you are unsure which serum, moisturizer, or routine matches your skin goals (blemishes, dark spots, sun tan, uneven tone, or dullness), our certified beauty advisors are available on WhatsApp and live chat daily from 10 AM to 10 PM. We listen to your concerns and recommend only what your skin genuinely needs.",
@@ -734,7 +734,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
         question: "Are your skincare and makeup products certified safe and free from toxic additives?",
         questionBn: "আপনাদের পণ্যগুলো কি ত্বকের জন্য নিরাপদ ও ক্ষতিকর উপাদানমুক্ত?",
         answer:
-          "100% safe and tested. We strictly reject harsh bleaching agents, toxic additives, or unverified chemical compounds. Every brand we carry complies with strict international cosmetic safety standards (such as Korean MFDS, EU Cosmetic Safety Regulations, and US FDA compliance) focused on gentle barrier restoration, natural radiance, and long-term dermatological safety.",
+          "100% safe and tested. We strictly reject harsh bleaching agents, toxic additives, or unverified chemical compounds. Every brand we carry complies with strict international cosmetic safety standards (such as Korean MFDS, EU Cosmetic Safety Regulations, and US FDA compliance) focused on gentle barrier restoration, natural radiance, and long-term cosmetic safety and skin wellness.",
         answerBn:
           "শতভাগ নিরাপদ ও সার্টিফাইড। আমরা ক্ষতিকর ব্লিচিং এজেন্ট, বিষাক্ত কেমিক্যাল বা অনুমোদনহীন উপাদানযুক্ত কোনো পণ্য বিক্রি করি না। আমাদের প্রতিটি ব্র্যান্ড আন্তর্জাতিক কসমেটিক নিরাপত্তা মানদণ্ড (যেমন কোরিয়ান MFDS, ইউরোপীয় ইউনিয়ন ও ইউএস এফডিএ) মেনে প্রস্তুত, যা ত্বকের ক্ষতি না করে ভেতর থেকে প্রাকৃতিক সুস্থতা ও গ্লো বজায় রাখে।",
       },

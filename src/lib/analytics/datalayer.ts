@@ -1309,7 +1309,7 @@ export function trackSubscribe(
 // 22. SubmitApplication (GA4: submit_application | Meta: SubmitApplication)
 // ============================================================================
 export function trackSubmitApplication(
-  applicationName: string = "consultation",
+  applicationName: string = "routine_finder",
   applicationId?: string,
   customer?: CustomerData
 ): void {
@@ -1331,7 +1331,7 @@ export function trackSubmitApplication(
 // 23. Schedule (GA4: schedule | Meta: Schedule)
 // ============================================================================
 export function trackSchedule(
-  scheduleType: string = "consultation",
+  scheduleType: string = "routine_finder",
   appointmentTime?: string,
   customer?: CustomerData
 ): void {

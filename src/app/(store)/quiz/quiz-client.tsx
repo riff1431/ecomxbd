@@ -151,8 +151,8 @@ export function SkincareQuizClient() {
     if (currentStep < questions.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      trackSchedule("skincare_consultation_results");
-      trackSubmitApplication("skincare_routine_assessment");
+      trackSchedule("routine_finder_results");
+      trackSubmitApplication("routine_match_completed");
       setCurrentStep(questions.length); // Results screen
 
       setLoadingResults(true);

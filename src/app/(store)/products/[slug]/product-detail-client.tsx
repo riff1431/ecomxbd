@@ -798,7 +798,7 @@ export function ProductDetailClient({
                   </div>
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4 text-[#e91e63] shrink-0" />
-                    <span>Dermatologist tested and approved for sensitive skin types.</span>
+                    <span>Certified gentle and skin-friendly for sensitive skin types.</span>
                   </div>
                 </>
               )}

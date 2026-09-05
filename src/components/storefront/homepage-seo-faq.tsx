@@ -358,7 +358,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
               <p className="text-sm sm:text-base font-black">
                 {language === "bn"
                   ? "সঠিক প্রোডাক্ট নির্বাচনে সাহায্য প্রয়োজন?"
-                  : "Need personalized skincare consultation?"}
+                  : "Need help choosing the right beauty products?"}
               </p>
               <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
                 {language === "bn"

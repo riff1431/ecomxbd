@@ -182,7 +182,7 @@ export function AuthorManagerClient({ initialAuthors }: AuthorManagerProps) {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Board-Certified Dermatologist"
+                  placeholder="e.g. Senior Beauty Editor & Esthetician"
                   value={editingAuthor.job_title || ""}
                   onChange={(e) =>
                     setEditingAuthor({ ...editingAuthor, job_title: e.target.value })
@@ -194,7 +194,7 @@ export function AuthorManagerClient({ initialAuthors }: AuthorManagerProps) {
               <div>
                 <ImageUploadDropzone
                   label="Avatar Photo"
-                  description="Drag & drop doctor / editor photo, or click to upload"
+                  description="Drag & drop author / editor photo, or click to upload"
                   value={editingAuthor.avatar_url || ""}
                   onChange={(url) =>
                     setEditingAuthor({ ...editingAuthor, avatar_url: url })
@@ -378,7 +378,7 @@ export function AuthorManagerClient({ initialAuthors }: AuthorManagerProps) {
           <User className="h-10 w-10 text-text-muted mx-auto" />
           <h3 className="text-sm font-bold text-text">No authors added yet</h3>
           <p className="text-xs text-text-secondary max-w-sm mx-auto">
-            Click "Add New Author" above to add your team members, dermatologists, and content creators.
+            Click "Add New Author" above to add your team members, beauty specialists, and content creators.
           </p>
         </div>
       )}
