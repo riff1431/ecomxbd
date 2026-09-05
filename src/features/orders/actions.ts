@@ -28,6 +28,7 @@ export interface CreateOrderInput {
     amount: number;
   };
   couponCode?: string | null;
+  paymentMethod?: string;
 }
 
 /**
@@ -209,7 +210,8 @@ export async function createOrder(input: CreateOrderInput) {
     const orderNumber = `ORD-2026-${randomSuffix}`;
 
     // 5. Initial Status matching WooCommerce (COD -> processing, Online -> pending)
-    const initialStatus = "processing";
+    const selectedMethod = (input.paymentMethod || "cod").toLowerCase();
+    const initialStatus = selectedMethod === "cod" ? "processing" : "pending";
 
     // 6. Insert Order
     const { data: order, error: orderErr } = await supabaseAdmin
@@ -226,7 +228,7 @@ export async function createOrder(input: CreateOrderInput) {
         shipping_amount: shippingAmount,
         tax_amount: 0,
         total,
-        payment_method: "cod",
+        payment_method: selectedMethod,
         payment_status: "pending",
         shipping_method: input.shipping.method,
         shipping_address_snapshot: {

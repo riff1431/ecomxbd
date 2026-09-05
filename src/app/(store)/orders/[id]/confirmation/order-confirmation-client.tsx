@@ -42,7 +42,10 @@ export function OrderConfirmationClient({ order }: OrderConfirmationClientProps)
       return language === "bn" ? "ক্যাশ অন ডেলিভারি" : "Cash on Delivery";
     }
     if (method === "bkash") {
-      return "bKash";
+      return "bKash (MFS Instant)";
+    }
+    if (method === "sslcommerz") {
+      return language === "bn" ? "অনলাইন কার্ড / নেট ব্যাংকিং (SSLCommerz)" : "SSLCommerz (Cards & Net Banking)";
     }
     if (method === "nagad") {
       return "Nagad";

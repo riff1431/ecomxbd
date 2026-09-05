@@ -225,7 +225,12 @@ export default function CheckoutPage() {
           quantity: it.quantity,
         })),
         value: finalTotal,
-        payment_type: selectedPaymentMethod === "cod" ? "Cash on Delivery" : "Mobile Wallet",
+        payment_type:
+          selectedPaymentMethod === "cod"
+            ? "Cash on Delivery"
+            : selectedPaymentMethod === "bkash"
+            ? "bKash MFS"
+            : "SSLCommerz Gateway",
         coupon: coupon?.code,
         discount,
         customer: {
@@ -265,6 +270,7 @@ export default function CheckoutPage() {
           amount: shippingFee,
         },
         couponCode: coupon?.code || null,
+        paymentMethod: selectedPaymentMethod,
       });
 
       if (res.error) {
@@ -738,6 +744,38 @@ export default function CheckoutPage() {
                   </div>
                   <span className="text-text-secondary mt-0.5 block leading-relaxed">
                     {t("checkout", "bkashDesc")}
+                  </span>
+                </div>
+              </label>
+
+              <label
+                className={`flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
+                  selectedPaymentMethod === "sslcommerz"
+                    ? "border-[#e91e63] bg-pink-50/40 ring-1 ring-[#e91e63]"
+                    : "border-border hover:bg-surface-secondary/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="sslcommerz"
+                  checked={selectedPaymentMethod === "sslcommerz"}
+                  onChange={() => setSelectedPaymentMethod("sslcommerz")}
+                  className="mt-1 h-4 w-4 text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
+                />
+                <div className="flex-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-text text-sm">
+                      {language === "bn" ? "অনলাইন পেমেন্ট (কার্ড ও নেট ব্যাংকিং)" : "SSLCommerz (Cards & Net Banking)"}
+                    </span>
+                    <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                      Visa / MC / Amex
+                    </span>
+                  </div>
+                  <span className="text-text-secondary mt-0.5 block leading-relaxed">
+                    {language === "bn"
+                      ? "ভিসা, মাস্টারকার্ড, অ্যামেক্স, ব্র্যাক, সিটিটাস, ডাচ-বাংলা অথবা যেকোনো ব্যাংক কার্ড দিয়ে অনলাইনে নিরাপদে পেমেন্ট করুন।"
+                      : "Pay securely with Visa, MasterCard, Amex, Internet Banking, or Mobile Wallet via SSLCommerz."}
                   </span>
                 </div>
               </label>
