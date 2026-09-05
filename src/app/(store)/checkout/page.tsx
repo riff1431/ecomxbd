@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   Clock,
   Check,
+  X,
 } from "lucide-react";
 import { validateBdPhoneNumber, cleanBdPhoneNumber } from "@/lib/validation/bangladesh-phone";
 import { useCart } from "@/context/cart-context";
@@ -52,13 +53,38 @@ export default function CheckoutPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { language, t, toBn, formatPriceBn } = useLanguage();
-  const { items, subtotal, discount, coupon, clearCart } = useCart();
+  const { items, subtotal, discount, coupon, applyCoupon, removeCoupon, clearCart } = useCart();
 
   const urlError = searchParams?.get("error");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(urlError || null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cod");
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Coupon Code State & Handler
+  const [couponCode, setCouponCode] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [couponMsg, setCouponMsg] = useState<{ text: string; isError: boolean } | null>(null);
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setIsApplyingCoupon(true);
+    setCouponMsg(null);
+    try {
+      const res = await applyCoupon(couponCode.trim());
+      setCouponMsg({ text: res.message, isError: !res.success });
+      if (res.success) {
+        setCouponCode("");
+      }
+    } catch {
+      setCouponMsg({
+        text: language === "bn" ? "কুপন প্রয়োগ করতে সমস্যা হয়েছে" : "Failed to apply coupon",
+        isError: true,
+      });
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
 
   // Admin Configured Rules & Rates
   const [settings, setSettings] = useState<CheckoutAndFraudSettings>({
@@ -1001,6 +1027,105 @@ export default function CheckoutPage() {
                   </span>
                 </div>
               ))}
+            </div>
+
+            {/* Coupon / Promo Code */}
+            <div className="pt-3 border-t border-border">
+              {coupon ? (
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50 border border-emerald-200 animate-in fade-in-0">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="h-8 w-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-200">
+                      <Tag className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-mono font-bold text-xs text-emerald-950 tracking-wider">
+                          {coupon.code}
+                        </span>
+                        <span className="text-[10px] font-black uppercase text-emerald-800 bg-white px-1.5 py-0.5 rounded-md border border-emerald-200 shadow-2xs">
+                          {coupon.type === "percentage"
+                            ? `${coupon.value}% OFF`
+                            : coupon.type === "free_shipping"
+                            ? (language === "bn" ? "ফ্রি ডেলিভারি" : "FREE SHIPPING")
+                            : `৳${coupon.value} OFF`}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-emerald-700 font-semibold truncate mt-0.5 flex items-center gap-1">
+                        <Check className="h-3 w-3 text-emerald-600" />
+                        {language === "bn" ? "কুপন কার্যকর হয়েছে" : "Coupon code applied"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeCoupon();
+                      setCouponMsg(null);
+                    }}
+                    className="p-1.5 rounded-lg text-emerald-800 hover:text-red-600 hover:bg-emerald-100/80 transition-colors shrink-0 cursor-pointer"
+                    title={language === "bn" ? "কুপন বাতিল করুন" : "Remove coupon"}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-text flex items-center gap-1.5">
+                    <Tag className="h-3.5 w-3.5 text-[#e91e63]" />
+                    <span>{language === "bn" ? "ডিসকাউন্ট কুপন" : "Promo / Coupon Code"}</span>
+                  </label>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder={language === "bn" ? "কুপন কোড লিখুন" : "Enter coupon code"}
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleApplyCoupon();
+                        }
+                      }}
+                      className="flex-1 pl-3 pr-3 py-2 rounded-xl border border-border text-xs font-mono uppercase text-text placeholder:normal-case placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-[#e91e63]/20 focus:border-[#e91e63] bg-surface-secondary/30 font-bold"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleApplyCoupon}
+                      disabled={isApplyingCoupon || !couponCode.trim()}
+                      className={cn(
+                        "rounded-xl text-xs font-bold px-4 h-9 shrink-0 transition-all",
+                        couponCode.trim()
+                          ? "bg-[#e91e63] hover:bg-sg-pink-hover text-white cursor-pointer shadow-xs"
+                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      )}
+                    >
+                      {isApplyingCoupon ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        language === "bn" ? "প্রয়োগ" : "Apply"
+                      )}
+                    </Button>
+                  </div>
+
+                  {couponMsg && (
+                    <p
+                      className={cn(
+                        "text-[11px] font-semibold flex items-center gap-1 mt-1 animate-in fade-in-0",
+                        couponMsg.isError ? "text-red-600" : "text-emerald-600"
+                      )}
+                    >
+                      {couponMsg.isError ? (
+                        <AlertCircle className="h-3 w-3 shrink-0" />
+                      ) : (
+                        <CheckCircle2 className="h-3 w-3 shrink-0" />
+                      )}
+                      <span>{couponMsg.text}</span>
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Price Calculations */}
