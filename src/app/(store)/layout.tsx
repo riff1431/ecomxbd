@@ -20,7 +20,7 @@ export default async function StorefrontLayout({
         <CartProvider>
           <div className="flex min-h-screen flex-col bg-white">
             <StorefrontHeader />
-            <main className="flex-1">{children}</main>
+            <main className="flex-1 min-h-[calc(100vh-80px)]">{children}</main>
             <StorefrontFooter />
             <MobileBottomNav />
             <CartDrawer />

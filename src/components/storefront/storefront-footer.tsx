@@ -36,12 +36,29 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
     message?: string;
   } | null>(null);
 
+  const [isStoreLoading, setIsStoreLoading] = useState(false);
+
   useEffect(() => {
     if (!initialConfig) {
       getHomepageConfig().then((data) => {
         if (data) setConfig(data);
       });
     }
+
+    // Automatically check if storefront skeleton loader is currently running
+    const checkLoading = () => {
+      const isLd = !!document.querySelector('[data-storefront-loading="true"]');
+      setIsStoreLoading(isLd);
+    };
+
+    checkLoading();
+
+    const mainEl = document.querySelector("main");
+    if (!mainEl) return;
+
+    const observer = new MutationObserver(checkLoading);
+    observer.observe(mainEl, { childList: true, subtree: true });
+    return () => observer.disconnect();
   }, [initialConfig]);
 
   const fc = config.footerConfig || DEFAULT_HOMEPAGE_CONFIG.footerConfig!;
@@ -144,8 +161,12 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
     }
   };
 
+  if (isStoreLoading) {
+    return null;
+  }
+
   return (
-    <footer className="border-t border-zinc-800 bg-[#0d131f] text-zinc-300 pb-24 lg:pb-0">
+    <footer className="storefront-footer border-t border-zinc-800 bg-[#0d131f] text-zinc-300 pb-24 lg:pb-0">
       {/* ============================================================ */}
       {/* 1. Value Props / Trust Pillars Strip (100% Admin Dynamic & Radiant Contrast) */}
       {/* ============================================================ */}

@@ -7,7 +7,10 @@ import {
 
 export default function StorefrontLoading() {
   return (
-    <div className="space-y-8 pb-16 animate-fade-in">
+    <div
+      data-storefront-loading="true"
+      className="min-h-screen space-y-8 pb-16 animate-fade-in"
+    >
       {/* Hero Slider Skeleton */}
       <HeroSkeleton />
 

@@ -377,3 +377,14 @@ button, a, input, select, textarea {
   }
 }
 
+/* ============================================================
+   Storefront Loading State: Prevent Footer Flash During Skeletons
+   ============================================================ */
+body:has([data-storefront-loading="true"]) footer,
+body:has([data-storefront-loading="true"]) .storefront-footer,
+main:has([data-storefront-loading="true"]) + footer,
+main:has([data-storefront-loading="true"]) ~ footer,
+[data-storefront-loading="true"] ~ footer {
+  display: none !important;
+}
+
