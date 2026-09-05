@@ -10,7 +10,7 @@ function NavigationTracker() {
   const lastTrackedUrl = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!pathname) return;
+    if (!pathname || pathname.startsWith("/admin")) return;
 
     const queryString = searchParams?.toString();
     const url = queryString ? `${pathname}?${queryString}` : pathname;

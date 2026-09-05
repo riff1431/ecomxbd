@@ -36,10 +36,7 @@ export const metadata: Metadata = {
   },
 };
 
-import { MetaPixel } from "@/components/analytics/meta-pixel";
-import { TikTokPixel } from "@/components/analytics/tiktok-pixel";
-import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
-import { NavigationEvents } from "@/components/analytics/navigation-events";
+import { StorefrontAnalytics } from "@/components/analytics/storefront-analytics";
 
 export default function RootLayout({
   children,
@@ -49,10 +46,7 @@ export default function RootLayout({
   return (
     <html lang="bn" className={`${inter.variable} ${hindSiliguri.variable} lang-bn`}>
       <body className="min-h-screen bg-white antialiased">
-        <GoogleTagManager />
-        <NavigationEvents />
-        <MetaPixel />
-        <TikTokPixel />
+        <StorefrontAnalytics />
         {children}
       </body>
     </html>

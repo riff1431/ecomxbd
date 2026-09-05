@@ -268,6 +268,7 @@ export function isDuplicateEvent(payload: Record<string, any>): boolean {
  */
 export function pushToDataLayer(payload: Record<string, any>): void {
   if (typeof window === "undefined") return;
+  if (typeof window.location !== "undefined" && window.location.pathname.startsWith("/admin")) return;
 
   if (isDuplicateEvent(payload)) {
     return;
@@ -287,6 +288,9 @@ export function pushToDataLayer(payload: Record<string, any>): void {
 // 1. PageView (GA4: page_view | Meta: PageView)
 // ============================================================================
 export function trackPageView(pagePath: string, pageTitle?: string, customer?: CustomerData): void {
+  if (pagePath.startsWith("/admin")) return;
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) return;
+
   const title = pageTitle || (typeof document !== "undefined" ? document.title : "");
   const location = typeof window !== "undefined" ? window.location.href : "";
   const userData = normalizeCustomerData(customer);

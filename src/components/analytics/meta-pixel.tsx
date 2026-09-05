@@ -1,6 +1,7 @@
 "use client";
 
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 
 declare global {
   interface Window {
@@ -21,6 +22,9 @@ const recentMetaEventTimestamps = new Map<string, number>();
 const META_DEDUP_WINDOW_MS = 1200;
 
 export function MetaPixel() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/admin")) return null;
+
   const pixelId = process.env.NEXT_PUBLIC_META_PIXEL_ID || "123456789012345";
 
   return (
@@ -57,6 +61,7 @@ export function trackMetaEvent(
   customEventId?: string
 ) {
   if (typeof window === "undefined") return;
+  if (typeof window.location !== "undefined" && window.location.pathname.startsWith("/admin")) return;
 
   // 1. Strict persistent deduplication for Purchase event
   if (eventName === "Purchase" && (params.order_id || params.transaction_id)) {

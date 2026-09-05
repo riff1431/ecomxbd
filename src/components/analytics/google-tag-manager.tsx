@@ -1,8 +1,12 @@
 "use client";
 
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 
 export function GoogleTagManager() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/admin")) return null;
+
   const gtmId = process.env.NEXT_PUBLIC_GTM_ID || "";
   const ga4Id = process.env.NEXT_PUBLIC_GA4_ID || process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID || "";
 

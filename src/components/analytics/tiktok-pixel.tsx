@@ -1,6 +1,7 @@
 "use client";
 
 import Script from "next/script";
+import { usePathname } from "next/navigation";
 
 declare global {
   interface Window {
@@ -21,6 +22,9 @@ const recentTikTokEventTimestamps = new Map<string, number>();
 const TIKTOK_DEDUP_WINDOW_MS = 1200;
 
 export function TikTokPixel() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/admin")) return null;
+
   const pixelId = process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || "CXXXXXXXXXXXXXXXXXX";
 
   return (
@@ -53,6 +57,7 @@ export function trackTikTokEvent(
   customEventId?: string
 ) {
   if (typeof window === "undefined") return;
+  if (typeof window.location !== "undefined" && window.location.pathname.startsWith("/admin")) return;
 
   // Map event name to TikTok standard if needed
   let mappedEvent = eventName;
