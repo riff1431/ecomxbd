@@ -160,12 +160,14 @@ export interface FooterConfig {
     tiktok?: string;
     whatsapp?: string;
   };
+  paymentBadgeStyle?: "icons_only" | "badges_with_text";
   acceptedPaymentMethods?: {
     bkash?: boolean;
     nagad?: boolean;
     visa?: boolean;
     mastercard?: boolean;
     cod?: boolean;
+    amex?: boolean;
   };
   categoryLinks?: FooterLinkItem[];
   customerCareLinks?: FooterLinkItem[];
@@ -781,6 +783,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
     showTrustPillars: true,
     showNewsletter: true,
     showPaymentBadges: true,
+    paymentBadgeStyle: "icons_only",
     showSocialLinks: true,
     socialLinks: {
       facebook: "https://facebook.com",
@@ -795,6 +798,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
       visa: true,
       mastercard: true,
       cod: true,
+      amex: true,
     },
     categoryLinks: [
       { label: "Skin Care", labelBn: "স্কিন কেয়ার", href: "/products?category=skin-care" },

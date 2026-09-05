@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import { ImageUploadDropzone } from "@/components/shared/image-upload-dropzone";
+import { cn } from "@/lib/utils";
 import {
   type HomepageFullConfig,
   type FooterConfig,
@@ -58,6 +59,7 @@ export function HomepageFooterEditor({ config, onChange }: HomepageFooterEditorP
     showTrustPillars: rawFooter?.showTrustPillars ?? defaultFooter.showTrustPillars ?? true,
     showNewsletter: rawFooter?.showNewsletter ?? defaultFooter.showNewsletter ?? true,
     showPaymentBadges: rawFooter?.showPaymentBadges ?? defaultFooter.showPaymentBadges ?? true,
+    paymentBadgeStyle: rawFooter?.paymentBadgeStyle ?? defaultFooter.paymentBadgeStyle ?? "icons_only",
     showSocialLinks: rawFooter?.showSocialLinks ?? defaultFooter.showSocialLinks ?? true,
     socialLinks: {
       ...defaultFooter.socialLinks,
@@ -859,15 +861,20 @@ export function HomepageFooterEditor({ config, onChange }: HomepageFooterEditorP
         </div>
       </div>
 
-      {/* 8. Payment Method Badges */}
+      {/* 8. Payment Method Badges & Display Style */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-[#e91e63]" />
-            Accepted Payment Badges
-          </h2>
+          <div>
+            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-[#e91e63]" />
+              Accepted Payment Badges
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Control accepted payment methods and display style in the storefront footer.
+            </p>
+          </div>
 
-          <label className="relative inline-flex items-center cursor-pointer">
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
             <input
               type="checkbox"
               checked={footer.showPaymentBadges !== false}
@@ -881,31 +888,132 @@ export function HomepageFooterEditor({ config, onChange }: HomepageFooterEditorP
           </label>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {[
-            { id: "bkash", label: "bKash" },
-            { id: "nagad", label: "Nagad" },
-            { id: "visa", label: "VISA" },
-            { id: "mastercard", label: "Mastercard" },
-            { id: "cod", label: "Cash on Delivery" },
-          ].map((item) => {
-            const isChecked = footer.acceptedPaymentMethods?.[item.id as keyof typeof footer.acceptedPaymentMethods] !== false;
-            return (
-              <label
-                key={item.id}
-                className="flex items-center gap-2.5 p-3 rounded-xl border border-gray-200 bg-gray-50/50 hover:bg-gray-100 cursor-pointer transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  checked={isChecked}
-                  onChange={(e) => updatePaymentMethod(item.id, e.target.checked)}
-                  className="rounded border-gray-300 text-[#e91e63] focus:ring-[#e91e63]"
-                />
-                <span className="text-xs font-bold text-gray-800">{item.label}</span>
-              </label>
-            );
-          })}
-        </div>
+        {footer.showPaymentBadges !== false && (
+          <div className="space-y-4 pt-1">
+            {/* Display Style Toggle: Icons Only vs Badges With Text */}
+            <div className="rounded-xl border border-pink-100 bg-pink-50/50 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <span className="block text-xs font-black text-gray-900">
+                  Badge Display Style
+                </span>
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  &quot;Icons Only&quot; displays clean, uniform official brand logos without text (best suited for dark footers).
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => updateFooter("paymentBadgeStyle", "icons_only")}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                    footer.paymentBadgeStyle !== "badges_with_text"
+                      ? "bg-[#e91e63] text-white shadow-xs"
+                      : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  )}
+                >
+                  ✨ Icons Only (Clean Logos)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateFooter("paymentBadgeStyle", "badges_with_text")}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
+                    footer.paymentBadgeStyle === "badges_with_text"
+                      ? "bg-[#e91e63] text-white shadow-xs"
+                      : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  )}
+                >
+                  Badges with Text
+                </button>
+              </div>
+            </div>
+
+            {/* Individual Checkboxes */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { id: "bkash", label: "bKash" },
+                { id: "nagad", label: "Nagad" },
+                { id: "visa", label: "VISA" },
+                { id: "mastercard", label: "Mastercard" },
+                { id: "amex", label: "AMEX" },
+                { id: "cod", label: "Cash on Delivery" },
+              ].map((item) => {
+                const isChecked = footer.acceptedPaymentMethods?.[item.id as keyof typeof footer.acceptedPaymentMethods] !== false;
+                return (
+                  <label
+                    key={item.id}
+                    className={cn(
+                      "flex items-center gap-2.5 p-3 rounded-xl border transition-colors cursor-pointer select-none",
+                      isChecked
+                        ? "border-pink-200 bg-pink-50/40 text-gray-900 font-bold"
+                        : "border-gray-200 bg-gray-50/50 text-gray-500 hover:bg-gray-100"
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => updatePaymentMethod(item.id, e.target.checked)}
+                      className="rounded border-gray-300 text-[#e91e63] focus:ring-[#e91e63]"
+                    />
+                    <span className="text-xs">{item.label}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Live Footer Preview */}
+            <div className="rounded-xl border border-slate-700 bg-[#0d131f] p-4 text-white space-y-2">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-400 block">
+                Live Footer Preview on Dark Background:
+              </span>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                {footer.acceptedPaymentMethods?.bkash !== false && (
+                  <div className="flex h-7 w-12 items-center justify-center rounded-lg bg-white px-2 py-1 shadow-xs border border-white/20">
+                    <svg viewBox="0 0 100 80" className="h-4.5 w-auto fill-[#e2136e]">
+                      <polygon points="50,5 95,50 50,40 5,50" />
+                      <polygon points="50,45 80,75 50,65 20,75" opacity="0.9" />
+                    </svg>
+                  </div>
+                )}
+                {footer.acceptedPaymentMethods?.nagad !== false && (
+                  <div className="flex h-7 w-12 items-center justify-center rounded-lg bg-white px-2 py-1 shadow-xs border border-white/20">
+                    <svg viewBox="0 0 100 100" className="h-5 w-auto">
+                      <path d="M50 10 C30 35 15 50 15 70 C15 85 30 95 50 95 C70 95 85 85 85 70 C85 50 70 35 50 10 Z" fill="#e82429" />
+                      <circle cx="50" cy="65" r="14" fill="#f7941d" />
+                    </svg>
+                  </div>
+                )}
+                {footer.acceptedPaymentMethods?.visa !== false && (
+                  <div className="flex h-7 w-12 items-center justify-center rounded-lg bg-white px-2 py-1 shadow-xs border border-white/20">
+                    <span className="text-xs font-black italic tracking-wider text-[#1a1f71] leading-none">VISA</span>
+                  </div>
+                )}
+                {footer.acceptedPaymentMethods?.mastercard !== false && (
+                  <div className="flex h-7 w-12 items-center justify-center rounded-lg bg-white px-2 py-1 shadow-xs border border-white/20">
+                    <div className="relative flex items-center justify-center h-3.5 w-5.5">
+                      <div className="absolute left-0.5 h-3.5 w-3.5 rounded-full bg-[#eb001b]" />
+                      <div className="absolute right-0.5 h-3.5 w-3.5 rounded-full bg-[#f79e1b] opacity-90" />
+                    </div>
+                  </div>
+                )}
+                {footer.acceptedPaymentMethods?.amex && (
+                  <div className="flex h-7 w-12 items-center justify-center rounded-lg bg-[#016fd0] px-2 py-1 shadow-xs border border-blue-400/30">
+                    <span className="text-[9px] font-black uppercase text-white tracking-tighter leading-none">AMEX</span>
+                  </div>
+                )}
+                {footer.acceptedPaymentMethods?.cod !== false && (
+                  <div className="flex h-7 w-12 items-center justify-center rounded-lg bg-white px-2 py-1 shadow-xs border border-white/20">
+                    <div className="flex flex-col items-center justify-center leading-none">
+                      <span className="text-[7px] font-bold text-zinc-500">PAY ON</span>
+                      <span className="text-[8px] font-black text-emerald-700 tracking-tight uppercase">DELIVERY</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
