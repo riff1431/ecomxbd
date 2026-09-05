@@ -7,6 +7,7 @@ import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
 import { useWishlist } from "@/context/wishlist-context";
 import { useCart } from "@/context/cart-context";
+import { useLanguage } from "@/context/language-context";
 import { triggerMicroRipple } from "@/lib/ui-effects";
 import {
   trackViewItem,
@@ -35,6 +36,8 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
   const [quantity, setQuantity] = useState(1);
   const { isWishlisted, toggleWishlist } = useWishlist();
   const { addItem } = useCart();
+  const { language, toBn, formatPriceBn } = useLanguage();
+  const isBn = language === "bn";
 
   useEffect(() => {
     if (isOpen && product) {
@@ -145,7 +148,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
             )}
             {discountPercent > 0 && (
               <span className="absolute top-3 left-3 rounded-md bg-accent-500 px-2 py-0.5 text-xs font-bold text-white shadow">
-                -{discountPercent}% OFF
+                {isBn ? `${toBn(discountPercent)}% ছাড়` : `-${discountPercent}% OFF`}
               </span>
             )}
           </div>
@@ -154,7 +157,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
           <div className="flex flex-col p-6 space-y-4">
             <div>
               {product.brand_name && (
-                <span className="text-xs font-bold uppercase tracking-wider text-primary-600">
+                <span className="text-xs font-bold uppercase tracking-wide text-primary-600">
                   {product.brand_name}
                 </span>
               )}
@@ -170,38 +173,40 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                   <Star className="h-3.5 w-3.5 fill-current" />
                   <Star className="h-3.5 w-3.5 fill-current" />
                 </div>
-                <span className="font-semibold text-text">5.0</span>
-                <span className="text-text-muted">(Verified Authentic)</span>
+                <span className="font-semibold text-text">{isBn ? "৫.০" : "5.0"}</span>
+                <span className="text-text-muted">({isBn ? "যাচাইকৃত আসল পণ্য" : "Verified Authentic"})</span>
               </div>
             </div>
 
             {/* Pricing */}
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-extrabold text-text">
-                {formatPrice(product.sale_price ?? product.regular_price)}
+                {formatPriceBn(product.sale_price ?? product.regular_price)}
               </span>
               {product.sale_price && product.sale_price < product.regular_price && (
                 <span className="text-sm text-text-muted line-through">
-                  {formatPrice(product.regular_price)}
+                  {formatPriceBn(product.regular_price)}
                 </span>
               )}
             </div>
 
             {/* Quantity Selector */}
             <div className="flex items-center gap-3">
-              <span className="text-xs font-medium text-text-muted">Quantity:</span>
+              <span className="text-xs font-medium text-text-muted">{isBn ? "পরিমাণ:" : "Quantity:"}</span>
               <div className="flex items-center rounded-lg border border-border bg-surface-secondary">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   disabled={quantity <= 1}
                   className="p-2 text-text hover:bg-white rounded-l-lg transition-colors disabled:opacity-40"
+                  aria-label="Decrease quantity"
                 >
                   <Minus className="h-3 w-3" />
                 </button>
-                <span className="w-8 text-center text-xs font-bold text-text">{quantity}</span>
+                <span className="w-8 text-center text-xs font-bold text-text">{isBn ? toBn(quantity) : quantity}</span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
                   className="p-2 text-text hover:bg-white rounded-r-lg transition-colors"
+                  aria-label="Increase quantity"
                 >
                   <Plus className="h-3 w-3" />
                 </button>
@@ -215,7 +220,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                 className="btn-add-to-cart ripple-container w-full py-5 text-xs font-bold shadow-sm flex items-center justify-center gap-2"
               >
                 <ShoppingBag className="h-4 w-4" />
-                Add to Cart ({quantity})
+                {isBn ? `কার্টে যোগ করুন (${toBn(quantity)})` : `Add to Cart (${quantity})`}
               </Button>
 
               <div className="flex gap-2">
@@ -226,20 +231,20 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                   className="flex-1 text-xs"
                 >
                   <Heart className={`h-3.5 w-3.5 mr-1 ${inWishlist ? "fill-accent-500 text-accent-500" : ""}`} />
-                  {inWishlist ? "Saved" : "Wishlist"}
+                  {inWishlist ? (isBn ? "সংরক্ষিত" : "Saved") : (isBn ? "উইশলিস্ট" : "Wishlist")}
                 </Button>
 
                 <Link href={`/products/${product.slug}`} onClick={onClose} className="flex-1">
                   <Button variant="outline" size="sm" className="w-full text-xs">
-                    Full Details &rarr;
+                    {isBn ? "বিস্তারিত দেখুন" : "Full Details"} &rarr;
                   </Button>
                 </Link>
               </div>
             </div>
 
-            <div className="pt-2 border-t border-border flex items-center gap-1.5 text-[11px] text-text-muted">
+            <div className="pt-2 border-t border-border flex items-center gap-1.5 text-xs text-text-muted">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-              <span>100% Genuine Guaranteed | Cash on Delivery Available</span>
+              <span>{isBn ? "১০০% আসল পণ্যের নিশ্চয়তা | ক্যাশ অন ডেলিভারি সুবিধা" : "100% Genuine Guaranteed | Cash on Delivery Available"}</span>
             </div>
           </div>
         </div>

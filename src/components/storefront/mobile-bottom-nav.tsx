@@ -88,15 +88,15 @@ export function MobileBottomNav() {
                   )}
                 />
                 {item.badge !== undefined && item.badge !== "" && item.badge !== 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[9px] font-black text-white shadow-xs">
+                  <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[10px] font-black text-white shadow-xs">
                     {item.badge}
                   </span>
                 )}
               </div>
               <span
                 className={cn(
-                  "mt-1 text-[9px] tracking-wider uppercase font-semibold transition-colors",
-                  item.isActive ? "text-[#e91e63] font-bold" : "text-gray-600"
+                  "mt-1 text-[10px] sm:text-[11px] font-bold transition-colors leading-tight",
+                  item.isActive ? "text-[#e91e63]" : "text-gray-600"
                 )}
               >
                 {item.label}

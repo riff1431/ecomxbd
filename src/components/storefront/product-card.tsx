@@ -323,7 +323,7 @@ export function ProductCard({
               disabled={product.is_in_stock === false}
               aria-label={`Add ${product.name} to cart`}
               className={cn(
-                "ripple-container w-full rounded-xl py-2 px-2 text-[11px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-95",
+                "ripple-container w-full rounded-xl py-2 px-2 text-xs font-black uppercase flex items-center justify-center gap-1 transition-all active:scale-95",
                 justAdded
                   ? "bg-emerald-600! text-white shadow-sm"
                   : product.is_in_stock === false
@@ -341,7 +341,7 @@ export function ProductCard({
               ) : (
                 <>
                   <ShoppingBag className="h-3 w-3" />
-                  <span>{language === "bn" ? "কার্ট-এ যোগ করুন" : (cardSettings?.addToCartText || "ADD TO CART")}</span>
+                  <span>{language === "bn" ? "কার্টে যোগ করুন" : (cardSettings?.addToCartText || "ADD TO CART")}</span>
                 </>
               )}
             </button>
@@ -353,7 +353,7 @@ export function ProductCard({
               disabled={product.is_in_stock === false}
               aria-label={`Order ${product.name} now`}
               className={cn(
-                "ripple-container w-full rounded-xl py-2 px-2 text-[11px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-95",
+                "ripple-container w-full rounded-xl py-2 px-2 text-xs font-black uppercase flex items-center justify-center gap-1 transition-all active:scale-95",
                 product.is_in_stock === false
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                   : "btn-order-now-action"

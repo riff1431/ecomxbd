@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { Sparkles, ArrowLeftRight, CheckCircle2, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/context/language-context";
 
 interface BeforeAfterSliderProps {
   beforeImage?: string;
@@ -26,21 +27,36 @@ interface BeforeAfterSliderProps {
 export function BeforeAfterSlider({
   beforeImage = "/banners/before_skin.jpg",
   afterImage = "/banners/after_skin.jpg",
-  beforeLabel = "DAY 1 • DULL & DEHYDRATED",
-  afterLabel = "DAY 7 • RADIANT GLASS SKIN",
+  beforeLabel,
+  afterLabel,
   imageFit = "top",
   aspectRatio = "4/3",
-  eyebrowBadge = "CLINICALLY FORMULATED",
-  title = "SEE REAL SKIN RESULTS",
-  subtitle = "Interactive 7-Day Skincare Transformation",
-  heading = "Restore Skin Barrier in 7 Days",
-  description = "Target hyperpigmentation, uneven skin tone, and deep dehydration using our certified 3-step routine.",
-  metric1 = "96% Noticeable reduction in redness and irritation",
-  metric2 = "24h Non-greasy moisture barrier protection",
-  metric3 = "100% Direct Certified Authentic Global Imports",
-  buttonText = "SHOP THE TRANSFORMATION ROUTINE",
+  eyebrowBadge,
+  title,
+  subtitle,
+  heading,
+  description,
+  metric1,
+  metric2,
+  metric3,
+  buttonText,
   buttonHref = "/products?category=skin-care",
 }: BeforeAfterSliderProps) {
+  const { language, toBn } = useLanguage();
+
+  const isBn = language === "bn";
+  const displayEyebrow = eyebrowBadge || (isBn ? "ক্লিনিক্যালি প্রমাণিত ফর্মুলা" : "CLINICALLY FORMULATED");
+  const displayTitle = title || (isBn ? "ত্বকের সত্যিকারের পরিবর্তন দেখুন" : "SEE REAL SKIN RESULTS");
+  const displaySubtitle = subtitle || (isBn ? "৭ দিনের স্কিনকেয়ার ট্রান্সফর্মেশন ফলাফল" : "Interactive 7-Day Skincare Transformation");
+  const displayHeading = heading || (isBn ? "৭ দিনে স্কিন ব্যারিয়ার পুনরুদ্ধার করুন" : "Restore Skin Barrier in 7 Days");
+  const displayDescription = description || (isBn ? "হাইপারপিগমেন্টেশন দূর করুন, ত্বকের স্বাভাবিক আর্দ্রতা ফিরিয়ে আনুন ৩-ধাপের বিশেষ রুটিনে।" : "Target hyperpigmentation, uneven skin tone, and deep dehydration using our certified 3-step routine.");
+  const displayMetric1 = metric1 || (isBn ? "৯৬% লালচে ভাব ও জ্বালাপোড়া হ্রাস" : "96% Noticeable reduction in redness and irritation");
+  const displayMetric2 = metric2 || (isBn ? "২৪ ঘণ্টা নন-গ্রিসি ময়েশ্চার প্রটেকশন" : "24h Non-greasy moisture barrier protection");
+  const displayMetric3 = metric3 || (isBn ? "১০০% আসল ও সার্টিফাইড পণ্য" : "100% Direct Certified Authentic Global Imports");
+  const displayButtonText = buttonText || (isBn ? "ট্রান্সফর্মেশন রুটিন কিনুন" : "SHOP THE TRANSFORMATION ROUTINE");
+  const displayBeforeLabel = beforeLabel || (isBn ? "১ম দিন • রুক্ষ ও প্রাণহীন" : "DAY 1 • DULL & DEHYDRATED");
+  const displayAfterLabel = afterLabel || (isBn ? "৭ম দিন • উজ্জ্বল ও মসৃণ ত্বক" : "DAY 7 • RADIANT GLASS SKIN");
+
   const [sliderPos, setSliderPos] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -135,19 +151,19 @@ export function BeforeAfterSlider({
       {/* Section Header */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-gray-200 pb-2">
         <div>
-          <div className="flex items-center gap-1.5 text-[#e91e63] text-xs font-black uppercase tracking-wider mb-0.5">
+          <div className="flex items-center gap-1.5 text-[#e91e63] text-xs font-black uppercase tracking-wide mb-0.5">
             <Sparkles className="h-3.5 w-3.5" />
-            <span>Proven Beauty Efficacy</span>
+            <span>{isBn ? "কার্যকর প্রমাণিত বিউটি রেজাল্ট" : "Proven Beauty Efficacy"}</span>
           </div>
-          <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-gray-900 font-sans">
-            {title}
+          <h2 className="text-base sm:text-lg md:text-xl font-black uppercase tracking-wide text-gray-900">
+            {displayTitle}
           </h2>
-          <p className="text-[11px] text-gray-500">{subtitle}</p>
+          <p className="text-xs sm:text-sm text-gray-500">{displaySubtitle}</p>
         </div>
 
-        <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold text-gray-400">
-          <ArrowLeftRight className="h-3 w-3" />
-          <span>Drag the slider to compare results</span>
+        <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-gray-400">
+          <ArrowLeftRight className="h-3.5 w-3.5" />
+          <span>{isBn ? "ফলাফল তুলনা করতে স্লাইডারটি টানুন" : "Drag the slider to compare results"}</span>
         </span>
       </div>
 
@@ -177,15 +193,15 @@ export function BeforeAfterSlider({
             {/* 1. After Image (Full Background Layer) */}
             <img
               src={afterImage}
-              alt="After 7 Days Glowing Skin"
+              alt={isBn ? "৭ দিন পর উজ্জ্বল ত্বক" : "After 7 Days Glowing Skin"}
               className={`absolute inset-0 h-full w-full ${fitClass}`}
               draggable={false}
             />
 
             {/* After Top-Right Pill Badge */}
             <div className="absolute right-3 top-3 z-10 pointer-events-none">
-              <span className="rounded-full bg-emerald-600/95 backdrop-blur-xs px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white shadow-md">
-                {afterLabel}
+              <span className="rounded-full bg-emerald-600/95 backdrop-blur-xs px-3 py-1 text-[10px] sm:text-xs font-black uppercase text-white shadow-md">
+                {displayAfterLabel}
               </span>
             </div>
 
@@ -199,7 +215,7 @@ export function BeforeAfterSlider({
             >
               <img
                 src={beforeImage}
-                alt="Before Treatment"
+                alt={isBn ? "ট্রিটমেন্টের পূর্বে" : "Before Treatment"}
                 className={`absolute inset-0 h-full w-full ${fitClass} filter grayscale-20 contrast-95`}
                 draggable={false}
               />
@@ -212,8 +228,8 @@ export function BeforeAfterSlider({
                 opacity: sliderPos < 15 ? sliderPos / 15 : 1,
               }}
             >
-              <span className="rounded-full bg-gray-900/90 backdrop-blur-xs px-3 py-1 text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-white shadow-md">
-                {beforeLabel}
+              <span className="rounded-full bg-gray-900/90 backdrop-blur-xs px-3 py-1 text-[10px] sm:text-xs font-black uppercase text-white shadow-md">
+                {displayBeforeLabel}
               </span>
             </div>
 
@@ -236,37 +252,37 @@ export function BeforeAfterSlider({
         {/* Right 5 Cols: Skincare Routine Explanation & Verified Callout */}
         <div className="lg:col-span-5 space-y-4">
           <div className="space-y-1">
-            {eyebrowBadge && (
-              <span className="text-[10px] font-black uppercase tracking-widest text-[#e91e63]">
-                {eyebrowBadge}
+            {displayEyebrow && (
+              <span className="text-xs font-black uppercase tracking-wide text-[#e91e63]">
+                {displayEyebrow}
               </span>
             )}
-            <h3 className="text-lg sm:text-xl font-extrabold text-gray-900">
-              {heading}
+            <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 leading-snug">
+              {displayHeading}
             </h3>
-            <p className="text-xs text-gray-600 leading-relaxed">
-              {description}
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+              {displayDescription}
             </p>
           </div>
 
           {/* 3 Metric Points */}
           <div className="space-y-2 pt-1 border-t border-gray-100">
-            {metric1 && (
-              <div className="flex items-start gap-2 text-xs font-semibold text-gray-800">
+            {displayMetric1 && (
+              <div className="flex items-start gap-2 text-xs sm:text-sm font-semibold text-gray-800">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>{metric1}</span>
+                <span>{displayMetric1}</span>
               </div>
             )}
-            {metric2 && (
-              <div className="flex items-start gap-2 text-xs font-semibold text-gray-800">
+            {displayMetric2 && (
+              <div className="flex items-start gap-2 text-xs sm:text-sm font-semibold text-gray-800">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>{metric2}</span>
+                <span>{displayMetric2}</span>
               </div>
             )}
-            {metric3 && (
-              <div className="flex items-start gap-2 text-xs font-semibold text-gray-800">
+            {displayMetric3 && (
+              <div className="flex items-start gap-2 text-xs sm:text-sm font-semibold text-gray-800">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>{metric3}</span>
+                <span>{displayMetric3}</span>
               </div>
             )}
           </div>
@@ -275,9 +291,9 @@ export function BeforeAfterSlider({
           <div className="pt-2">
             <Link
               href={buttonHref}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e91e63] px-6 py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-white shadow-md transition-all duration-200 hover:bg-sg-pink-hover hover:shadow-lg active:scale-98"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e91e63] px-6 py-3 text-xs sm:text-sm font-black uppercase text-white shadow-md transition-all duration-200 hover:bg-sg-pink-hover hover:shadow-lg active:scale-98"
             >
-              <span>{buttonText}</span>
+              <span>{displayButtonText}</span>
               <ChevronRight className="h-4 w-4 stroke-3" />
             </Link>
           </div>

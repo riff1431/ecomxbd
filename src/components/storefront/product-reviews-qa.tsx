@@ -14,12 +14,16 @@ import {
 import { Button } from "@/components/shared/ui/button";
 import { submitReview, getProductReviews } from "@/features/reviews/actions";
 import { askQuestion, getProductQA } from "@/features/qa/actions";
+import { useLanguage } from "@/context/language-context";
 
 interface ProductReviewsQAProps {
   productId: string;
 }
 
 export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
+  const { language, toBn } = useLanguage();
+  const isBn = language === "bn";
+
   const [activeSubTab, setActiveSubTab] = useState<"reviews" | "qa">("reviews");
 
   // Reviews state
@@ -89,7 +93,7 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
   return (
     <div className="space-y-6">
       {/* Sub tabs: Reviews vs Q&A */}
-      <div className="flex gap-4 border-b border-border pb-2 text-xs font-bold">
+      <div className="flex gap-4 border-b border-border pb-2 text-xs sm:text-sm font-bold">
         <button
           onClick={() => setActiveSubTab("reviews")}
           className={`flex items-center gap-1.5 pb-2 transition-colors ${
@@ -99,7 +103,7 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
           }`}
         >
           <Star className="h-4 w-4 fill-current text-amber-400" />
-          <span>Customer Reviews ({reviews.length})</span>
+          <span>{isBn ? `কাস্টমার রিভিউ (${toBn(reviews.length)})` : `Customer Reviews (${reviews.length})`}</span>
         </button>
 
         <button
@@ -111,7 +115,7 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
           }`}
         >
           <MessageSquare className="h-4 w-4 text-primary-600" />
-          <span>Questions & Answers ({questions.length})</span>
+          <span>{isBn ? `প্রশ্ন ও উত্তর (${toBn(questions.length)})` : `Questions & Answers (${questions.length})`}</span>
         </button>
       </div>
 
@@ -119,14 +123,14 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
         <div className="space-y-8">
           {/* Write a Review Card */}
           <div className="rounded-2xl border border-border bg-surface-secondary/40 p-5 space-y-4 text-xs">
-            <h3 className="text-sm font-bold text-text flex items-center gap-1.5">
+            <h3 className="text-sm sm:text-base font-bold text-text flex items-center gap-1.5">
               <Sparkles className="h-4 w-4 text-amber-500" />
-              Leave a Verified Customer Review
+              {isBn ? "যাচাইকৃত কাস্টমার রিভিউ লিখুন" : "Leave a Verified Customer Review"}
             </h3>
 
             <form onSubmit={handleReviewSubmit} className="space-y-3">
               <div>
-                <label className="block font-semibold text-text mb-1">Your Rating</label>
+                <label className="block font-semibold text-text mb-1">{isBn ? "আপনার রেটিং" : "Your Rating"}</label>
                 <div className="flex items-center gap-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
@@ -142,15 +146,15 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
                       />
                     </button>
                   ))}
-                  <span className="ml-2 font-bold text-text">{rating}.0 / 5.0</span>
+                  <span className="ml-2 font-bold text-text">{isBn ? `${toBn(rating)}.০ / ৫.০` : `${rating}.0 / 5.0`}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block font-semibold text-text mb-1">Review Headline</label>
+                <label className="block font-semibold text-text mb-1">{isBn ? "রিভিউ শিরোনাম" : "Review Headline"}</label>
                 <input
                   type="text"
-                  placeholder="e.g. Excellent texture, leaves skin glowing!"
+                  placeholder={isBn ? "যেমন: অসাধারণ টেক্সচার, ত্বককে উজ্জ্বল করে!" : "e.g. Excellent texture, leaves skin glowing!"}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs focus:outline-none"
@@ -158,11 +162,11 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
               </div>
 
               <div>
-                <label className="block font-semibold text-text mb-1">Detailed Review</label>
+                <label className="block font-semibold text-text mb-1">{isBn ? "বিস্তারিত অভিজ্ঞতা" : "Detailed Review"}</label>
                 <textarea
                   rows={3}
                   required
-                  placeholder="Share your genuine experience with this skincare product..."
+                  placeholder={isBn ? "এই স্কিনকেয়ার পণ্য নিয়ে আপনার বাস্তব অভিজ্ঞতা শেয়ার করুন..." : "Share your genuine experience with this skincare product..."}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   className="w-full rounded-xl border border-border bg-white p-3 text-xs focus:outline-none"
@@ -179,9 +183,9 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
                     {reviewMsg.text}
                   </span>
                 )}
-                <Button type="submit" size="sm" disabled={submittingReview} className="ml-auto text-xs">
+                <Button type="submit" size="sm" disabled={submittingReview} className="ml-auto text-xs font-bold">
                   {submittingReview ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-                  Submit Review
+                  {isBn ? "রিভিউ জমা দিন" : "Submit Review"}
                 </Button>
               </div>
             </form>
@@ -191,7 +195,7 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
           <div className="space-y-4">
             {reviews.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border bg-white p-8 text-center text-text-muted text-xs">
-                No reviews yet. Be the first to share your experience!
+                {isBn ? "এখনো কোনো রিভিউ দেওয়া হয়নি। আপনার অভিজ্ঞতা প্রথম শেয়ার করুন!" : "No reviews yet. Be the first to share your experience!"}
               </div>
             ) : (
               reviews.map((r) => (
@@ -207,31 +211,31 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
                         />
                       ))}
                     </div>
-                    <span className="text-[11px] text-text-muted">
+                    <span className="text-[11px] sm:text-xs text-text-muted">
                       {new Date(r.created_at).toLocaleDateString("en-GB")}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-text">
-                      {r.profiles?.full_name || "Verified Customer"}
+                      {r.profiles?.full_name || (isBn ? "ভেরিফায়েড ক্রেতা" : "Verified Customer")}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.2 text-[10px] font-bold border border-emerald-200">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 px-2 py-0.2 text-[10px] sm:text-xs font-bold border border-emerald-200">
                       <ShieldCheck className="h-3 w-3" />
-                      Verified Purchase
+                      {isBn ? "যাচাইকৃত ক্রয়" : "Verified Purchase"}
                     </span>
                   </div>
 
-                  {r.title && <h4 className="font-bold text-text text-sm">{r.title}</h4>}
+                  {r.title && <h4 className="font-bold text-text text-sm sm:text-base">{r.title}</h4>}
                   <p className="text-text-secondary leading-relaxed">{r.comment}</p>
 
                   {/* Admin Reply */}
                   {r.admin_reply && (
                     <div className="mt-3 rounded-xl bg-primary-50/70 border border-primary-100 p-3 space-y-1">
-                      <span className="font-bold text-[11px] text-primary-900 block">
-                        Response from ecomXbangladesh Official Advisor:
+                      <span className="font-bold text-xs text-primary-900 block">
+                        {isBn ? "অফিসিয়াল বিউটি স্পেশালিস্টের উত্তর:" : "Response from ecomXbangladesh Official Advisor:"}
                       </span>
-                      <p className="text-[11px] text-primary-800 leading-relaxed">{r.admin_reply}</p>
+                      <p className="text-xs text-primary-800 leading-relaxed">{r.admin_reply}</p>
                     </div>
                   )}
                 </div>
@@ -245,23 +249,23 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
         <div className="space-y-6">
           {/* Ask Question Form */}
           <div className="rounded-2xl border border-border bg-surface-secondary/40 p-5 space-y-3 text-xs">
-            <h3 className="text-sm font-bold text-text flex items-center gap-1.5">
+            <h3 className="text-sm sm:text-base font-bold text-text flex items-center gap-1.5">
               <HelpCircle className="h-4 w-4 text-primary-600" />
-              Have a question about ingredients or usage?
+              {isBn ? "উপাদান বা ব্যবহার বিধি সম্পর্কে কিছু জানার আছে?" : "Have a question about ingredients or usage?"}
             </h3>
 
             <form onSubmit={handleQuestionSubmit} className="flex gap-2">
               <input
                 type="text"
                 required
-                placeholder="e.g. Is this suitable for sensitive acne-prone skin?"
+                placeholder={isBn ? "যেমন: এটি কি সংবেদনশীল একনে-প্রবণ ত্বকে ব্যবহারযোগ্য?" : "e.g. Is this suitable for sensitive acne-prone skin?"}
                 value={questionText}
                 onChange={(e) => setQuestionText(e.target.value)}
                 className="flex-1 rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
               <Button type="submit" size="sm" disabled={submittingQuestion} className="text-xs font-semibold">
                 {submittingQuestion ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
-                Ask
+                {isBn ? "প্রশ্ন করুন" : "Ask"}
               </Button>
             </form>
 
@@ -280,7 +284,7 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
           <div className="space-y-3">
             {questions.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border bg-white p-8 text-center text-text-muted text-xs">
-                No questions asked yet. Ask our team anything!
+                {isBn ? "এখনো কোনো প্রশ্ন করা হয়নি। নির্দ্বিধায় প্রশ্ন করুন!" : "No questions asked yet. Ask our team anything!"}
               </div>
             ) : (
               questions.map((q) => (
@@ -289,8 +293,8 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
                     <span className="font-extrabold text-primary-600 text-sm">Q:</span>
                     <div>
                       <p className="font-bold text-text text-sm">{q.question}</p>
-                      <span className="text-[10px] text-text-muted">
-                        Asked by {q.profiles?.full_name || "Customer"} on{" "}
+                      <span className="text-[11px] text-text-muted">
+                        {isBn ? "প্রশ্ন করেছেন" : "Asked by"} {q.profiles?.full_name || (isBn ? "ক্রেতা" : "Customer")} •{" "}
                         {new Date(q.created_at).toLocaleDateString("en-GB")}
                       </span>
                     </div>
@@ -301,10 +305,10 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
                       {q.answers.map((a: any) => (
                         <div key={a.id} className="space-y-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-bold text-text">Answer:</span>
+                            <span className="font-bold text-text">{isBn ? "উত্তর:" : "Answer:"}</span>
                             {a.is_official && (
-                              <span className="rounded bg-primary-100 text-primary-800 text-[10px] font-bold px-1.5 py-0.2">
-                                Official Answer
+                              <span className="rounded bg-primary-100 text-primary-800 text-[10px] sm:text-xs font-bold px-1.5 py-0.2">
+                                {isBn ? "অফিসিয়াল উত্তর" : "Official Answer"}
                               </span>
                             )}
                           </div>
@@ -313,8 +317,8 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-[11px] text-text-muted italic pl-4">
-                      Awaiting response from our certified beauty specialist...
+                    <p className="text-xs text-text-muted italic pl-4">
+                      {isBn ? "আমাদের সার্টিফাইড বিউটি স্পেশালিস্টের উত্তরের অপেক্ষায়..." : "Awaiting response from our certified beauty specialist..."}
                     </p>
                   )}
                 </div>

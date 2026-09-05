@@ -217,12 +217,12 @@ export function HomepageInteractive({
       {/* 3. DEALS YOU CANNOT MISS (Section 1: 4 Square Image Banners) */}
       {/* ============================================================ */}
       <section className="container-main">
-        <div className="text-center mb-3">
-          <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
+        <div className="text-center mb-4">
+          <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
             {language === "bn" ? t("home", "dealsTitle") : "DEALS YOU CANNOT MISS"}
           </h2>
           {language === "bn" && (
-            <p className="text-[11px] text-gray-500 mt-0.5">{t("home", "dealsSubtitle")}</p>
+            <p className="text-xs text-gray-500 mt-1">{t("home", "dealsSubtitle")}</p>
           )}
         </div>
 
@@ -248,12 +248,12 @@ export function HomepageInteractive({
       {/* 4. TOP BRANDS & OFFERS (Section 2: Separate 6 Brand Promo Cards) */}
       {/* ============================================================ */}
       <section className="container-main space-y-3">
-        <div className="text-center mb-3">
-          <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
+        <div className="text-center mb-4">
+          <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
             {language === "bn" ? t("home", "topBrandsTitle") : "TOP BRANDS & OFFERS"}
           </h2>
           {language === "bn" && (
-            <p className="text-[11px] text-gray-500 mt-0.5">{t("home", "topBrandsSubtitle")}</p>
+            <p className="text-xs text-gray-500 mt-1">{t("home", "topBrandsSubtitle")}</p>
           )}
         </div>
 
@@ -279,12 +279,12 @@ export function HomepageInteractive({
       {/* 5. LIMITED TIME OFFERS (4 Wavy/Curved Pink Badges) */}
       {/* ============================================================ */}
       <section className="container-main">
-        <div className="text-center mb-3">
-          <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
+        <div className="text-center mb-4">
+          <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
             {language === "bn" ? t("home", "limitedOffersTitle") : "LIMITED TIME OFFERS"}
           </h2>
           {language === "bn" && (
-            <p className="text-[11px] text-gray-500 mt-0.5">{t("home", "limitedOffersSubtitle")}</p>
+            <p className="text-xs text-gray-500 mt-1">{t("home", "limitedOffersSubtitle")}</p>
           )}
         </div>
 
@@ -316,12 +316,12 @@ export function HomepageInteractive({
       {/* 6. SHOP BEAUTY PRODUCTS BY CATEGORY (Girl Model Cards - Shajgoj Style) */}
       {/* ============================================================ */}
       <section className="container-main">
-        <div className="text-center mb-3">
-          <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
+        <div className="text-center mb-4">
+          <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
             {language === "bn" ? t("home", "shopByCategoryTitle") : "SHOP BEAUTY PRODUCTS BY CATEGORY"}
           </h2>
           {language === "bn" && (
-            <p className="text-[11px] text-gray-500 mt-0.5">{t("home", "shopByCategorySubtitle")}</p>
+            <p className="text-xs text-gray-500 mt-1">{t("home", "shopByCategorySubtitle")}</p>
           )}
         </div>
 
@@ -349,14 +349,14 @@ export function HomepageInteractive({
 
               {/* Top Category Title */}
               <div className="relative z-10 pt-3 sm:pt-4 px-2 text-center w-full">
-                <span className="font-black text-xs sm:text-sm md:text-base tracking-wider text-white uppercase drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] font-sans">
+                <span className="font-black text-xs sm:text-sm md:text-base text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">
                   {cat.name}
                 </span>
               </div>
 
               {/* Bottom Subtle Pill */}
               <div className="relative z-10 pb-2.5 px-2 text-center w-full">
-                <span className="inline-block rounded-full bg-white/25 backdrop-blur-xs px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider group-hover:bg-[#e91e63] group-hover:text-white transition-colors shadow-xs">
+                <span className="inline-block rounded-full bg-white/25 backdrop-blur-xs px-2.5 py-0.5 text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider group-hover:bg-[#e91e63] group-hover:text-white transition-colors shadow-xs">
                   {language === "bn" ? "কিনুন" : "SHOP NOW"}
                 </span>
               </div>
@@ -395,16 +395,16 @@ export function HomepageInteractive({
       <section className="container-main space-y-4">
         <div className="flex items-center justify-between border-b border-gray-200 pb-2">
           <div>
-            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
+            <h2 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-wide text-gray-900">
               {language === "bn" ? t("home", "trendingTitle") : trendingTitle}
             </h2>
-            <p className="text-[11px] text-gray-500">
+            <p className="text-xs text-gray-500 mt-0.5">
               {language === "bn" ? t("home", "trendingSubtitle") : trendingSubtitle}
             </p>
           </div>
           <Link
             href="/products"
-            className="text-xs font-bold text-[#e91e63] hover:underline flex items-center gap-1 group"
+            className="text-xs sm:text-sm font-bold text-[#e91e63] hover:underline flex items-center gap-1 group"
           >
             <span>{language === "bn" ? t("home", "trendingViewAll") : trendingViewAllText}</span>
           </Link>
@@ -439,8 +439,8 @@ export function HomepageInteractive({
               >
                 {renderTrustIcon(tp.iconName, tp.imageUrl)}
                 <div>
-                  <h4 className="text-xs font-black text-gray-900">{title}</h4>
-                  <p className="text-[10px] text-gray-500">{subtitle}</p>
+                  <h4 className="text-xs sm:text-sm font-black text-gray-900">{title}</h4>
+                  <p className="text-[11px] sm:text-xs text-gray-500">{subtitle}</p>
                 </div>
               </div>
             );
