@@ -94,7 +94,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
   return (
     <section
       id="homepage-seo-faq"
-      className="border-t border-zinc-200/90 bg-linear-to-b from-white via-pink-50/25 to-white py-12 sm:py-16 lg:py-20 overflow-hidden"
+      className="border-t border-zinc-200/90 bg-linear-to-b from-white via-pink-50/25 to-white pt-10 sm:pt-14 lg:pt-16 pb-6 sm:pb-8 lg:pb-10 overflow-hidden"
       aria-labelledby="seo-faq-heading"
     >
       {/* Schema.org FAQPage JSON-LD Structured Data */}
@@ -368,7 +368,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
 
         {/* Need More Assistance Banner (100% Admin Controllable & Mobile Responsive) */}
         {config?.showWhatsappCard !== false && (
-          <div className="mt-8 sm:mt-12 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white p-5 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xl">
+          <div className="mt-6 sm:mt-8 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white p-5 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xl">
             <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 text-left">
               <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-600 text-white shadow-xs mt-0.5 sm:mt-0">
                 <PhoneCall className="h-5 w-5 sm:h-6 sm:w-6" />

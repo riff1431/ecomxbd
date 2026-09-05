@@ -113,7 +113,7 @@ export function HomepageInteractive({
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-16 bg-[#fafafa]">
+    <div className="space-y-6 sm:space-y-8 bg-[#fafafa]">
       {/* ============================================================ */}
       {/* 1. HERO CAROUSEL BANNER (Full Dynamic Responsive Display) */}
       {/* ============================================================ */}
