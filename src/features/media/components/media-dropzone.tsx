@@ -411,7 +411,7 @@ export default function MediaDropzone({
             <select
               value={targetFolder}
               onChange={(e) => setTargetFolder(e.target.value)}
-              className="h-8 rounded-lg border border-border bg-white px-2.5 text-xs font-medium text-text shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 capitalize"
+              className="h-8 rounded-lg border bg-white px-2.5 text-xs font-medium text-text shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 capitalize"
             >
               {FOLDERS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -620,7 +620,7 @@ export default function MediaDropzone({
                         </span>
                       )}
                       {item.status === "error" && (
-                        <span className="inline-flex items-center gap-1 font-medium text-red-600 truncate max-w-[150px]">
+                        <span className="inline-flex items-center gap-1 font-medium text-red-600 truncate max-w-37.5">
                           <AlertCircle className="h-3 w-3 shrink-0" />
                           {item.error || "Upload failed"}
                         </span>

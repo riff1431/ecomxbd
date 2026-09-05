@@ -15,6 +15,7 @@ import {
   ArrowRight,
   ExternalLink,
   MessageSquare,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import { ModuleHeader } from "@/components/admin/module-settings/module-header";
@@ -137,7 +138,7 @@ export function ReturnsClient({ initialReturns }: ReturnsClientProps) {
             placeholder="Search by RMA #, Order #, or Customer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface-secondary/50 pl-9 pr-4 py-2 text-xs text-text placeholder:text-text-muted focus:border-primary-600 focus:bg-white focus:outline-none"
+            className="w-full rounded-xl border border-border bg-surface-secondary/50 pl-9 pr-4 py-2 text-xs text-text placeholder:text-text-muted focus:outline-none"
           />
         </div>
 
@@ -255,7 +256,7 @@ export function ReturnsClient({ initialReturns }: ReturnsClientProps) {
                 onClick={() => setSelectedReturn(null)}
                 className="text-text-muted hover:text-text p-1 rounded-lg"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -316,7 +317,7 @@ export function ReturnsClient({ initialReturns }: ReturnsClientProps) {
                 onChange={(e) => setAdminNoteInput(e.target.value)}
                 rows={2}
                 placeholder="Enter courier consignment note, refund reference number, or inspection remarks..."
-                className="w-full rounded-xl border border-border p-3 text-xs focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border p-3 text-xs focus:outline-none"
               />
             </div>
 

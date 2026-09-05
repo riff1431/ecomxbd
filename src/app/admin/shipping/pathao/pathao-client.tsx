@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Truck, Save, RefreshCw, CheckCircle2, AlertTriangle, KeyRound, Sliders, Store } from "lucide-react";
+import { Truck, Save, RefreshCw, CheckCircle2, AlertTriangle, KeyRound, Sliders, Store, Webhook, Zap } from "lucide-react";
 import { ModuleHeader } from "@/components/admin/module-settings/module-header";
 import { ModuleTabs } from "@/components/admin/module-settings/module-tabs";
 import { SecretField } from "@/components/admin/module-settings/secret-field";
 import { Button } from "@/components/shared/ui/button";
-import { savePathaoSettings, testPathaoConnection } from "@/features/logistics/courier-settings-actions";
+import { savePathaoSettings, testPathaoConnection, fetchPathaoStoresAction } from "@/features/logistics/courier-settings-actions";
 
 interface PathaoClientProps {
   initialSettings: any;
@@ -17,6 +17,8 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
   const [formData, setFormData] = useState(initialSettings);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [fetchingStores, setFetchingStores] = useState(false);
+  const [availableStores, setAvailableStores] = useState<any[]>([]);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [successMsg, setSuccessMsg] = useState(false);
 
@@ -24,6 +26,7 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
     { id: "general", label: "General & Store" },
     { id: "credentials", label: "API Credentials (OAuth2)" },
     { id: "automation", label: "Automation Rules" },
+    { id: "webhook", label: "Status Webhook" },
   ];
 
   const handleSave = async (e: React.FormEvent) => {
@@ -47,8 +50,29 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
     try {
       const res = await testPathaoConnection();
       setTestResult(res);
+      if (res.stores && res.stores.length > 0) {
+        setAvailableStores(res.stores);
+      }
     } finally {
       setTesting(false);
+    }
+  };
+
+  const handleFetchStores = async () => {
+    setFetchingStores(true);
+    try {
+      const res = await fetchPathaoStoresAction();
+      if (res.success && res.stores) {
+        setAvailableStores(res.stores);
+        if (res.stores.length > 0 && !formData.store_id) {
+          setFormData({ ...formData, store_id: String(res.stores[0].store_id || res.stores[0].id) });
+        }
+        alert(`Successfully fetched ${res.stores.length} store(s) from Pathao!`);
+      } else {
+        alert(res.error || "Failed to fetch stores. Please verify your Pathao API credentials.");
+      }
+    } finally {
+      setFetchingStores(false);
     }
   };
 
@@ -116,22 +140,51 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
                 <select
                   value={formData.environment}
                   onChange={(e) => setFormData({ ...formData, environment: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                 >
-                  <option value="live">Live / Production</option>
-                  <option value="sandbox">Sandbox / Staging</option>
+                  <option value="live">Live / Production (api-hermes.pathao.com)</option>
+                  <option value="sandbox">Sandbox / Staging (courier-api-sandbox.pathao.com)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-text mb-1">Pathao Store ID</label>
-                <input
-                  type="text"
-                  value={formData.store_id}
-                  onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
-                  placeholder="e.g. store_gulshan_hq"
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block font-semibold text-text">Pathao Store ID</label>
+                  <button
+                    type="button"
+                    onClick={handleFetchStores}
+                    disabled={fetchingStores}
+                    className="text-[11px] font-bold text-primary-600 hover:underline flex items-center gap-1"
+                  >
+                    {fetchingStores ? <RefreshCw className="h-3 w-3 animate-spin" /> : <span className="inline-flex items-center gap-1"><Zap className="h-3 w-3" /> Auto-Fetch Stores</span>}
+                  </button>
+                </div>
+
+                {availableStores.length > 0 ? (
+                  <select
+                    value={formData.store_id}
+                    onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
+                  >
+                    <option value="">Select a Pathao Store...</option>
+                    {availableStores.map((st) => (
+                      <option key={st.store_id || st.id} value={st.store_id || st.id}>
+                        {st.store_name || st.name} (ID: {st.store_id || st.id})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={formData.store_id}
+                    onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
+                    placeholder="e.g. 12345 (Click Auto-Fetch Stores above)"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
+                  />
+                )}
+                <p className="text-[11px] text-text-muted mt-1">
+                  The pickup warehouse store registered under your Pathao Merchant account.
+                </p>
               </div>
             </div>
           </div>
@@ -154,8 +207,8 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
                   required
                   value={formData.client_id}
                   onChange={(e) => setFormData({ ...formData, client_id: e.target.value })}
-                  placeholder="e.g. pathao_client_id_..."
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                  placeholder="e.g. 1234 or your Pathao Client ID"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                 />
               </div>
 
@@ -171,12 +224,16 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-semibold text-text mb-1">Username / Email</label>
+                  <label className="block font-semibold text-text mb-1">
+                    Merchant Email / Username <span className="text-red-500">*</span>
+                  </label>
                   <input
                     type="text"
+                    required
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                    placeholder="merchant@example.com"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                   />
                 </div>
 
@@ -186,7 +243,8 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
                   value={formData.password}
                   onChange={(val) => setFormData({ ...formData, password: val })}
                   isConfigured={!!formData.password && formData.password.startsWith("••••")}
-                  description="Merchant login password for bearer token grants."
+                  description="Merchant login password for OAuth2 bearer token grants."
+                  required
                 />
               </div>
             </div>
@@ -205,7 +263,7 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
                 <div>
                   <span className="font-semibold text-text block">Auto-Book Pathao Consignment</span>
                   <span className="text-text-muted text-[11px]">
-                    Creates parcel on Pathao system automatically when order confirmation is finalized.
+                    Creates parcel on Pathao system automatically when order moves to Confirmed/Processing.
                   </span>
                 </div>
                 <input
@@ -219,6 +277,85 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
           </div>
         )}
 
+        {activeTab === "webhook" && (
+          <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-5">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                <Webhook className="h-4 w-4 text-primary-600" />
+                Pathao Courier Webhook Integration
+              </h2>
+              <p className="text-xs text-text-secondary mt-1">
+                Configure real-time automated delivery and parcel return callbacks from Pathao.
+              </p>
+            </div>
+
+            {/* Custom Live Domain / App URL Override */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-text">
+                Live Store Domain (Optional Override)
+              </label>
+              <input
+                type="text"
+                value={formData.webhook_domain_override || ""}
+                onChange={(e) => setFormData({ ...formData, webhook_domain_override: e.target.value })}
+                placeholder="e.g. https://yourdomain.com (Leave blank to auto-detect)"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
+              />
+              <p className="text-[11px] text-text-muted">
+                If you are testing locally on <code>localhost</code>, enter your live production domain or ngrok tunnel URL above. When deployed live, it automatically uses your active store domain.
+              </p>
+            </div>
+
+            {/* Callback URL Field with Dynamic Origin & 1-Click Copy */}
+            {(() => {
+              const baseOrigin = formData.webhook_domain_override?.trim()
+                ? formData.webhook_domain_override.trim().replace(/\/$/, "")
+                : typeof window !== "undefined" && window.location?.origin
+                ? window.location.origin
+                : (process.env.NEXT_PUBLIC_APP_URL || "");
+
+              const computedCallbackUrl = `${baseOrigin}/api/webhooks/courier/pathao`;
+              const isLocalhost = baseOrigin.includes("localhost") || baseOrigin.includes("127.0.0.1");
+
+              return (
+                <div className="space-y-1.5 pt-2 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-text">
+                      Callback URL (Paste into Pathao Developer Portal)
+                    </label>
+                    {isLocalhost && (
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md">
+                        Running on Localhost (Auto-changes on Live Domain)
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 rounded-xl border border-border bg-surface-secondary px-3.5 py-2 font-mono text-xs text-primary-700 select-all truncate">
+                      {computedCallbackUrl}
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(computedCallbackUrl);
+                        alert("Pathao Callback URL copied to clipboard!");
+                      }}
+                      className="text-xs shrink-0"
+                    >
+                      Copy URL
+                    </Button>
+                  </div>
+                  <p className="text-[11px] text-text-muted">
+                    Paste this into your Pathao Merchant Dashboard under <strong>Developer API &gt; Webhook URL</strong>.
+                  </p>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         <div className="flex justify-end">
           <Button type="submit" disabled={saving} size="sm" className="text-xs">
             <Save className="h-3.5 w-3.5 mr-1.5" />
@@ -229,3 +366,4 @@ export function PathaoClient({ initialSettings }: PathaoClientProps) {
     </div>
   );
 }
+

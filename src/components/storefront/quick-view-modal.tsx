@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X, Star, ShoppingBag, Plus, Minus, Zap, ShieldCheck, Heart } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
@@ -8,6 +8,11 @@ import { Button } from "@/components/shared/ui/button";
 import { useWishlist } from "@/context/wishlist-context";
 import { useCart } from "@/context/cart-context";
 import { triggerMicroRipple } from "@/lib/ui-effects";
+import {
+  trackViewItem,
+  trackAddToCart as trackGA4AddToCart,
+  trackAddToWishlist as trackGA4AddToWishlist,
+} from "@/lib/analytics/datalayer";
 
 interface QuickViewProduct {
   id: string;
@@ -17,6 +22,7 @@ interface QuickViewProduct {
   sale_price: number | null;
   image_url?: string | null;
   brand_name?: string | null;
+  category_name?: string | null;
 }
 
 interface QuickViewModalProps {
@@ -30,13 +36,87 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
   const { isWishlisted, toggleWishlist } = useWishlist();
   const { addItem } = useCart();
 
+  useEffect(() => {
+    if (isOpen && product) {
+      const effectivePrice = product.sale_price ?? product.regular_price;
+      trackViewItem({
+        item_id: product.id,
+        item_name: product.name,
+        item_brand: product.brand_name || undefined,
+        item_category: product.category_name || undefined,
+        price: effectivePrice,
+        quantity: 1,
+      });
+    }
+  }, [isOpen, product]);
+
   if (!isOpen || !product) return null;
 
   const inWishlist = isWishlisted(product.id);
+  const effectivePrice = product.sale_price ?? product.regular_price;
   const discountPercent =
     product.sale_price && product.regular_price > product.sale_price
       ? Math.round(((product.regular_price - product.sale_price) / product.regular_price) * 100)
       : 0;
+
+  const handleAddToCartClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    triggerMicroRipple(e);
+    trackGA4AddToCart(
+      [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.brand_name || undefined,
+          item_category: product.category_name || undefined,
+          price: effectivePrice,
+          quantity,
+        },
+      ],
+      effectivePrice * quantity
+    );
+
+    addItem(
+      {
+        id: product.id,
+        product_id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: effectivePrice,
+        regular_price: product.regular_price,
+        image_url: product.image_url || null,
+        brand_name: product.brand_name || null,
+      },
+      quantity
+    );
+    onClose();
+  };
+
+  const handleWishlistClick = () => {
+    if (!inWishlist) {
+      trackGA4AddToWishlist(
+        [
+          {
+            item_id: product.id,
+            item_name: product.name,
+            item_brand: product.brand_name || undefined,
+            item_category: product.category_name || undefined,
+            price: effectivePrice,
+            quantity: 1,
+          },
+        ],
+        effectivePrice
+      );
+    }
+    toggleWishlist({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      regular_price: product.regular_price,
+      sale_price: product.sale_price,
+      image_url: product.image_url || null,
+      brand_name: product.brand_name || null,
+    });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in-0">
@@ -60,7 +140,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-text-muted">
-                <ShoppingBag className="h-16 w-16 stroke-[1]" />
+                <ShoppingBag className="h-16 w-16 stroke-1" />
               </div>
             )}
             {discountPercent > 0 && (
@@ -131,20 +211,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
             {/* Action Buttons */}
             <div className="space-y-2 pt-2">
               <Button
-                onClick={(e) => {
-                  triggerMicroRipple(e);
-                  addItem({
-                    id: product.id,
-                    product_id: product.id,
-                    name: product.name,
-                    slug: product.slug,
-                    price: product.sale_price ?? product.regular_price,
-                    regular_price: product.regular_price,
-                    image_url: product.image_url || null,
-                    brand_name: product.brand_name || null,
-                  }, quantity);
-                  onClose();
-                }}
+                onClick={handleAddToCartClick}
                 className="btn-add-to-cart ripple-container w-full py-5 text-xs font-bold shadow-sm flex items-center justify-center gap-2"
               >
                 <ShoppingBag className="h-4 w-4" />
@@ -155,17 +222,7 @@ export function QuickViewModal({ product, isOpen, onClose }: QuickViewModalProps
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    toggleWishlist({
-                      id: product.id,
-                      name: product.name,
-                      slug: product.slug,
-                      regular_price: product.regular_price,
-                      sale_price: product.sale_price,
-                      image_url: product.image_url || null,
-                      brand_name: product.brand_name || null,
-                    })
-                  }
+                  onClick={handleWishlistClick}
                   className="flex-1 text-xs"
                 >
                   <Heart className={`h-3.5 w-3.5 mr-1 ${inWishlist ? "fill-accent-500 text-accent-500" : ""}`} />

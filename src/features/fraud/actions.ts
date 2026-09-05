@@ -37,14 +37,23 @@ export interface AbandonedLead {
   customer_email?: string;
   district?: string;
   address?: string;
-  cart_items: Array<{ name: string; quantity: number; price: number }>;
+  cart_items: Array<{
+    id?: string;
+    name: string;
+    quantity: number;
+    price: number;
+    image?: string;
+    variant?: string;
+  }>;
   cart_total: number;
   recovery_status: "abandoned" | "sms_sent" | "whatsapp_sent" | "converted";
   last_active_at: string;
 }
 
-// In-memory blacklist store with persistent fallback
-let memoryFraudProfiles: FraudProfile[] = [
+const FRAUD_STORE_KEY = "fraud_profiles_store";
+const LEADS_STORE_KEY = "abandoned_checkouts_store";
+
+const DEFAULT_FRAUD_PROFILES: FraudProfile[] = [
   {
     id: "fp-1",
     identifier_type: "phone",
@@ -72,6 +81,50 @@ let memoryFraudProfiles: FraudProfile[] = [
     updated_at: new Date().toISOString(),
   },
 ];
+
+async function getStoredFraudProfiles(): Promise<FraudProfile[]> {
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase.from("store_settings").select("value").eq("key", FRAUD_STORE_KEY).single();
+    if (data && Array.isArray(data.value) && data.value.length > 0) {
+      return data.value as FraudProfile[];
+    }
+  } catch {}
+  return DEFAULT_FRAUD_PROFILES;
+}
+
+async function saveStoredFraudProfiles(profiles: FraudProfile[]) {
+  try {
+    const supabase = createAdminClient();
+    await supabase.from("store_settings").upsert({
+      key: FRAUD_STORE_KEY,
+      value: profiles as any,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "key" });
+  } catch {}
+}
+
+async function getStoredLeads(): Promise<AbandonedLead[]> {
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase.from("store_settings").select("value").eq("key", LEADS_STORE_KEY).single();
+    if (data && Array.isArray(data.value) && data.value.length > 0) {
+      return data.value as AbandonedLead[];
+    }
+  } catch {}
+  return memoryAbandonedCheckouts;
+}
+
+async function saveStoredLeads(leads: AbandonedLead[]) {
+  try {
+    const supabase = createAdminClient();
+    await supabase.from("store_settings").upsert({
+      key: LEADS_STORE_KEY,
+      value: leads as any,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "key" });
+  } catch {}
+}
 
 // In-memory abandoned leads store
 let memoryAbandonedCheckouts: AbandonedLead[] = [
@@ -133,8 +186,9 @@ export async function evaluateOrderRisk({
   let riskScore = 0;
 
   // 1. Blacklist Check
-  const blacklisted = memoryFraudProfiles.find(
-    (p) =>
+  const profiles = await getStoredFraudProfiles();
+  const blacklisted = profiles.find(
+    (p: FraudProfile) =>
       p.is_blacklisted &&
       (p.identifier_value === cleanPhone || (ipAddress && p.identifier_value === ipAddress))
   );
@@ -219,37 +273,65 @@ export async function evaluateOrderRisk({
 }
 
 /**
- * 2. Real-Time Incomplete / Abandoned Lead Capture (Triggered on Checkout Input)
+ * 2. Real-Time Incomplete / Abandoned Lead Capture (Triggered Instantly on Checkout Input)
  */
 export async function saveIncompleteLead(input: {
-  name: string;
-  phone: string;
+  name?: string;
+  phone?: string;
   email?: string;
   district?: string;
+  thana?: string;
   address?: string;
-  cartItems: Array<{ name: string; quantity: number; price: number }>;
+  cartItems: Array<{
+    id?: string;
+    name: string;
+    quantity: number;
+    price: number;
+    image?: string;
+    variant?: string;
+  }>;
   cartTotal: number;
+  subtotal?: number;
+  shippingFee?: number;
+  discount?: number;
 }) {
-  if (!input.name || !input.phone || input.phone.length < 10) {
-    return { success: false };
+  const cleanPhone = (input.phone || "").trim().replace(/[^0-9]/g, "");
+  const cleanEmail = (input.email || "").trim().toLowerCase();
+  const cleanName = (input.name || "").trim();
+
+  // Require at least a valid contact identifier (phone with >= 6 digits, or email, or name)
+  if (!cleanPhone && !cleanEmail && !cleanName) {
+    return { success: false, error: "No contact info" };
   }
 
-  const cleanPhone = input.phone.trim().replace(/[^0-9]/g, "");
+  const identifier = cleanPhone || cleanEmail || `lead_${cleanName.toLowerCase().replace(/\s+/g, "_")}`;
 
   const existingIdx = memoryAbandonedCheckouts.findIndex(
-    (l) => l.customer_phone === cleanPhone && l.recovery_status !== "converted"
+    (l) =>
+      (cleanPhone && l.customer_phone === cleanPhone) ||
+      (cleanEmail && l.customer_email === cleanEmail) ||
+      (l.id === identifier)
   );
 
   const lead: AbandonedLead = {
-    id: existingIdx >= 0 ? memoryAbandonedCheckouts[existingIdx].id : `ab-${Date.now()}`,
-    customer_name: input.name.trim(),
-    customer_phone: cleanPhone,
-    customer_email: input.email?.trim(),
-    district: input.district,
-    address: input.address,
-    cart_items: input.cartItems,
+    id: existingIdx >= 0 ? memoryAbandonedCheckouts[existingIdx].id : `ab-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    customer_name: cleanName || "Guest Customer",
+    customer_phone: cleanPhone || "Not Provided",
+    customer_email: cleanEmail || undefined,
+    district: input.district || "Dhaka City",
+    address: [input.address, input.thana, input.district].filter(Boolean).join(", "),
+    cart_items: input.cartItems.map((it) => ({
+      id: it.id,
+      name: it.name,
+      quantity: it.quantity || 1,
+      price: it.price || 0,
+      image: it.image,
+      variant: it.variant,
+    })),
     cart_total: input.cartTotal,
-    recovery_status: "abandoned",
+    recovery_status: existingIdx >= 0 && memoryAbandonedCheckouts[existingIdx].recovery_status === "converted"
+      ? "converted"
+      : "abandoned",
     last_active_at: new Date().toISOString(),
   };
 
@@ -257,6 +339,11 @@ export async function saveIncompleteLead(input: {
     memoryAbandonedCheckouts[existingIdx] = lead;
   } else {
     memoryAbandonedCheckouts.unshift(lead);
+  }
+
+  // Keep latest 200 leads in memory
+  if (memoryAbandonedCheckouts.length > 200) {
+    memoryAbandonedCheckouts = memoryAbandonedCheckouts.slice(0, 200);
   }
 
   return { success: true, leadId: lead.id };
@@ -267,18 +354,88 @@ export async function markLeadConverted(phone: string) {
   memoryAbandonedCheckouts = memoryAbandonedCheckouts.map((l) =>
     l.customer_phone === cleanPhone ? { ...l, recovery_status: "converted" } : l
   );
+  revalidatePath("/admin/orders/incomplete");
   return { success: true };
 }
 
 export async function getAbandonedCheckouts() {
-  return memoryAbandonedCheckouts.filter((l) => l.recovery_status !== "converted");
+  const leads = await getStoredLeads();
+  return leads.filter((l) => l.recovery_status !== "converted");
+}
+
+export async function createOrderFromAbandonedLead(leadId: string, fallbackLead?: AbandonedLead) {
+  const currentLeads = await getStoredLeads();
+  let lead = currentLeads.find((l) => l.id === leadId) || fallbackLead;
+
+  if (!lead) {
+    return { success: false, error: "Incomplete lead data not found" };
+  }
+
+  const { createOrder } = await import("@/features/orders/actions");
+
+  try {
+    const isDhaka = (lead.district || "").toLowerCase().includes("dhaka");
+    const deliveryFee = isDhaka ? 60 : 120;
+
+    const itemsToOrder = (lead.cart_items && lead.cart_items.length > 0)
+      ? lead.cart_items.map((it) => ({
+          product_id: it.id || "prod_converted",
+          variant_id: null,
+          name: it.name,
+          price: it.price,
+          quantity: it.quantity || 1,
+        }))
+      : [
+          {
+            product_id: "prod_converted",
+            variant_id: null,
+            name: "Skincare Cosmetics Lead Package",
+            price: lead.cart_total > 0 ? lead.cart_total : 1000,
+            quantity: 1,
+          },
+        ];
+
+    const res = await createOrder({
+      customer: {
+        name: lead.customer_name || "Customer",
+        phone: lead.customer_phone || "01700000000",
+        email: lead.customer_email || undefined,
+        district: lead.district || "Dhaka City",
+        thana: "",
+        address: lead.address || "Dhaka, Bangladesh",
+        notes: `Order converted from Incomplete Lead (${lead.id}) via Admin Dashboard`,
+      },
+      items: itemsToOrder,
+      shipping: {
+        method: isDhaka ? "Inside Dhaka Express (24-48h)" : "Outside Dhaka Courier (3-5d)",
+        amount: deliveryFee,
+      },
+    });
+
+    if (res.success) {
+      const updatedLeads = currentLeads.map((l) =>
+        l.id === leadId || (lead && l.customer_phone === lead.customer_phone)
+          ? { ...l, recovery_status: "converted" as const }
+          : l
+      );
+      await saveStoredLeads(updatedLeads);
+
+      revalidatePath("/admin/orders");
+      revalidatePath("/admin/orders/incomplete");
+      return { success: true, orderNumber: res.orderNumber, orderId: res.orderId };
+    }
+
+    return { success: false, error: res.error || "Failed to create order" };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to convert lead" };
+  }
 }
 
 /**
  * 3. Fraud Blacklist Management
  */
 export async function getFraudProfiles() {
-  return memoryFraudProfiles;
+  return await getStoredFraudProfiles();
 }
 
 export async function addBlacklistEntry(input: {
@@ -286,6 +443,7 @@ export async function addBlacklistEntry(input: {
   value: string;
   reason: string;
 }) {
+  const current = await getStoredFraudProfiles();
   const newProfile: FraudProfile = {
     id: `fp-${Date.now()}`,
     identifier_type: input.type,
@@ -299,27 +457,31 @@ export async function addBlacklistEntry(input: {
     updated_at: new Date().toISOString(),
   };
 
-  memoryFraudProfiles.unshift(newProfile);
+  current.unshift(newProfile);
+  await saveStoredFraudProfiles(current);
   revalidatePath("/admin/orders");
   revalidatePath("/admin/orders/fraud");
   return { success: true, profile: newProfile };
 }
 
 export async function removeBlacklistEntry(id: string) {
-  memoryFraudProfiles = memoryFraudProfiles.filter((p) => p.id !== id);
+  const current = await getStoredFraudProfiles();
+  const updated = current.filter((p) => p.id !== id);
+  await saveStoredFraudProfiles(updated);
   revalidatePath("/admin/orders");
   revalidatePath("/admin/orders/fraud");
   return { success: true };
 }
 
 export async function toggleBlacklistStatus(phoneOrId: string, isBlacklisted: boolean, reason?: string) {
+  const current = await getStoredFraudProfiles();
   const clean = phoneOrId.trim();
-  const existing = memoryFraudProfiles.find((p) => p.identifier_value === clean || p.id === clean);
+  const existing = current.find((p) => p.identifier_value === clean || p.id === clean);
   if (existing) {
     existing.is_blacklisted = isBlacklisted;
     existing.blacklist_reason = reason || existing.blacklist_reason;
   } else {
-    memoryFraudProfiles.unshift({
+    current.unshift({
       id: `fp-${Date.now()}`,
       identifier_type: "phone",
       identifier_value: clean,
@@ -332,6 +494,7 @@ export async function toggleBlacklistStatus(phoneOrId: string, isBlacklisted: bo
       updated_at: new Date().toISOString(),
     });
   }
+  await saveStoredFraudProfiles(current);
   revalidatePath("/admin/orders");
   revalidatePath("/admin/orders/fraud");
   return { success: true };

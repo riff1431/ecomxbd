@@ -1,7 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { getStoreFeatureSettings } from "@/features/settings/feature-settings-actions";
+import { sendSmsNotification } from "@/features/sms/actions";
 
 export interface CreateOrderInput {
   customer: {
@@ -27,6 +30,94 @@ export interface CreateOrderInput {
   couponCode?: string | null;
 }
 
+/**
+ * WooCommerce Idempotent Stock Reduction Engine
+ * wc_maybe_reduce_stock_levels()
+ */
+export async function reduceOrderStock(
+  orderId: string,
+  supabaseAdmin: any,
+  providedItems?: any[]
+): Promise<boolean> {
+  try {
+    let items: any[] = providedItems || [];
+    if (items.length === 0) {
+      const { data: fetchedItems } = await supabaseAdmin
+        .from("order_items")
+        .select("product_id, variant_id, quantity")
+        .eq("order_id", orderId);
+      items = fetchedItems || [];
+    }
+
+    for (const item of items) {
+      if (item.product_id) {
+        const { data: prod } = await supabaseAdmin
+          .from("products")
+          .select("stock_quantity")
+          .eq("id", item.product_id)
+          .maybeSingle();
+
+        if (prod && typeof prod.stock_quantity === "number") {
+          const newQty = Math.max(0, prod.stock_quantity - (item.quantity || 1));
+          await supabaseAdmin
+            .from("products")
+            .update({ stock_quantity: newQty })
+            .eq("id", item.product_id);
+        }
+      }
+    }
+
+    return true;
+  } catch (err) {
+    console.warn("Stock reduction warning:", err);
+    return false;
+  }
+}
+
+/**
+ * WooCommerce Idempotent Stock Restoration Engine
+ * wc_maybe_increase_stock_levels()
+ */
+export async function restoreOrderStock(
+  orderId: string,
+  supabaseAdmin: any,
+  providedItems?: any[]
+): Promise<boolean> {
+  try {
+    let items: any[] = providedItems || [];
+    if (items.length === 0) {
+      const { data: fetchedItems } = await supabaseAdmin
+        .from("order_items")
+        .select("product_id, variant_id, quantity")
+        .eq("order_id", orderId);
+      items = fetchedItems || [];
+    }
+
+    for (const item of items) {
+      if (item.product_id) {
+        const { data: prod } = await supabaseAdmin
+          .from("products")
+          .select("stock_quantity")
+          .eq("id", item.product_id)
+          .maybeSingle();
+
+        if (prod && typeof prod.stock_quantity === "number") {
+          const newQty = prod.stock_quantity + (item.quantity || 1);
+          await supabaseAdmin
+            .from("products")
+            .update({ stock_quantity: newQty })
+            .eq("id", item.product_id);
+        }
+      }
+    }
+
+    return true;
+  } catch (err) {
+    console.warn("Stock restoration warning:", err);
+    return false;
+  }
+}
+
 export async function createOrder(input: CreateOrderInput) {
   try {
     const supabaseUserClient = await createClient();
@@ -40,27 +131,41 @@ export async function createOrder(input: CreateOrderInput) {
     const validatedItems: any[] = [];
 
     for (const item of input.items) {
-      const { data: product } = await supabaseAdmin
-        .from("products")
-        .select("id, name, sku, regular_price, sale_price")
-        .eq("id", item.product_id)
-        .single();
+      let product: any = null;
 
-      if (!product) {
-        return { error: `Product not found: ${item.name}` };
+      // 1. Try finding by ID
+      if (item.product_id && item.product_id.length > 5 && !item.product_id.startsWith("prod_")) {
+        const { data: pById } = await supabaseAdmin
+          .from("products")
+          .select("id, name, sku, regular_price, sale_price")
+          .eq("id", item.product_id)
+          .maybeSingle();
+        product = pById;
       }
 
-      const activePrice = product.sale_price ?? product.regular_price;
-      const lineTotal = activePrice * item.quantity;
+      // 2. If not found by ID, try finding by name
+      if (!product && item.name) {
+        const { data: pByName } = await supabaseAdmin
+          .from("products")
+          .select("id, name, sku, regular_price, sale_price")
+          .ilike("name", item.name.trim())
+          .maybeSingle();
+        product = pByName;
+      }
+
+      const activePrice = product
+        ? (product.sale_price ?? product.regular_price ?? item.price)
+        : item.price;
+      const lineTotal = activePrice * (item.quantity || 1);
       subtotal += lineTotal;
 
       validatedItems.push({
-        product_id: product.id,
+        product_id: product?.id || null,
         variant_id: item.variant_id || null,
-        product_name_snapshot: product.name,
-        sku_snapshot: product.sku || null,
+        product_name_snapshot: product?.name || item.name,
+        sku_snapshot: product?.sku || null,
         unit_price: activePrice,
-        quantity: item.quantity,
+        quantity: item.quantity || 1,
         total: lineTotal,
       });
     }
@@ -103,7 +208,10 @@ export async function createOrder(input: CreateOrderInput) {
     const randomSuffix = Math.floor(100000 + Math.random() * 900000);
     const orderNumber = `ORD-2026-${randomSuffix}`;
 
-    // 5. Insert Order
+    // 5. Initial Status matching WooCommerce (COD -> processing, Online -> pending)
+    const initialStatus = "processing";
+
+    // 6. Insert Order
     const { data: order, error: orderErr } = await supabaseAdmin
       .from("orders")
       .insert({
@@ -130,7 +238,7 @@ export async function createOrder(input: CreateOrderInput) {
           address: input.customer.address,
         },
         public_note: input.customer.notes || null,
-        status: "pending",
+        status: initialStatus,
       })
       .select()
       .single();
@@ -140,7 +248,7 @@ export async function createOrder(input: CreateOrderInput) {
       return { error: `Failed to place order: ${orderErr.message}` };
     }
 
-    // 6. Insert Order Items
+    // 7. Insert Order Items
     const itemsToInsert = validatedItems.map((item) => ({
       ...item,
       order_id: order.id,
@@ -148,13 +256,17 @@ export async function createOrder(input: CreateOrderInput) {
 
     await supabaseAdmin.from("order_items").insert(itemsToInsert);
 
-    // 7. Insert Initial Status History
+    // 8. Reduce Stock for Processing COD Order
+    await reduceOrderStock(order.id, supabaseAdmin, itemsToInsert);
+
+    // 9. Insert Initial Status History
     await supabaseAdmin.from("order_status_history").insert({
       order_id: order.id,
-      status: "pending",
-      note: "Order placed via website with Cash on Delivery",
+      status: initialStatus,
+      note: "Order placed via website (Cash on Delivery). Stock reduced.",
       created_by: user?.id || null,
     });
+
 
     // 8. Update Coupon Usage if applicable
     if (appliedCoupon) {
@@ -171,10 +283,29 @@ export async function createOrder(input: CreateOrderInput) {
         .eq("id", appliedCoupon.id);
     }
 
+    // 9. Automated Transactional SMS Trigger (Admin Controlled)
+    const featureSettings = await getStoreFeatureSettings();
+    if (featureSettings.enable_order_placed_sms !== false && input.customer.phone) {
+      sendSmsNotification({
+        recipientPhone: input.customer.phone,
+        eventType: "order_created",
+        variables: {
+          customer_name: input.customer.name,
+          order_number: order.order_number,
+          total: total.toString(),
+          tracking_url: `/account/track?order=${order.order_number}`,
+        },
+      }).catch((e) => console.error("SMS notification trigger failed:", e));
+    }
+
     return {
       success: true,
       orderId: order.id,
       orderNumber: order.order_number,
+      order: {
+        ...order,
+        order_items: itemsToInsert,
+      },
     };
   } catch (err: any) {
     console.error("Unexpected checkout error:", err);
@@ -215,7 +346,25 @@ export async function getAdminOrders(statusFilter?: string) {
   const supabase = createAdminClient();
   let query = supabase
     .from("orders")
-    .select("*, order_items(id, quantity)")
+    .select(`
+      *,
+      order_items (
+        id,
+        product_id,
+        variant_id,
+        product_name_snapshot,
+        sku_snapshot,
+        unit_price,
+        quantity,
+        total
+      ),
+      order_status_history (
+        id,
+        status,
+        note,
+        created_at
+      )
+    `)
     .order("created_at", { ascending: false });
 
   if (statusFilter && statusFilter !== "all") {
@@ -227,13 +376,65 @@ export async function getAdminOrders(statusFilter?: string) {
     console.error("Failed to fetch admin orders:", error);
     return [];
   }
-  return data || [];
+
+  // Enrich with dynamic calculation & risk scoring
+  const { computeCustomerRiskProfile, calculateOrderFinancials } = await import("@/types/orders");
+
+  return (data || []).map((order) => {
+    const advancePaid = Number(order.advance_paid) || 0;
+    const grossTotal = Number(order.total) || 0;
+    const financials = calculateOrderFinancials(
+      order.subtotal || 0,
+      order.shipping_amount || 0,
+      order.discount_amount || 0,
+      order.tax_amount || 0,
+      advancePaid
+    );
+
+    const phone = order.shipping_address_snapshot?.phone || order.guest_phone || "";
+    const riskProfile = computeCustomerRiskProfile({
+      phone,
+      district: order.shipping_address_snapshot?.district || "",
+      orderTotal: grossTotal,
+      advancePaid,
+      isBlacklisted: Boolean(order.fraud_score && order.fraud_score < 20),
+    });
+
+    return {
+      ...order,
+      advance_paid: advancePaid,
+      amount_to_collect: financials.amount_to_collect,
+      payment_status: order.payment_status || financials.payment_status,
+      risk_profile: riskProfile,
+    };
+  });
 }
 
-export async function updateOrderStatus(orderId: string, newStatus: string, note?: string) {
+export async function updateOrderStatus(
+  orderId: string,
+  newStatus: string,
+  note?: string,
+  isOverride: boolean = false,
+  overrideReason?: string
+) {
   const supabaseAdmin = createAdminClient();
   const supabaseUser = await createClient();
   const { data: authData } = await supabaseUser.auth.getUser();
+
+  // 1. Fetch current order to validate transition invariant
+  const { data: currentOrder } = await supabaseAdmin
+    .from("orders")
+    .select("status, order_number")
+    .eq("id", orderId)
+    .single();
+
+  if (currentOrder) {
+    const { canTransitionOrderStatus } = await import("@/types/orders");
+    const check = canTransitionOrderStatus(currentOrder.status as any, newStatus as any, isOverride);
+    if (!check.allowed) {
+      return { error: check.reason || "Invalid status transition" };
+    }
+  }
 
   const { data, error } = await supabaseAdmin
     .from("orders")
@@ -244,14 +445,98 @@ export async function updateOrderStatus(orderId: string, newStatus: string, note
 
   if (error) return { error: error.message };
 
+  // 2. WooCommerce Idempotent Inventory Synchronization
+  try {
+    const isNowCancelledOrRefunded = ["cancelled", "refunded", "failed", "returned"].includes(newStatus);
+    const isNowActive = ["processing", "confirmed", "on-hold", "completed", "shipped"].includes(newStatus);
+
+    if (isNowCancelledOrRefunded) {
+      await restoreOrderStock(orderId, supabaseAdmin);
+    } else if (isNowActive) {
+      await reduceOrderStock(orderId, supabaseAdmin);
+    }
+  } catch (invErr) {
+    console.warn("Inventory sync warning (non-fatal):", invErr);
+  }
+
+  const historyNote = isOverride
+    ? `[ADMIN OVERRIDE]: Status manually forced from '${currentOrder?.status || "unknown"}' to '${newStatus}'. Reason: ${overrideReason || "Supervisor manual correction"}`
+    : note || `Status updated from ${currentOrder?.status || "unknown"} to ${newStatus}`;
+
   await supabaseAdmin.from("order_status_history").insert({
     order_id: orderId,
     status: newStatus,
-    note: note || `Status updated to ${newStatus}`,
+    note: historyNote,
     created_by: authData?.user?.id || null,
   });
 
   return { success: true, order: data };
+}
+
+
+
+export async function recordAdvancePayment(params: {
+  orderId: string;
+  amount: number;
+  paymentMethod: "bkash" | "nagad" | "rocket" | "upay" | "bank_transfer" | "cash";
+  trxId: string;
+  note?: string;
+}) {
+  const supabaseAdmin = createAdminClient();
+  const supabaseUser = await createClient();
+  const { data: authData } = await supabaseUser.auth.getUser();
+
+  const { data: order, error: fetchErr } = await supabaseAdmin
+    .from("orders")
+    .select("*")
+    .eq("id", params.orderId)
+    .single();
+
+  if (fetchErr || !order) {
+    return { error: "Order not found" };
+  }
+
+  const { calculateOrderFinancials } = await import("@/types/orders");
+  const newAdvancePaid = (Number(order.advance_paid) || 0) + params.amount;
+  const financials = calculateOrderFinancials(
+    order.subtotal || 0,
+    order.shipping_amount || 0,
+    order.discount_amount || 0,
+    order.tax_amount || 0,
+    newAdvancePaid
+  );
+
+  const { data: updatedOrder, error: updateErr } = await supabaseAdmin
+    .from("orders")
+    .update({
+      advance_paid: newAdvancePaid,
+      payment_status: financials.payment_status,
+      advance_payment_method: params.paymentMethod,
+      advance_trx_id: params.trxId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", params.orderId)
+    .select()
+    .single();
+
+  if (updateErr) {
+    return { error: updateErr.message };
+  }
+
+  await supabaseAdmin.from("order_status_history").insert({
+    order_id: params.orderId,
+    status: order.status,
+    note: `Advance payment received: ৳${params.amount} via ${params.paymentMethod.toUpperCase()} (TrxID: ${params.trxId}). Remaining COD: ৳${financials.amount_to_collect}. ${params.note || ""}`,
+    created_by: authData?.user?.id || null,
+  });
+
+  return {
+    success: true,
+    order: {
+      ...updatedOrder,
+      amount_to_collect: financials.amount_to_collect,
+    },
+  };
 }
 
 export async function updateAdminOrderFull(orderId: string, payload: {
@@ -313,6 +598,25 @@ export async function updateAdminOrderFull(orderId: string, payload: {
       note: payload.note || `Order modified by admin`,
       created_by: authData?.user?.id || null,
     });
+
+    // Automated Transactional SMS Trigger on Order Shipped (Admin Controlled)
+    if (payload.status === "shipped") {
+      const featureSettings = await getStoreFeatureSettings();
+      const phone = data.guest_phone || data.shipping_address_snapshot?.phone;
+      if (featureSettings.enable_order_shipped_sms !== false && phone) {
+        sendSmsNotification({
+          recipientPhone: phone,
+          eventType: "order_shipped",
+          variables: {
+            customer_name: data.guest_name || data.shipping_address_snapshot?.name || "Customer",
+            order_number: data.order_number,
+            courier_name: data.courier_name || "SteadFast Courier",
+            tracking_id: data.consignment_id || data.tracking_code || data.order_number,
+            tracking_url: data.tracking_url || `/account/track?order=${data.order_number}`,
+          },
+        }).catch((e) => console.error("Dispatch SMS trigger failed:", e));
+      }
+    }
   }
 
   return { success: true, order: data };
@@ -351,4 +655,96 @@ export async function trackOrder(orderNumber: string, phone: string) {
   }
 
   return { order };
+}
+
+/**
+ * Customer Self-Service Order Cancellation
+ * Allows customers to cancel pending/un-dispatched orders directly from their account dashboard.
+ * Restores product stock automatically and logs to status history.
+ */
+export async function cancelCustomerOrder(orderId: string, reason?: string) {
+  try {
+    const supabaseUser = await createClient();
+    const { data: authData } = await supabaseUser.auth.getUser();
+    const user = authData?.user;
+
+    if (!user) {
+      return { error: "You must be signed in to cancel an order." };
+    }
+
+    const supabaseAdmin = createAdminClient();
+
+    // Fetch the order and verify ownership
+    const { data: order, error: fetchErr } = await supabaseAdmin
+      .from("orders")
+      .select("*, order_items(*)")
+      .eq("id", orderId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (fetchErr || !order) {
+      return { error: "Order not found or you do not have permission to cancel this order." };
+    }
+
+    // Check if order can be cancelled
+    const nonCancellableStatuses = [
+      "shipped",
+      "in_transit",
+      "out_for_delivery",
+      "delivered",
+      "cancelled",
+      "returned",
+      "refunded",
+    ];
+    if (nonCancellableStatuses.includes(order.status)) {
+      return {
+        error: `Order cannot be cancelled because it is already marked as "${order.status}". Please contact our customer support for assistance.`,
+      };
+    }
+
+    if (order.consignment_id) {
+      return {
+        error: "This order has already been booked with the courier and cannot be cancelled online. Please contact support immediately.",
+      };
+    }
+
+    // Restore inventory
+    await restoreOrderStock(order.id, supabaseAdmin, order.order_items);
+
+    // Update order status to cancelled
+    const cancelNote = reason?.trim()
+      ? `Cancelled by customer: ${reason.trim()}`
+      : "Cancelled by customer via self-service";
+
+    const { error: updateErr } = await supabaseAdmin
+      .from("orders")
+      .update({
+        status: "cancelled",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", order.id);
+
+    if (updateErr) {
+      return { error: updateErr.message };
+    }
+
+    // Insert status history
+    await supabaseAdmin.from("order_status_history").insert({
+      order_id: order.id,
+      status: "cancelled",
+      note: cancelNote,
+      created_by: user.id,
+    });
+
+    // Revalidate paths
+    revalidatePath("/account/orders");
+    revalidatePath(`/account/orders/${orderId}`);
+    revalidatePath("/admin/orders");
+    revalidatePath(`/admin/orders/${orderId}`);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Cancel order error:", err);
+    return { error: err?.message || "An unexpected error occurred while cancelling your order." };
+  }
 }

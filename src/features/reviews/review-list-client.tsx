@@ -201,7 +201,7 @@ export function ReviewListClient({ initialReviews }: ReviewListClientProps) {
                   placeholder="Thank you for your feedback! We are delighted that..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  className="w-full rounded-xl border border-border p-3 text-xs text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border p-3 text-xs text-text focus:outline-none"
                 />
               </div>
 

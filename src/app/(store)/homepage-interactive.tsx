@@ -10,6 +10,7 @@ import {
   Zap,
   Clock,
   RotateCcw,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProductCard, type ProductCardData } from "@/components/storefront/product-card";
@@ -311,12 +312,8 @@ export function HomepageInteractive({
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-sky-900/60 pointer-events-none" />
 
               {/* Sparkle Star Accents */}
-              <span className="absolute top-8 left-2.5 text-pink-300 text-xs sm:text-sm opacity-90 drop-shadow-xs pointer-events-none">
-                ✦
-              </span>
-              <span className="absolute top-12 right-2.5 text-pink-200 text-xs opacity-80 drop-shadow-xs pointer-events-none">
-                ✦
-              </span>
+              <Sparkles className="absolute top-8 left-2.5 h-3.5 w-3.5 text-pink-300 opacity-90 drop-shadow-xs pointer-events-none" />
+              <Sparkles className="absolute top-12 right-2.5 h-3 w-3 text-pink-200 opacity-80 drop-shadow-xs pointer-events-none" />
 
               {/* Top Category Title */}
               <div className="relative z-10 pt-3 sm:pt-4 px-2 text-center w-full">

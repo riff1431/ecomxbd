@@ -8,7 +8,7 @@ import {
   Megaphone, Truck, DollarSign, Image, FileText, Palette,
   Shield, BarChart3, Settings, ScrollText, ChevronDown,
   ChevronRight, Menu, X, Search, Bell, LogOut, User,
-  CreditCard, MessageSquare,
+  CreditCard, MessageSquare, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminNavItems } from "@/config/site";
@@ -17,7 +17,7 @@ import { createClient } from "@/lib/supabase/client";
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard, ShoppingBag, Package, Warehouse, Users,
   Megaphone, Truck, DollarSign, Image, FileText, Palette,
-  Shield, BarChart3, Settings, ScrollText, CreditCard, MessageSquare,
+  Shield, BarChart3, Settings, ScrollText, CreditCard, MessageSquare, BookOpen,
 };
 
 interface AdminSidebarProps {

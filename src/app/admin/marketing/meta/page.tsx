@@ -1,149 +1,840 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { Sparkles, ExternalLink, ShieldCheck, CheckCircle2, Code2, Save, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import {
+  Sparkles,
+  ExternalLink,
+  ShieldCheck,
+  CheckCircle2,
+  Code2,
+  Save,
+  Layers,
+  Zap,
+  RefreshCw,
+  AlertTriangle,
+  Lock,
+  Globe,
+  Copy,
+  Check,
+  Radio,
+  FileCode,
+  Video,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
-import { trackMetaEvent } from "@/components/analytics/meta-pixel";
+import {
+  getMarketingAnalyticsSettings,
+  saveMarketingAnalyticsSettings,
+  testMetaCapiDiagnostic,
+  type MarketingAnalyticsSettings,
+} from "@/features/marketing/meta-actions";
+import {
+  getTikTokSettings,
+  saveTikTokSettings,
+  testTikTokCapiDiagnostic,
+  type TikTokSettings,
+} from "@/features/marketing/tiktok-actions";
 
 export default function AdminMetaSettingsPage() {
-  const [pixelId, setPixelId] = useState("123456789012345");
-  const [capiToken, setCapiToken] = useState("");
-  const [testCode, setTestCode] = useState("TEST89582");
-  const [saved, setSaved] = useState(false);
-  const [tested, setTested] = useState(false);
+  const [activeTab, setActiveTab] = useState<"meta" | "tiktok" | "gtm" | "catalog">("meta");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testingCapi, setTestingCapi] = useState(false);
+  const [testingTikTok, setTestingTikTok] = useState(false);
+  const [copiedFeed, setCopiedFeed] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const [formData, setFormData] = useState<MarketingAnalyticsSettings>({
+    meta_pixel_id: "",
+    meta_capi_token: "",
+    meta_test_event_code: "",
+    meta_capi_enabled: true,
+    meta_advanced_matching_enabled: true,
+    gtm_container_id: "",
+    ga4_measurement_id: "",
+    catalog_feed_url: "/api/feed/meta",
+  });
+
+  const [tiktokData, setTiktokData] = useState<TikTokSettings>({
+    tiktok_pixel_id: "",
+    tiktok_access_token: "",
+    tiktok_test_event_code: "",
+    tiktok_capi_enabled: true,
+    tiktok_advanced_matching_enabled: true,
+  });
+
+  const [feedback, setFeedback] = useState<{ text: string; isError?: boolean } | null>(null);
+  const [capiTestResult, setCapiTestResult] = useState<{
+    success: boolean;
+    message: string;
+    fbTraceId?: string;
+  } | null>(null);
+
+  const [tiktokTestResult, setTiktokTestResult] = useState<{
+    success: boolean;
+    message: string;
+    requestId?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    Promise.all([getMarketingAnalyticsSettings(), getTikTokSettings()]).then(
+      ([metaConfig, ttConfig]) => {
+        setFormData(metaConfig);
+        setTiktokData(ttConfig);
+        setLoading(false);
+      }
+    );
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaving(true);
+    setFeedback(null);
+
+    try {
+      await Promise.all([
+        saveMarketingAnalyticsSettings(formData),
+        saveTikTokSettings(tiktokData),
+      ]);
+      setFeedback({ text: "Meta & TikTok Marketing settings saved successfully!" });
+      setTimeout(() => setFeedback(null), 4000);
+    } catch (err: any) {
+      setFeedback({ text: `Failed to save: ${err.message}`, isError: true });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleTestEvent = () => {
-    trackMetaEvent("Purchase", {
-      value: 1365.0,
-      currency: "BDT",
-      content_name: "COSRX Advanced Snail 96 Mucin Power Essence",
-      content_type: "product",
-    });
-    setTested(true);
-    setTimeout(() => setTested(false), 3000);
+  const handleTestCapiPing = async () => {
+    setTestingCapi(true);
+    setCapiTestResult(null);
+
+    try {
+      const res = await testMetaCapiDiagnostic(formData.meta_test_event_code);
+      if (res.success) {
+        setCapiTestResult({
+          success: true,
+          message: `Meta Graph API Received 1 Diagnostic Event! Events Received: ${res.eventsReceived ?? 1}`,
+          fbTraceId: res.fbTraceId,
+        });
+      } else if (res.skipped) {
+        setCapiTestResult({
+          success: false,
+          message: "Please enter your Meta Pixel ID and CAPI Access Token first.",
+        });
+      } else {
+        setCapiTestResult({
+          success: false,
+          message: res.error || "Meta CAPI request failed",
+          fbTraceId: res.metaTraceId,
+        });
+      }
+    } catch (err: any) {
+      setCapiTestResult({
+        success: false,
+        message: err.message || "Network error testing CAPI",
+      });
+    } finally {
+      setTestingCapi(false);
+    }
   };
+
+  const handleTestTikTokPing = async () => {
+    setTestingTikTok(true);
+    setTiktokTestResult(null);
+
+    try {
+      const res = await testTikTokCapiDiagnostic(tiktokData.tiktok_test_event_code);
+      if (res.success) {
+        setTiktokTestResult({
+          success: true,
+          message: `TikTok Business Events API Received 1 Diagnostic Event! ${res.message}`,
+          requestId: res.requestId,
+        });
+      } else if (res.skipped) {
+        setTiktokTestResult({
+          success: false,
+          message: "Please enter your TikTok Pixel Code and Access Token first.",
+        });
+      } else {
+        setTiktokTestResult({
+          success: false,
+          message: res.error || "TikTok Events API request failed",
+        });
+      }
+    } catch (err: any) {
+      setTiktokTestResult({
+        success: false,
+        message: err.message || "Network error testing TikTok Events API",
+      });
+    } finally {
+      setTestingTikTok(false);
+    }
+  };
+
+  const origin =
+    typeof window !== "undefined" && window.location?.origin
+      ? window.location.origin
+      : (process.env.NEXT_PUBLIC_APP_URL || "");
+
+  const fullFeedUrl = `${origin}/api/feed/meta`;
+
+  const handleCopyFeed = () => {
+    navigator.clipboard.writeText(fullFeedUrl);
+    setCopiedFeed(true);
+    setTimeout(() => setCopiedFeed(false), 2500);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <RefreshCw className="h-6 w-6 animate-spin text-primary-600" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-6 max-w-5xl">
       {/* Header */}
-      <div className="border-b border-border pb-4">
-        <h1 className="text-2xl font-bold text-text">Meta Pixel & Conversions API (CAPI)</h1>
-        <p className="text-sm text-text-secondary mt-0.5">
-          Configure Facebook / Instagram pixel tracking, Conversions API deduplication, and Dynamic Catalog feeds.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4 bg-white p-6 rounded-3xl shadow-card">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#e91e63] animate-pulse" />
+            <span className="text-[11px] font-bold text-pink-700 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200 uppercase">
+              Omnichannel Tracking Hub
+            </span>
+          </div>
+          <h1 className="text-2xl font-black text-gray-900 mt-1 flex items-center gap-2">
+            <Sparkles className="h-6 w-6 text-[#e91e63]" />
+            Meta &amp; TikTok Pixel, CAPI &amp; DataLayer Settings
+          </h1>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Full-funnel Browser Meta &amp; TikTok Pixels, Server-Side Conversions APIs (CAPI), GTM/GA4 Enhanced Ecommerce DataLayer, and Product Catalog XML Feed.
+          </p>
+        </div>
+
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs shrink-0"
+        >
+          <Save className="h-3.5 w-3.5 mr-1.5" />
+          {saving ? "Saving Changes..." : "Save Configuration"}
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Settings Form */}
-        <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-4 text-xs">
-          <h2 className="text-base font-bold text-text flex items-center gap-2 border-b border-border pb-2">
-            <Sparkles className="h-4 w-4 text-primary-600" />
-            Meta Tracking Credentials
-          </h2>
+      {feedback && (
+        <div
+          className={`rounded-2xl border p-4 text-xs font-bold flex justify-between ${
+            feedback.isError
+              ? "bg-red-50 border-red-200 text-red-800"
+              : "bg-emerald-50 border-emerald-200 text-emerald-800"
+          } animate-in fade-in-0`}
+        >
+          <span>{feedback.text}</span>
+          <button onClick={() => setFeedback(null)} className="opacity-60 hover:opacity-100 p-1">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
-          <form onSubmit={handleSave} className="space-y-4">
-            <div>
-              <label className="block font-semibold text-text mb-1">
-                Meta Pixel ID
-              </label>
-              <input
-                type="text"
-                required
-                value={pixelId}
-                onChange={(e) => setPixelId(e.target.value)}
-                className="w-full rounded-xl border border-border px-3 py-2 text-xs font-mono focus:border-primary-600 focus:outline-none"
-              />
+      {/* Navigation Tabs */}
+      <div className="flex flex-wrap gap-2 border-b border-border">
+        <button
+          onClick={() => setActiveTab("meta")}
+          className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 ${
+            activeTab === "meta"
+              ? "border-[#e91e63] text-[#e91e63]"
+              : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <Sparkles className="inline h-4 w-4 mr-1.5" />
+          Meta Pixel &amp; CAPI
+        </button>
+        <button
+          onClick={() => setActiveTab("tiktok")}
+          className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 ${
+            activeTab === "tiktok"
+              ? "border-[#e91e63] text-[#e91e63]"
+              : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <Video className="inline h-4 w-4 mr-1.5" />
+          TikTok Pixel &amp; Events API (CAPI)
+        </button>
+        <button
+          onClick={() => setActiveTab("gtm")}
+          className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 ${
+            activeTab === "gtm"
+              ? "border-[#e91e63] text-[#e91e63]"
+              : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <Code2 className="inline h-4 w-4 mr-1.5" />
+          GTM &amp; GA4 DataLayer
+        </button>
+        <button
+          onClick={() => setActiveTab("catalog")}
+          className={`px-4 py-2.5 text-xs font-bold transition-all border-b-2 ${
+            activeTab === "catalog"
+              ? "border-[#e91e63] text-[#e91e63]"
+              : "border-transparent text-gray-500 hover:text-gray-900"
+          }`}
+        >
+          <FileCode className="inline h-4 w-4 mr-1.5" />
+          Product Catalog Feeds
+        </button>
+      </div>
+
+      {/* TAB 1: Meta Pixel & Conversions API (CAPI) */}
+      {activeTab === "meta" && (
+        <div className="space-y-6">
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-5">
+              <div className="border-b border-border pb-3 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-[#e91e63]" />
+                    Facebook Pixel &amp; Server-Side CAPI Credentials
+                  </h2>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Connects browser events and server-side Conversions API to eliminate ad-blocker signal loss with 100% event deduplication.
+                  </p>
+                </div>
+
+                <a
+                  href="https://business.facebook.com/events_manager2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-bold text-[#e91e63] hover:underline flex items-center gap-1"
+                >
+                  Meta Events Manager <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-text mb-1">
+                    Meta Pixel ID <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.meta_pixel_id}
+                    onChange={(e) => setFormData({ ...formData, meta_pixel_id: e.target.value })}
+                    placeholder="e.g. 123456789012345"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs font-mono text-text focus:outline-none"
+                  />
+                  <p className="text-[11px] text-text-muted mt-1">
+                    Found in Meta Business Suite &gt; Events Manager &gt; Data Sources.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-text mb-1">
+                    Test Event Code (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.meta_test_event_code || ""}
+                    onChange={(e) => setFormData({ ...formData, meta_test_event_code: e.target.value })}
+                    placeholder="e.g. TEST89582"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs font-mono text-text focus:outline-none"
+                  />
+                  <p className="text-[11px] text-text-muted mt-1">
+                    Enter your temporary Test Event Code from Meta Events Manager &gt; Test Events to verify events in real time.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-text mb-1">
+                  Conversions API (CAPI) System User Access Token
+                </label>
+                <div className="relative">
+                  <textarea
+                    rows={3}
+                    value={formData.meta_capi_token}
+                    onChange={(e) => setFormData({ ...formData, meta_capi_token: e.target.value })}
+                    placeholder="EAA..."
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
+                  />
+                </div>
+                <p className="text-[11px] text-text-muted mt-1">
+                  Generate in Events Manager &gt; Settings &gt; Conversions API &gt; &quot;Generate access token&quot;.
+                </p>
+              </div>
+
+              {/* Automation Toggles */}
+              <div className="space-y-3 pt-2 border-t border-border">
+                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer">
+                  <div>
+                    <span className="font-bold text-text text-xs block">Enable Server-Side Conversions API (CAPI)</span>
+                    <span className="text-text-muted text-[11px]">
+                      Sends parallel server-to-server events to Meta Graph API v21.0 with shared deduplication `eventID`.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.meta_capi_enabled}
+                    onChange={(e) => setFormData({ ...formData, meta_capi_enabled: e.target.checked })}
+                    className="h-4 w-4 rounded border-border text-[#e91e63] focus:ring-[#e91e63]"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer">
+                  <div>
+                    <span className="font-bold text-text text-xs block">
+                      Automatic Advanced Matching (Customer Data Hashing)
+                    </span>
+                    <span className="text-text-muted text-[11px]">
+                      SHA-256 hashes customer email, phone (8801XXXXXXXXX), name, city, and cookies (_fbp, _fbc) for maximized Event Quality Match Score.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={formData.meta_advanced_matching_enabled}
+                    onChange={(e) =>
+                      setFormData({ ...formData, meta_advanced_matching_enabled: e.target.checked })
+                    }
+                    className="h-4 w-4 rounded border-border text-[#e91e63] focus:ring-[#e91e63]"
+                  />
+                </label>
+              </div>
             </div>
 
-            <div>
-              <label className="block font-semibold text-text mb-1">
-                Conversions API (CAPI) Access Token
-              </label>
-              <input
-                type="password"
-                placeholder="EAAB..."
-                value={capiToken}
-                onChange={(e) => setCapiToken(e.target.value)}
-                className="w-full rounded-xl border border-border px-3 py-2 text-xs font-mono focus:border-primary-600 focus:outline-none"
-              />
-            </div>
+            {/* Diagnostic Ping Card */}
+            <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-text flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-amber-500" />
+                    Live Meta CAPI Diagnostic Connection Tester
+                  </h3>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Dispatches a live test event to Meta Graph API and verifies payload reception.
+                  </p>
+                </div>
 
-            <div>
-              <label className="block font-semibold text-text mb-1">
-                Test Event Code (Optional)
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. TEST12345"
-                value={testCode}
-                onChange={(e) => setTestCode(e.target.value)}
-                className="w-full rounded-xl border border-border px-3 py-2 text-xs font-mono focus:border-primary-600 focus:outline-none"
-              />
-            </div>
+                <Button
+                  type="button"
+                  onClick={handleTestCapiPing}
+                  disabled={testingCapi || !formData.meta_pixel_id}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-bold rounded-xl shrink-0"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${testingCapi ? "animate-spin" : ""}`} />
+                  {testingCapi ? "Dispatching..." : "Send CAPI Test Ping"}
+                </Button>
+              </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-border">
-              {saved && (
-                <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Credentials saved!
-                </span>
+              {capiTestResult && (
+                <div
+                  className={`flex items-start gap-2.5 rounded-2xl border p-4 text-xs font-semibold ${
+                    capiTestResult.success
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      : "bg-red-50 border-red-200 text-red-800"
+                  }`}
+                >
+                  {capiTestResult.success ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+                  )}
+                  <div className="space-y-1">
+                    <div>{capiTestResult.message}</div>
+                    {capiTestResult.fbTraceId && (
+                      <div className="text-[10px] font-mono text-gray-500">
+                        FB Trace ID: {capiTestResult.fbTraceId}
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-              <Button type="submit" size="sm" className="ml-auto text-xs">
-                <Save className="h-3.5 w-3.5 mr-1" />
-                Save Settings
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs"
+              >
+                <Save className="h-3.5 w-3.5 mr-1.5" />
+                {saving ? "Saving Changes..." : "Save Meta Settings"}
               </Button>
             </div>
           </form>
         </div>
+      )}
 
-        {/* Dynamic Catalog Feed Info */}
+      {/* TAB 2: TikTok Pixel & Events API (CAPI) */}
+      {activeTab === "tiktok" && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-4 text-xs">
-            <h2 className="text-base font-bold text-text flex items-center gap-2 border-b border-border pb-2">
-              <Code2 className="h-4 w-4 text-primary-600" />
-              Meta Product Catalog XML Feed
-            </h2>
-            <p className="text-text-secondary leading-relaxed">
-              Use this real-time dynamic XML feed to sync your skincare catalog with Facebook / Instagram Shop and run Advantage+ catalog ads.
-            </p>
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-5">
+              <div className="border-b border-border pb-3 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                    <Video className="h-4 w-4 text-black" />
+                    TikTok Pixel &amp; Events API (CAPI) Credentials
+                  </h2>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Connect TikTok Pixel (`ttq`) and Server-Side Events API (v1.3) for TikTok Ads Manager attribution and ROAS tracking.
+                  </p>
+                </div>
 
-            <div className="rounded-xl bg-surface-secondary p-3 font-mono text-[11px] text-text-secondary break-all border border-border">
-              /api/feed/meta
+                <a
+                  href="https://ads.tiktok.com/marketing_api/docs?id=1739584855420929"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-bold text-[#e91e63] hover:underline flex items-center gap-1"
+                >
+                  TikTok Events API Docs <ExternalLink className="h-3 w-3" />
+                </a>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-text mb-1">
+                    TikTok Pixel ID / Code <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={tiktokData.tiktok_pixel_id}
+                    onChange={(e) => setTiktokData({ ...tiktokData, tiktok_pixel_id: e.target.value })}
+                    placeholder="e.g. CXXXXXXXXXXXXXXX"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs font-mono text-text focus:outline-none"
+                  />
+                  <p className="text-[11px] text-text-muted mt-1">
+                    Found in TikTok Ads Manager &gt; Assets &gt; Events &gt; Web Events.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-text mb-1">
+                    Test Event Code (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={tiktokData.tiktok_test_event_code || ""}
+                    onChange={(e) => setTiktokData({ ...tiktokData, tiktok_test_event_code: e.target.value })}
+                    placeholder="e.g. TESTXXXXX"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs font-mono text-text focus:outline-none"
+                  />
+                  <p className="text-[11px] text-text-muted mt-1">
+                    Enter your Test Event Code from TikTok Events Manager &gt; Test Events.
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-text mb-1">
+                  TikTok Events API Long-Term Access Token
+                </label>
+                <div className="relative">
+                  <textarea
+                    rows={3}
+                    value={tiktokData.tiktok_access_token}
+                    onChange={(e) => setTiktokData({ ...tiktokData, tiktok_access_token: e.target.value })}
+                    placeholder="Enter your TikTok Access Token..."
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
+                  />
+                </div>
+                <p className="text-[11px] text-text-muted mt-1">
+                  Generate in TikTok Events Manager &gt; Settings &gt; Events API &gt; &quot;Generate Access Token&quot;.
+                </p>
+              </div>
+
+              <div className="space-y-3 pt-2 border-t border-border">
+                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer">
+                  <div>
+                    <span className="font-bold text-text text-xs block">Enable Server-Side TikTok Events API (CAPI)</span>
+                    <span className="text-text-muted text-[11px]">
+                      Sends parallel server-to-server conversions to TikTok Business API with matching `event_id`.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={tiktokData.tiktok_capi_enabled}
+                    onChange={(e) => setTiktokData({ ...tiktokData, tiktok_capi_enabled: e.target.checked })}
+                    className="h-4 w-4 rounded border-border text-[#e91e63] focus:ring-[#e91e63]"
+                  />
+                </label>
+
+                <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer">
+                  <div>
+                    <span className="font-bold text-text text-xs block">
+                      Automatic Advanced Matching (SHA-256 Hashing)
+                    </span>
+                    <span className="text-text-muted text-[11px]">
+                      Hashes customer email, phone, external ID, and TikTok Click ID (`ttclid`, `ttp`) for maximum ad attribution.
+                    </span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={tiktokData.tiktok_advanced_matching_enabled}
+                    onChange={(e) =>
+                      setTiktokData({ ...tiktokData, tiktok_advanced_matching_enabled: e.target.checked })
+                    }
+                    className="h-4 w-4 rounded border-border text-[#e91e63] focus:ring-[#e91e63]"
+                  />
+                </label>
+              </div>
             </div>
 
-            <Link href="/api/feed/meta" target="_blank" className="inline-block">
-              <Button variant="outline" size="sm" className="text-xs">
-                <ExternalLink className="h-3.5 w-3.5 mr-1 text-primary-600" />
-                Open Live XML Feed
+            {/* Diagnostic Ping Card */}
+            <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-text flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-amber-500" />
+                    Live TikTok Events API Diagnostic Connection Tester
+                  </h3>
+                  <p className="text-xs text-text-secondary mt-0.5">
+                    Dispatches a live test event to TikTok Business API and verifies response status.
+                  </p>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={handleTestTikTokPing}
+                  disabled={testingTikTok || !tiktokData.tiktok_pixel_id}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs font-bold rounded-xl shrink-0"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${testingTikTok ? "animate-spin" : ""}`} />
+                  {testingTikTok ? "Dispatching..." : "Send TikTok Test Ping"}
+                </Button>
+              </div>
+
+              {tiktokTestResult && (
+                <div
+                  className={`flex items-start gap-2.5 rounded-2xl border p-4 text-xs font-semibold ${
+                    tiktokTestResult.success
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      : "bg-red-50 border-red-200 text-red-800"
+                  }`}
+                >
+                  {tiktokTestResult.success ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+                  ) : (
+                    <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+                  )}
+                  <div className="space-y-1">
+                    <div>{tiktokTestResult.message}</div>
+                    {tiktokTestResult.requestId && (
+                      <div className="text-[10px] font-mono text-gray-500">
+                        TikTok Request ID: {tiktokTestResult.requestId}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs"
+              >
+                <Save className="h-3.5 w-3.5 mr-1.5" />
+                {saving ? "Saving Changes..." : "Save TikTok Settings"}
               </Button>
-            </Link>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* TAB 3: GTM & GA4 DataLayer */}
+      {activeTab === "gtm" && (
+        <form onSubmit={handleSave} className="space-y-6">
+          <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-5">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                <Code2 className="h-4 w-4 text-blue-600" />
+                Google Tag Manager &amp; GA4 Configuration
+              </h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Standard Google Analytics 4 Enhanced Ecommerce DataLayer output (`window.dataLayer.push`).
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-text mb-1">
+                  Google Tag Manager (GTM) Container ID
+                </label>
+                <input
+                  type="text"
+                  value={formData.gtm_container_id || ""}
+                  onChange={(e) => setFormData({ ...formData, gtm_container_id: e.target.value })}
+                  placeholder="GTM-XXXXXXX"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs font-mono text-text focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-text mb-1">
+                  GA4 Measurement ID
+                </label>
+                <input
+                  type="text"
+                  value={formData.ga4_measurement_id || ""}
+                  onChange={(e) => setFormData({ ...formData, ga4_measurement_id: e.target.value })}
+                  placeholder="G-XXXXXXXXXX"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs font-mono text-text focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-border space-y-2">
+              <h3 className="text-xs font-bold text-text uppercase tracking-wider text-text-muted">
+                Active Enhanced Ecommerce DataLayer Events
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                {[
+                  "view_item_list",
+                  "select_item",
+                  "view_item",
+                  "add_to_cart",
+                  "remove_from_cart",
+                  "view_cart",
+                  "begin_checkout",
+                  "add_shipping_info",
+                  "add_payment_info",
+                  "purchase",
+                  "refund",
+                  "search",
+                ].map((ev) => (
+                  <div key={ev} className="flex items-center gap-2 p-2 rounded-xl bg-gray-50 border border-gray-100 font-mono text-[11px] text-gray-800">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                    <span>{ev}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-3 text-xs">
-            <h3 className="font-bold text-text">Verify Pixel Event Dispatch</h3>
-            <p className="text-text-secondary">
-              Click below to fire a test &quot;Purchase&quot; event into the active Meta Pixel script.
-            </p>
-            <div className="flex items-center gap-2">
-              <Button onClick={handleTestEvent} size="sm" variant="secondary" className="text-xs">
-                Fire Test Purchase Event
-              </Button>
-              {tested && (
-                <span className="text-xs font-semibold text-emerald-600">
-                  Dispatched!
-                </span>
-              )}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={saving}
+              className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs rounded-xl shadow-xs"
+            >
+              <Save className="h-3.5 w-3.5 mr-1.5" />
+              {saving ? "Saving Changes..." : "Save GTM Settings"}
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {/* TAB 4: Dynamic Catalog XML Feeds */}
+      {activeTab === "catalog" && (
+        <div className="space-y-4">
+          <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-5">
+            <div className="border-b border-border pb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                  <FileCode className="h-4 w-4 text-[#e91e63]" />
+                  Meta Dynamic Product Catalog XML Feed
+                </h2>
+                <p className="text-xs text-text-secondary mt-0.5">
+                  Live XML Feed compliant with Meta Commerce Manager, Advantage+ Dynamic Ads, and Instagram Shop tagging.
+                </p>
+              </div>
+              <a
+                href="/admin/marketing/catalog"
+                className="text-[11px] font-bold text-primary-600 hover:underline flex items-center gap-1"
+              >
+                View All Feeds <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-text">
+                Meta Catalog Feed URL (Paste into Meta Commerce Manager &gt; Data Sources)
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 rounded-xl border border-border bg-surface-secondary px-3.5 py-2.5 font-mono text-xs text-[#e91e63] select-all truncate">
+                  {fullFeedUrl}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyFeed}
+                  className="text-xs font-bold rounded-xl shrink-0"
+                >
+                  {copiedFeed ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1 text-emerald-600" /> Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5 mr-1" /> Copy URL
+                    </>
+                  )}
+                </Button>
+                <a
+                  href="/api/feed/meta"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-xl bg-gray-900 hover:bg-black text-white font-bold text-xs px-3 py-2 shadow-xs transition-colors shrink-0"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Preview Feed
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-5">
+            <div className="border-b border-border pb-3">
+              <h2 className="text-sm font-bold text-text flex items-center gap-2">
+                <Video className="h-4 w-4 text-pink-600" />
+                TikTok Product Catalog XML Feed
+              </h2>
+              <p className="text-xs text-text-secondary mt-0.5">
+                Dynamic product XML feed formatted for TikTok Catalog Manager, Video Shopping Ads, and Dynamic Showcase Ads.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-text">
+                TikTok Catalog Feed URL (Paste into TikTok Ads Manager &gt; Assets &gt; Catalogs)
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 rounded-xl border border-border bg-surface-secondary px-3.5 py-2.5 font-mono text-xs text-pink-600 select-all truncate">
+                  {`${origin}/api/feed/tiktok`}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${origin}/api/feed/tiktok`);
+                    setCopiedFeed(true);
+                    setTimeout(() => setCopiedFeed(false), 2500);
+                  }}
+                  className="text-xs font-bold rounded-xl shrink-0"
+                >
+                  <Copy className="h-3.5 w-3.5 mr-1" /> Copy URL
+                </Button>
+                <a
+                  href="/api/feed/tiktok"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs px-3 py-2 shadow-xs transition-colors shrink-0"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" /> Preview Feed
+                </a>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

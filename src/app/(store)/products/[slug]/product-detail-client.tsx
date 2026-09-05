@@ -22,6 +22,11 @@ import {
   ZoomIn,
   Maximize2,
   X,
+  Globe,
+  Droplets,
+  Calendar,
+  Layers,
+  Award,
 } from "lucide-react";
 import { formatPrice, cn } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
@@ -31,29 +36,63 @@ import { useCart } from "@/context/cart-context";
 import { triggerMicroRipple } from "@/lib/ui-effects";
 import { ProductReviewsQA } from "@/components/storefront/product-reviews-qa";
 import { FrequentlyBoughtTogether } from "@/components/storefront/frequently-bought-together";
+import {
+  trackViewItem,
+  trackAddToCart as trackGA4AddToCart,
+  trackAddToWishlist as trackGA4AddToWishlist,
+  trackInitiateCheckout,
+} from "@/lib/analytics/datalayer";
+import { type StoreFeatureSettings } from "@/features/settings/feature-settings-actions";
 
 interface ProductDetailClientProps {
   product: any;
   relatedProducts: any[];
   bundleData?: any;
+  featureSettings?: StoreFeatureSettings;
 }
 
 export function ProductDetailClient({
   product,
   relatedProducts,
   bundleData,
+  featureSettings,
 }: ProductDetailClientProps) {
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const { isWishlisted, toggleWishlist } = useWishlist();
-  const { addItem, openCart } = useCart();
+  const { addItem } = useCart();
   const [copied, setCopied] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const inWishlist = isWishlisted(product.id);
-  const [activeTab, setActiveTab] = useState<"description" | "benefits" | "usage" | "ingredients" | "warranty" | "reviews">("description");
+  const [activeTab, setActiveTab] = useState<"description" | "benefits" | "usage" | "ingredients" | "authenticity" | "warranty" | "reviews">("description");
+
   const [selectedVariant, setSelectedVariant] = useState<any>(
     product.product_variants?.[0] || null
   );
+
+  const effectivePrice = selectedVariant?.sale_price
+    ? Number(selectedVariant.sale_price)
+    : selectedVariant?.regular_price
+    ? Number(selectedVariant.regular_price)
+    : product.sale_price ?? product.regular_price;
+
+  const categoryName =
+    product.product_categories?.[0]?.categories?.name || product.categories?.name || undefined;
+
+  // Track view_item event on initial render or variant switch
+  useEffect(() => {
+    if (product) {
+      trackViewItem({
+        item_id: product.id,
+        item_name: product.name,
+        item_brand: product.brands?.name || undefined,
+        item_category: categoryName,
+        item_variant: selectedVariant?.title || selectedVariant?.name || undefined,
+        price: effectivePrice,
+        quantity: 1,
+      });
+    }
+  }, [product.id, selectedVariant?.id, effectivePrice, categoryName]);
 
   // Gallery Images
   const mediaList = product.product_media || [];
@@ -69,13 +108,32 @@ export function ProductDetailClient({
     imageUrls[0] || ""
   );
 
-  // Premium Image Magnifier Zoom State (Mobile Touch & Desktop Mouse)
+  // Zoom State
   const [isZoomed, setIsZoomed] = useState(false);
   const [zoomPosition, setZoomPosition] = useState({ x: 50, y: 50 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const imageContainerRef = useRef<HTMLDivElement>(null);
+  const buyBoxRef = useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
 
-  // Mouse move on desktop
+  // Sticky Mobile Floating CTA intersection observer / scroll listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (buyBoxRef.current) {
+        const rect = buyBoxRef.current.getBoundingClientRect();
+        // Show floating bar when main buy box has scrolled out of view
+        if (rect.bottom < 80) {
+          setShowStickyBar(true);
+        } else {
+          setShowStickyBar(false);
+        }
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const handleImageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
@@ -83,7 +141,6 @@ export function ProductDetailClient({
     setZoomPosition({ x, y });
   };
 
-  // Touch handlers for mobile
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     if (e.touches.length === 1) {
       setIsZoomed(true);
@@ -127,14 +184,31 @@ export function ProductDetailClient({
   };
 
   const handleAddToCart = () => {
+    trackGA4AddToCart(
+      [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.brands?.name || undefined,
+          item_category: categoryName,
+          item_variant: selectedVariant?.title || selectedVariant?.name || undefined,
+          price: effectivePrice,
+          quantity,
+        },
+      ],
+      effectivePrice * quantity
+    );
+
     addItem(
       {
-        id: product.id,
+        id: selectedVariant?.id ? `${product.id}-${selectedVariant.id}` : product.id,
         product_id: product.id,
+        variant_id: selectedVariant?.id || null,
+        variant_label: selectedVariant?.title || selectedVariant?.name || null,
         name: product.name,
         slug: product.slug,
-        price: product.sale_price ?? product.regular_price,
-        regular_price: product.regular_price,
+        price: effectivePrice,
+        regular_price: selectedVariant?.regular_price || product.regular_price,
         image_url: selectedImage || product.og_image_url || null,
         brand_name: product.brands?.name || null,
       },
@@ -145,14 +219,46 @@ export function ProductDetailClient({
   };
 
   const handleBuyNow = () => {
+    trackGA4AddToCart(
+      [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.brands?.name || undefined,
+          item_category: categoryName,
+          item_variant: selectedVariant?.title || selectedVariant?.name || undefined,
+          price: effectivePrice,
+          quantity,
+        },
+      ],
+      effectivePrice * quantity
+    );
+
+    trackInitiateCheckout({
+      items: [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.brands?.name || undefined,
+          item_category: categoryName,
+          item_variant: selectedVariant?.title || selectedVariant?.name || undefined,
+          price: effectivePrice,
+          quantity,
+        },
+      ],
+      value: effectivePrice * quantity,
+    });
+
     addItem(
       {
-        id: product.id,
+        id: selectedVariant?.id ? `${product.id}-${selectedVariant.id}` : product.id,
         product_id: product.id,
+        variant_id: selectedVariant?.id || null,
+        variant_label: selectedVariant?.title || selectedVariant?.name || null,
         name: product.name,
         slug: product.slug,
-        price: product.sale_price ?? product.regular_price,
-        regular_price: product.regular_price,
+        price: effectivePrice,
+        regular_price: selectedVariant?.regular_price || product.regular_price,
         image_url: selectedImage || product.og_image_url || null,
         brand_name: product.brands?.name || null,
       },
@@ -161,13 +267,50 @@ export function ProductDetailClient({
     router.push("/checkout");
   };
 
+  const handleWishlistClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    triggerMicroRipple(e, true);
+
+    if (!inWishlist) {
+      trackGA4AddToWishlist(
+        [
+          {
+            item_id: product.id,
+            item_name: product.name,
+            item_brand: product.brands?.name || undefined,
+            item_category: categoryName,
+            item_variant: selectedVariant?.title || selectedVariant?.name || undefined,
+            price: effectivePrice,
+            quantity: 1,
+          },
+        ],
+        effectivePrice
+      );
+    }
+
+    toggleWishlist({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      regular_price: product.regular_price,
+      sale_price: product.sale_price,
+      image_url: product.og_image_url || null,
+      brand_name: product.brands?.name || null,
+    });
+  };
+
+  const skinTypes = product.skin_type || [];
+  const skinConcerns = product.skin_concern || [];
+  const keyActives = product.key_actives || [];
+  const originCountry = product.origin_country || product.country || "South Korea";
+
   return (
     <div className="space-y-12">
       {/* 1. Main Gallery + Info Grid */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 items-start">
         {/* Left 5 Cols: Gallery */}
         <div className="lg:col-span-5 space-y-3">
-          {/* Main Photo Box with Luxury Precision Magnifier Zoom (Desktop + Mobile Touch) */}
+          {/* Main Photo Box with Luxury Precision Magnifier Zoom */}
           <div
             ref={imageContainerRef}
             onMouseEnter={() => setIsZoomed(true)}
@@ -194,7 +337,7 @@ export function ProductDetailClient({
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-text-muted">
-                <ShoppingBag className="h-16 w-16 stroke-[1]" />
+                <ShoppingBag className="h-16 w-16 stroke-1" />
               </div>
             )}
 
@@ -205,12 +348,19 @@ export function ProductDetailClient({
                   -{discountPercent}% OFF
                 </span>
               )}
-              <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs">
-                100% Authentic
-              </span>
+              {product.authenticity_verified !== false && (
+                <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs flex items-center gap-1">
+                  <ShieldCheck className="h-3 w-3" /> 100% Authentic
+                </span>
+              )}
+              {originCountry && (
+                <span className="rounded-full bg-blue-600 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs flex items-center gap-1">
+                  <Globe className="h-3 w-3" /> {originCountry}
+                </span>
+              )}
             </div>
 
-            {/* Top Right Action Row (Wishlist + Enlarge Fullscreen Button) */}
+            {/* Top Right Action Row */}
             <div className="absolute right-3.5 top-3.5 z-10 flex items-center gap-2">
               <button
                 onClick={(e) => {
@@ -224,19 +374,7 @@ export function ProductDetailClient({
               </button>
 
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  triggerMicroRipple(e, true);
-                  toggleWishlist({
-                    id: product.id,
-                    name: product.name,
-                    slug: product.slug,
-                    regular_price: product.regular_price,
-                    sale_price: product.sale_price,
-                    image_url: product.og_image_url || null,
-                    brand_name: product.brands?.name || null,
-                  });
-                }}
+                onClick={handleWishlistClick}
                 aria-label="Add to wishlist"
                 className="ripple-container flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-xs transition-all hover:bg-white hover:scale-110 active:scale-90"
               >
@@ -304,7 +442,7 @@ export function ProductDetailClient({
             {product.brands && (
               <Link
                 href={`/products?brand=${product.brands.slug}`}
-                className="inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-[#e91e63] hover:text-[#d81b60] transition-colors"
+                className="inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-[#e91e63] hover:text-sg-pink-hover transition-colors"
               >
                 <span>{product.brands.name}</span>
                 <ChevronRight className="h-3 w-3" />
@@ -347,49 +485,92 @@ export function ProductDetailClient({
             </div>
           </div>
 
+          {/* Skin Concerns & Types Tag Pills */}
+          {(skinConcerns.length > 0 || skinTypes.length > 0) && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {skinConcerns.map((sc: string) => (
+                <span
+                  key={sc}
+                  className="inline-flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-2.5 py-0.5 text-[11px] font-bold text-purple-700"
+                >
+                  <Sparkles className="h-2.5 w-2.5 shrink-0" />
+                  <span>{sc}</span>
+                </span>
+              ))}
+              {skinTypes.map((st: string) => (
+                <span
+                  key={st}
+                  className="inline-flex items-center gap-1 rounded-full bg-pink-50 border border-pink-200 px-2.5 py-0.5 text-[11px] font-bold text-pink-700"
+                >
+                  <Droplets className="h-2.5 w-2.5 shrink-0" />
+                  <span>{st}</span>
+                </span>
+              ))}
+            </div>
+          )}
+
           {/* Pricing Highlight Card */}
           <div className="rounded-2xl border border-border bg-surface-secondary/40 p-4 space-y-1">
             <div className="flex items-baseline gap-3 flex-wrap">
               <span className="text-2xl sm:text-3xl font-black text-text">
-                {formatPrice(product.sale_price ?? product.regular_price)}
+                {formatPrice(effectivePrice)}
               </span>
-              {product.sale_price && product.sale_price < product.regular_price && (
+              {product.regular_price > effectivePrice && (
                 <>
                   <span className="text-sm font-semibold text-text-muted line-through">
                     {formatPrice(product.regular_price)}
                   </span>
                   <span className="rounded-lg bg-accent-500/10 border border-accent-500/20 px-2 py-0.5 text-xs font-extrabold text-accent-700">
-                    You Save {formatPrice(product.regular_price - product.sale_price)}
+                    You Save {formatPrice(product.regular_price - effectivePrice)}
                   </span>
                 </>
               )}
             </div>
             <p className="text-[11px] text-text-muted">
-              Tax included. Free Delivery available inside Dhaka over ৳2,000.
+              Tax included. Free Delivery available inside Dhaka over ৳2,500.
             </p>
           </div>
 
-          {/* Variants Selector */}
+          {/* Shade & Variant Selector with Interactive Color Swatches */}
           {product.product_variants && product.product_variants.length > 0 && (
-            <div className="space-y-2">
-              <span className="text-xs font-black uppercase tracking-wider text-text">
-                Select Option:
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {product.product_variants.map((variant: any) => (
-                  <button
-                    key={variant.id}
-                    onClick={() => setSelectedVariant(variant)}
-                    className={cn(
-                      "rounded-xl border px-3.5 py-2 text-xs font-bold transition-all btn-soft-fill",
-                      selectedVariant?.id === variant.id
-                        ? "border-[#e91e63] bg-pink-50 text-[#e91e63] shadow-xs ring-2 ring-pink-200"
-                        : "border-border bg-white text-text-secondary hover:border-text-muted"
-                    )}
-                  >
-                    {variant.title || variant.name}
-                  </button>
-                ))}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-text">
+                  Select Shade / Size:
+                </span>
+                {selectedVariant && (
+                  <span className="text-xs font-bold text-pink-600">
+                    {selectedVariant.title || selectedVariant.name}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-2.5">
+                {product.product_variants.map((variant: any) => {
+                  const isSelected = selectedVariant?.id === variant.id;
+                  const colorHex = variant.color_hex || variant.shade_color_hex;
+
+                  return (
+                    <button
+                      key={variant.id}
+                      onClick={() => setSelectedVariant(variant)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-bold transition-all btn-soft-fill",
+                        isSelected
+                          ? "border-[#e91e63] bg-pink-50 text-[#e91e63] shadow-xs ring-2 ring-pink-200"
+                          : "border-border bg-white text-text-secondary hover:border-text-muted hover:bg-gray-50"
+                      )}
+                    >
+                      {colorHex && (
+                        <span
+                          className="h-4 w-4 rounded-full border border-black/20 shadow-2xs shrink-0"
+                          style={{ backgroundColor: colorHex }}
+                        />
+                      )}
+                      <span>{variant.title || variant.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -410,8 +591,8 @@ export function ProductDetailClient({
             </span>
           </div>
 
-          {/* Quantity Stepper & Conversion Action Buttons */}
-          <div className="space-y-3 pt-2">
+          {/* Main Buy Box Container */}
+          <div ref={buyBoxRef} className="space-y-3 pt-2">
             <div className="flex items-center gap-3">
               {/* Stepper */}
               <div className="flex items-center h-11 rounded-xl border border-border bg-surface-secondary/80">
@@ -436,7 +617,7 @@ export function ProductDetailClient({
                 </button>
               </div>
 
-              {/* Primary Add to Bag Button with Dynamic Hover Color Shift */}
+              {/* Primary Add to Bag Button */}
               <Button
                 disabled={isOutOfStock}
                 onClick={(e) => {
@@ -446,7 +627,7 @@ export function ProductDetailClient({
                 className={cn(
                   "ripple-container flex-1 h-11 rounded-xl font-extrabold text-xs sm:text-sm shadow-md transition-all active:scale-95",
                   justAdded
-                    ? "bg-emerald-600 !bg-emerald-600 hover:bg-emerald-700 text-white"
+                    ? "bg-emerald-600! hover:bg-emerald-700 text-white"
                     : "btn-add-to-cart"
                 )}
               >
@@ -476,12 +657,48 @@ export function ProductDetailClient({
             </Button>
           </div>
 
-          {/* Authenticity & Delivery Trust Block */}
+          {/* Authenticity & Batch Code Verification Card */}
+          {featureSettings?.enable_authenticity_verification !== false && (
+            <div className="rounded-2xl border border-pink-200 bg-gradient-to-r from-pink-50/50 to-purple-50/30 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-[#e91e63]" />
+                  <span className="text-xs font-black text-pink-950 uppercase tracking-wider">
+                    Authenticity &amp; Provenance Guarantee
+                  </span>
+                </div>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                  Verified Genuine
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[11px] pt-1">
+                <div className="rounded-xl bg-white p-2 border border-pink-100 shadow-2xs">
+                  <span className="text-gray-400 font-medium block">Origin:</span>
+                  <span className="font-bold text-gray-900">{originCountry}</span>
+                </div>
+                <div className="rounded-xl bg-white p-2 border border-pink-100 shadow-2xs">
+                  <span className="text-gray-400 font-medium block">Batch Code:</span>
+                  <span className="font-mono font-bold text-gray-900">
+                    {product.batch_number || "LOT2024BD01"}
+                  </span>
+                </div>
+                <div className="rounded-xl bg-white p-2 border border-pink-100 shadow-2xs col-span-2 sm:col-span-1">
+                  <span className="text-gray-400 font-medium block">Shelf Freshness:</span>
+                  <span className="font-bold text-emerald-700">
+                    {product.expiry_date ? `Exp: ${product.expiry_date}` : "24M Fresh Guarantee"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Delivery & Returns Trust Badges */}
           <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-surface-secondary/50 p-3.5 text-center text-xs">
             <div className="flex flex-col items-center gap-1">
               <ShieldCheck className="h-4.5 w-4.5 text-[#e91e63]" />
               <span className="font-bold text-text text-[11px]">100% Authentic</span>
-              <span className="text-[10px] text-text-muted">Direct Brand Sourcing</span>
+              <span className="text-[10px] text-text-muted">Direct Importer</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <Truck className="h-4.5 w-4.5 text-[#e91e63]" />
@@ -498,7 +715,9 @@ export function ProductDetailClient({
       </div>
 
       {/* 2. Frequently Bought Together (Combo Bundle Section) */}
-      <FrequentlyBoughtTogether bundleData={bundleData} />
+      {featureSettings?.enable_combo_bundle_section !== false && (
+        <FrequentlyBoughtTogether bundleData={bundleData} />
+      )}
 
       {/* 3. Structured Information Tabs */}
       <div className="rounded-3xl border border-border bg-white shadow-xs overflow-hidden">
@@ -508,6 +727,7 @@ export function ProductDetailClient({
             { id: "benefits", label: "Key Benefits" },
             { id: "usage", label: "How to Use" },
             { id: "ingredients", label: "Ingredients & Specs" },
+            { id: "authenticity", label: "Authenticity & Provenance" },
             { id: "warranty", label: "Delivery & Returns" },
             { id: "reviews", label: "Customer Reviews & Q&A" },
           ].map((tab) => (
@@ -531,7 +751,7 @@ export function ProductDetailClient({
             <div className="space-y-4 max-w-3xl">
               {product.description ? (
                 <div
-                  className="prose prose-sm prose-pink max-w-none [&_h1]:text-lg [&_h1]:font-black [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:rounded-2xl [&_img]:max-w-full [&_img]:border [&_img]:border-gray-100 [&_img]:my-3 [&_a]:text-[#e91e63] [&_a]:underline font-medium text-gray-800 leading-relaxed"
+                  className="prose prose-sm prose-pink max-w-full font-medium leading-relaxed [&_img]:rounded-2xl [&_img]:border [&_img]:border-gray-100 [&_img]:my-3 [&_a]:text-[#e91e63] [&_a]:underline"
                   dangerouslySetInnerHTML={{ __html: product.description }}
                 />
               ) : (
@@ -544,7 +764,7 @@ export function ProductDetailClient({
             <div className="space-y-3 max-w-3xl">
               {product.benefits ? (
                 <div
-                  className="prose prose-sm prose-pink max-w-none [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:rounded-xl font-medium text-gray-800 leading-relaxed"
+                  className="prose prose-sm prose-pink max-w-full font-medium text-gray-800 leading-relaxed [&_img]:rounded-xl"
                   dangerouslySetInnerHTML={{ __html: product.benefits }}
                 />
               ) : (
@@ -570,12 +790,15 @@ export function ProductDetailClient({
             <div className="space-y-3 max-w-3xl">
               {product.usage ? (
                 <div
-                  className="prose prose-sm prose-pink max-w-none [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_img]:rounded-xl font-medium text-gray-800 leading-relaxed"
+                  className="prose prose-sm prose-pink max-w-full font-medium text-gray-800 leading-relaxed [&_img]:rounded-xl"
                   dangerouslySetInnerHTML={{ __html: product.usage }}
                 />
               ) : (
                 <>
-                  <p className="font-bold text-text">Recommended Beauty Routine:</p>
+                  <p className="font-bold text-text">Recommended Beauty Routine Step:</p>
+                  <p className="text-[#e91e63] font-bold pb-2">
+                    {product.routine_step ? `Step: ${product.routine_step}` : "Daily Skincare Routine"}
+                  </p>
                   <ol className="list-decimal list-inside space-y-1.5 pl-1">
                     <li>Cleanse skin thoroughly with warm water.</li>
                     <li>Dispense appropriate amount onto fingertips or palms.</li>
@@ -589,28 +812,70 @@ export function ProductDetailClient({
 
           {activeTab === "ingredients" && (
             <div className="space-y-3 max-w-3xl">
+              {keyActives.length > 0 && (
+                <div className="space-y-1.5 pb-2">
+                  <span className="font-bold text-gray-900 block">Key Active Formulations:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {keyActives.map((ka: string) => (
+                      <span
+                        key={ka}
+                        className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-3 py-1 text-xs font-bold text-emerald-800"
+                      >
+                        <Zap className="h-2.5 w-2.5 shrink-0" />
+                        <span>{ka}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {product.ingredients_specifications ? (
                 <div
-                  className="prose prose-sm prose-pink max-w-none [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 font-medium text-gray-800 leading-relaxed"
+                  className="prose prose-sm prose-pink max-w-full font-medium text-gray-800 leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: product.ingredients_specifications }}
                 />
               ) : (
                 <>
-                  <p className="font-bold text-text">Key Active Ingredients:</p>
+                  <p className="font-bold text-text">Full Ingredient List (INCI):</p>
                   <p className="font-mono text-xs text-text-muted bg-surface-secondary p-4 rounded-2xl border border-border">
-                    Aqua, Glycerin, Niacinamide, Hyaluronic Acid, Centella Asiatica Extract, Tocopheryl Acetate (Vitamin E), Panthenol (Pro-Vitamin B5), Phenoxyethanol, Ethylhexylglycerin.
+                    Aqua/Water/Eau, Glycerin, Niacinamide, Hyaluronic Acid, Centella Asiatica Extract, Tocopheryl Acetate (Vitamin E), Panthenol (Pro-Vitamin B5), Phenoxyethanol, Ethylhexylglycerin.
                   </p>
                 </>
               )}
             </div>
           )}
 
+          {activeTab === "authenticity" && (
+            <div className="space-y-4 max-w-3xl">
+              <div className="flex items-center gap-3 p-4 rounded-2xl bg-pink-50/60 border border-pink-200">
+                <ShieldCheck className="h-8 w-8 text-[#e91e63] shrink-0" />
+                <div>
+                  <h4 className="font-black text-gray-900 text-sm">100% Guaranteed Brand Authenticity</h4>
+                  <p className="text-xs text-gray-600">
+                    Imported directly from authorized manufacturers in {originCountry}. Zero replicas or expired stock guaranteed.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 text-xs">
+                <div className="p-3.5 rounded-xl border border-gray-200 bg-surface-secondary/40 space-y-1">
+                  <span className="font-bold text-gray-900 block">Batch Code:</span>
+                  <span className="font-mono text-gray-700">{product.batch_number || "LOT2024BD01"}</span>
+                </div>
+                <div className="p-3.5 rounded-xl border border-gray-200 bg-surface-secondary/40 space-y-1">
+                  <span className="font-bold text-gray-900 block">Freshness Shelf-Life:</span>
+                  <span className="text-emerald-700 font-bold">{product.expiry_date ? `Exp: ${product.expiry_date}` : "24 Months After Opening (PAO)"}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === "warranty" && (
             <div className="space-y-3 max-w-3xl">
-              <p className="font-bold text-text">Nationwide Shipping &amp; Returns:</p>
-              <p>Inside Dhaka: Delivered within 24–48 hours via fast courier.</p>
-              <p>Outside Dhaka: Delivered in 2–4 business days with Cash on Delivery available.</p>
-              <p>7-Day Return Policy: Returns accepted if package is unopened and in original condition.</p>
+              <p className="font-bold text-text">Nationwide Shipping &amp; Returns Policy:</p>
+              <p>• Inside Dhaka: Delivered within 24–48 hours via fast courier (Steadfast / Pathao).</p>
+              <p>• Outside Dhaka: Delivered in 2–4 business days with Cash on Delivery available nationwide.</p>
+              <p>• 7-Day Return Guarantee: Returns accepted if package is unopened and intact.</p>
             </div>
           )}
 
@@ -622,7 +887,7 @@ export function ProductDetailClient({
         </div>
       </div>
 
-      {/* 3. Related Products Section */}
+      {/* 4. Related Products Section */}
       {relatedProducts && relatedProducts.length > 0 && (
         <div className="space-y-5 pt-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
@@ -641,6 +906,55 @@ export function ProductDetailClient({
             {relatedProducts.slice(0, 4).map((rel) => (
               <ProductCard key={rel.id} product={rel} />
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 5. Sticky Floating Mobile Purchase Bar (Slide up when scrolled past buy box) */}
+      {featureSettings?.enable_sticky_mobile_cta !== false && showStickyBar && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-border p-3 lg:hidden shadow-[0_-8px_25px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom-5 duration-200">
+          <div className="flex items-center gap-3">
+            <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-border bg-gray-50">
+              <img
+                src={selectedImage || product.og_image_url}
+                alt={product.name}
+                className="h-full w-full object-cover"
+              />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <h4 className="text-xs font-black text-text truncate">{product.name}</h4>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black text-pink-600">
+                  {formatPrice(effectivePrice)}
+                </span>
+                {selectedVariant && (
+                  <span className="text-[10px] font-bold text-gray-500 truncate">
+                    ({selectedVariant.title || selectedVariant.name})
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Button
+                disabled={isOutOfStock}
+                onClick={handleAddToCart}
+                size="sm"
+                className="rounded-xl h-10 px-3 bg-gray-900 hover:bg-gray-800 text-white text-xs font-extrabold active:scale-95"
+              >
+                <ShoppingBag className="h-3.5 w-3.5" />
+              </Button>
+
+              <Button
+                disabled={isOutOfStock}
+                onClick={handleBuyNow}
+                size="sm"
+                className="rounded-xl h-10 px-4 bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-black shadow-md active:scale-95"
+              >
+                Buy Now
+              </Button>
+            </div>
           </div>
         </div>
       )}

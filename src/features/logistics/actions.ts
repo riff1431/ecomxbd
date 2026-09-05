@@ -104,94 +104,39 @@ export async function bookCourierDelivery(input: {
   totalQuantity?: number;
   specialInstruction?: string;
 }) {
-  const supabase = createAdminClient();
-  const courierName =
-    input.courierCode === "steadfast"
-      ? "SteadFast Courier"
-      : input.courierCode === "pathao"
-      ? "Pathao Courier"
-      : input.courierCode === "redx"
-      ? "RedX Delivery"
-      : input.courierCode === "paperfly"
-      ? "Paperfly Express"
-      : "Sundarban Courier";
+  const { dispatchOrderToCourier } = await import("./services/courier-service");
+  const code = (input.courierCode === "steadfast" || input.courierCode === "pathao")
+    ? input.courierCode
+    : "manual";
 
-  let prefix = input.courierCode === "steadfast" ? "SF" : input.courierCode === "pathao" ? "PTH" : "STF";
-  let consignmentId = `${prefix}-${Math.floor(100000 + Math.random() * 900000)}`;
-  let trackingId = `TRK-${Math.floor(10000000 + Math.random() * 90000000)}`;
-  const parcelWeight = input.weightKg || 0.5;
-  const itemsSummary = input.itemDescription || "Skincare cosmetics package";
-  const instructions = input.specialInstruction || "Fragile skincare cosmetics. Handle with care.";
+  const result = await dispatchOrderToCourier({
+    orderId: input.orderId,
+    orderNumber: input.orderNumber,
+    courierCode: code,
+    recipientName: input.recipientName,
+    recipientPhone: input.recipientPhone,
+    recipientAddress: input.recipientAddress,
+    district: input.district,
+    thana: input.thana,
+    codAmount: input.codAmount,
+    weightKg: input.weightKg,
+    itemDescription: input.itemDescription,
+    totalQuantity: input.totalQuantity,
+    specialInstruction: input.specialInstruction,
+  });
 
+  if (!result.success) {
+    return {
+      success: false,
+      consignmentId: "",
+      trackingId: "",
+      courierName: result.courier_name,
+      error: result.error || "Courier booking failed",
+    };
+  }
+
+  // Trigger automated SMS notification
   try {
-    // 0. If SteadFast API credentials are configured, execute live SteadFast booking
-    if (input.courierCode === "steadfast") {
-      try {
-        const { getSteadfastSettings } = await import("./courier-settings-actions");
-        const sfSettings = await getSteadfastSettings();
-        if (sfSettings.api_key && sfSettings.secret_key && sfSettings.secret_key !== "••••••••") {
-          const sfRes = await fetch(`${sfSettings.api_base_url}/create_order`, {
-            method: "POST",
-            headers: {
-              "Api-Key": sfSettings.api_key,
-              "Secret-Key": sfSettings.secret_key,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              invoice: input.orderNumber,
-              recipient_name: input.recipientName,
-              recipient_phone: input.recipientPhone,
-              recipient_address: input.recipientAddress,
-              cod_amount: input.codAmount,
-              note: instructions,
-            }),
-          });
-          const sfJson = await sfRes.json();
-          if (sfJson.status === 200 && sfJson.consignment) {
-            consignmentId = String(sfJson.consignment.consignment_id || sfJson.consignment.tracking_code);
-            trackingId = String(sfJson.consignment.tracking_code || `SF-${consignmentId}`);
-          }
-        }
-      } catch (sfErr) {
-        console.warn("SteadFast live API booking attempt:", sfErr);
-      }
-    }
-
-    // 1. Try to record in courier_shipments with complete payload
-    await supabase.from("courier_shipments").insert({
-      order_id: input.orderId,
-      courier_name: courierName,
-      consignment_id: consignmentId,
-      tracking_id: trackingId,
-      booking_status: "booked",
-      delivery_status: "in_transit",
-      cod_amount: input.codAmount,
-      weight_kg: parcelWeight,
-      item_description: itemsSummary,
-      special_instruction: instructions,
-      booked_at: new Date().toISOString(),
-    });
-
-    // 2. Update order status to shipped, courier_id, consignment_id
-    await supabase
-      .from("orders")
-      .update({
-        status: "shipped",
-        courier_id: courierName,
-        consignment_id: consignmentId,
-        tracking_id: trackingId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", input.orderId);
-
-    // 3. Append to order status history with full payload note
-    await supabase.from("order_status_history").insert({
-      order_id: input.orderId,
-      status: "shipped",
-      note: `Booked with ${courierName}. Consignment: ${consignmentId}, Weight: ${parcelWeight}kg (${itemsSummary}). Note: "${instructions}"`,
-    });
-
-    // 4. Trigger automated SMS dispatch to customer
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "";
     await sendSmsNotification({
       recipientPhone: input.recipientPhone,
@@ -199,39 +144,31 @@ export async function bookCourierDelivery(input: {
       variables: {
         customer_name: input.recipientName,
         order_number: input.orderNumber,
-        courier_name: courierName,
-        tracking_id: trackingId,
-        tracking_url: `${appUrl}/account/track`,
+        courier_name: result.courier_name,
+        tracking_id: result.tracking_code,
+        tracking_url: result.tracking_url || `${appUrl}/account/track`,
       },
     });
-
-    revalidatePath("/admin/shipping");
-    revalidatePath(`/admin/orders/${input.orderId}`);
-    revalidatePath("/admin/orders");
-    revalidatePath("/account/orders");
-    revalidatePath("/account/track");
-
-    return {
-      success: true,
-      consignmentId,
-      trackingId,
-      courierName,
-      weightKg: parcelWeight,
-      itemsSummary,
-      instructions,
-      error: undefined,
-    };
-  } catch (err: any) {
-    console.error("Courier dispatch error:", err);
-    return {
-      success: false,
-      consignmentId: "",
-      trackingId: "",
-      courierName,
-      weightKg: parcelWeight,
-      itemsSummary,
-      instructions,
-      error: err instanceof Error ? err.message : "Courier booking service error",
-    };
+  } catch (smsErr) {
+    console.warn("SMS delivery notification notice:", smsErr);
   }
+
+  revalidatePath("/admin/shipping");
+  revalidatePath(`/admin/orders/${input.orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath("/account/orders");
+  revalidatePath("/account/track");
+
+  return {
+    success: true,
+    consignmentId: result.consignment_id,
+    trackingId: result.tracking_code,
+    trackingUrl: result.tracking_url,
+    courierName: result.courier_name,
+    weightKg: input.weightKg || 0.5,
+    itemsSummary: input.itemDescription || "Cosmetics Parcel",
+    instructions: input.specialInstruction,
+    error: undefined,
+  };
 }
+

@@ -214,7 +214,7 @@ export function FraudCheckerClient({ initialProfiles }: FraudCheckerClientProps)
                   placeholder="017XXXXXXXX"
                   value={phoneSearch}
                   onChange={(e) => setPhoneSearch(e.target.value)}
-                  className="flex-1 rounded-xl border border-border px-3 py-2 text-xs font-mono focus:border-primary-600 focus:outline-none"
+                  className="flex-1 rounded-xl border border-border px-3 py-2 text-xs font-mono focus:outline-none"
                 />
                 <Button type="submit" size="sm" className="text-xs">
                   Check Risk
@@ -260,7 +260,7 @@ export function FraudCheckerClient({ initialProfiles }: FraudCheckerClientProps)
                 placeholder="01XXXXXXXXX"
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
-                className="w-full rounded-xl border border-border px-3 py-2 text-xs font-mono focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border px-3 py-2 text-xs font-mono focus:outline-none"
               />
             </div>
 
@@ -271,7 +271,7 @@ export function FraudCheckerClient({ initialProfiles }: FraudCheckerClientProps)
                 placeholder="e.g. Returned parcel 3 times refused at doorstep"
                 value={newReason}
                 onChange={(e) => setNewReason(e.target.value)}
-                className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
               />
             </div>
 

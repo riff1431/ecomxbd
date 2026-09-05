@@ -1,0 +1,228 @@
+"use server";
+
+import { createHash } from "crypto";
+import { getSettingsByGroup, updateGroupSettings } from "@/lib/settings/config-service";
+import { revalidatePath } from "next/cache";
+import { getBaseUrl } from "@/lib/utils";
+
+export interface TikTokSettings {
+  tiktok_pixel_id: string;
+  tiktok_access_token: string;
+  tiktok_test_event_code?: string;
+  tiktok_capi_enabled: boolean;
+  tiktok_advanced_matching_enabled: boolean;
+}
+
+/**
+ * SHA-256 Hasher for TikTok Events API parameters.
+ */
+function hashTikTokParameter(val?: string | null): string | undefined {
+  if (!val) return undefined;
+  const trimmed = val.trim().toLowerCase();
+  if (!trimmed) return undefined;
+  return createHash("sha256").update(trimmed).digest("hex");
+}
+
+/**
+ * Normalizes phone number into E.164 digits with or without leading + (e.g. +88017XXXXXXXX / 88017XXXXXXXX).
+ */
+function normalizeTikTokPhone(rawPhone?: string | null): string | undefined {
+  if (!rawPhone) return undefined;
+  let digits = rawPhone.replace(/\D/g, "");
+  if (digits.startsWith("01") && digits.length === 11) {
+    digits = "88" + digits;
+  }
+  return hashTikTokParameter(digits);
+}
+
+/**
+ * 1. Fetch TikTok Analytics Settings
+ */
+export async function getTikTokSettings(): Promise<TikTokSettings> {
+  const settings = await getSettingsByGroup("marketing_tiktok");
+  return {
+    tiktok_pixel_id: settings.tiktok_pixel_id || process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID || "",
+    tiktok_access_token: settings.tiktok_access_token || process.env.TIKTOK_CAPI_ACCESS_TOKEN || "",
+    tiktok_test_event_code: settings.tiktok_test_event_code || process.env.TIKTOK_TEST_EVENT_CODE || "",
+    tiktok_capi_enabled: settings.tiktok_capi_enabled !== false,
+    tiktok_advanced_matching_enabled: settings.tiktok_advanced_matching_enabled !== false,
+  };
+}
+
+/**
+ * 2. Save TikTok Analytics Settings
+ */
+export async function saveTikTokSettings(settings: Partial<TikTokSettings>) {
+  await updateGroupSettings("marketing_tiktok", {
+    tiktok_pixel_id: settings.tiktok_pixel_id || "",
+    tiktok_access_token: settings.tiktok_access_token || "",
+    tiktok_test_event_code: settings.tiktok_test_event_code || "",
+    tiktok_capi_enabled: settings.tiktok_capi_enabled ?? true,
+    tiktok_advanced_matching_enabled: settings.tiktok_advanced_matching_enabled ?? true,
+  });
+
+  revalidatePath("/admin/marketing/meta");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * 3. Send Server-Side Event to TikTok Events API (v1.3)
+ */
+export async function sendTikTokCapiEvent(input: {
+  eventName: string;
+  eventId: string;
+  eventSourceUrl?: string;
+  userData?: {
+    email?: string;
+    phone?: string;
+    externalId?: string;
+    clientIpAddress?: string;
+    clientUserAgent?: string;
+    ttclid?: string;
+    ttp?: string;
+  };
+  properties?: Record<string, any>;
+  testEventCode?: string;
+}) {
+  const config = await getTikTokSettings();
+
+  const pixelCode = config.tiktok_pixel_id || process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID;
+  const accessToken = config.tiktok_access_token || process.env.TIKTOK_CAPI_ACCESS_TOKEN;
+
+  if (!pixelCode || !accessToken) {
+    return {
+      success: false,
+      skipped: true,
+      error: "TikTok Pixel Code or Access Token is not configured.",
+    };
+  }
+
+  // Construct User Identity Payload (SHA-256 Hashed)
+  const userPayload: Record<string, any> = {};
+
+  if (input.userData) {
+    const { email, phone, externalId, clientIpAddress, clientUserAgent, ttclid, ttp } = input.userData;
+
+    if (email) {
+      const hashedEmail = hashTikTokParameter(email);
+      if (hashedEmail) userPayload.email = hashedEmail;
+    }
+
+    if (phone) {
+      const hashedPhone = normalizeTikTokPhone(phone);
+      if (hashedPhone) userPayload.phone_number = hashedPhone;
+    }
+
+    if (externalId) {
+      const hashedExt = hashTikTokParameter(externalId);
+      if (hashedExt) userPayload.external_id = hashedExt;
+    }
+
+    if (clientIpAddress) userPayload.ip = clientIpAddress;
+    if (clientUserAgent) userPayload.user_agent = clientUserAgent;
+    if (ttclid) userPayload.ttclid = ttclid;
+    if (ttp) userPayload.ttp = ttp;
+  }
+
+  // Map event name to TikTok standard if needed
+  let mappedEvent = input.eventName;
+  if (input.eventName === "Purchase") mappedEvent = "CompletePayment";
+  if (input.eventName === "Lead") mappedEvent = "SubmitForm";
+
+  const eventPayload: Record<string, any> = {
+    event: mappedEvent,
+    event_time: Math.floor(Date.now() / 1000),
+    event_id: input.eventId,
+    user: userPayload,
+    properties: {
+      currency: input.properties?.currency || "BDT",
+      value: input.properties?.value !== undefined ? Number(input.properties?.value) : undefined,
+      content_type: input.properties?.content_type || "product",
+      contents: input.properties?.contents || undefined,
+      content_id: input.properties?.content_id || (input.properties?.content_ids?.[0]) || undefined,
+      content_name: input.properties?.content_name || undefined,
+      content_category: input.properties?.content_category || undefined,
+      quantity: input.properties?.num_items || input.properties?.quantity || undefined,
+      order_id: input.properties?.order_id || input.properties?.transaction_id || undefined,
+      query: input.properties?.search_string || input.properties?.query || undefined,
+    },
+    page: {
+      url: input.eventSourceUrl || getBaseUrl() || undefined,
+    },
+  };
+
+  const testCode = input.testEventCode || config.tiktok_test_event_code;
+
+  const requestBody: Record<string, any> = {
+    event_source: "web",
+    event_source_id: pixelCode,
+    data: [eventPayload],
+  };
+
+  if (testCode && testCode.trim().length > 0) {
+    requestBody.test_event_code = testCode.trim();
+  }
+
+  try {
+    const tiktokApiUrl = "https://business-api.tiktok.com/open_api/v1.3/event/track/";
+    const response = await fetch(tiktokApiUrl, {
+      method: "POST",
+      headers: {
+        "Access-Token": accessToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+
+    const resJson = await response.json();
+
+    if (resJson.code !== 0 && !response.ok) {
+      console.error("[TikTok CAPI Error]", resJson);
+      return {
+        success: false,
+        error: resJson.message || "TikTok Events API request failed",
+        logId: resJson.request_id,
+      };
+    }
+
+    return {
+      success: true,
+      code: resJson.code,
+      message: resJson.message || "Event tracked successfully",
+      requestId: resJson.request_id,
+    };
+  } catch (err: any) {
+    console.error("[TikTok CAPI Network Error]", err);
+    return {
+      success: false,
+      error: err.message || "Network error dispatching TikTok CAPI event",
+    };
+  }
+}
+
+/**
+ * 4. Test Live Diagnostic TikTok Events API Connection
+ */
+export async function testTikTokCapiDiagnostic(testCodeOverride?: string, originUrl?: string) {
+  const testEventId = `tt_test_evt_${Date.now()}_diag`;
+  const base = originUrl || getBaseUrl() || "";
+  const result = await sendTikTokCapiEvent({
+    eventName: "PageView",
+    eventId: testEventId,
+    eventSourceUrl: base ? `${base}/admin/marketing/meta` : undefined,
+    userData: {
+      email: "test_customer@example.com",
+      phone: "01700000000",
+      clientUserAgent: "TikTok-EventsAPI-Diagnostic/1.0",
+    },
+    properties: {
+      currency: "BDT",
+      value: 1250,
+      content_name: "TikTok Events API Live Diagnostic Verification",
+    },
+    testEventCode: testCodeOverride,
+  });
+
+  return result;
+}

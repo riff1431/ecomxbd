@@ -17,6 +17,7 @@ import { getBrands } from "@/features/brands/actions";
 import { getAttributes } from "@/features/attributes/actions";
 import { getProductComboConfig, saveProductComboConfig } from "@/features/products/combo-actions";
 import { RichTextEditor } from "@/components/shared/rich-text-editor";
+import { ImageUploadDropzone } from "@/components/shared/image-upload-dropzone";
 
 interface AttributeOption {
   id: string;
@@ -93,8 +94,17 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
     benefits: (initialData?.benefits as string) ?? "",
     usage: (initialData?.usage as string) ?? "",
     ingredients_specifications: (initialData?.ingredients_specifications as string) ?? "",
-    country: (initialData?.country as string) ?? "",
+    country: (initialData?.country as string) ?? (initialData?.origin_country as string) ?? "",
     warranty: (initialData?.warranty as string) ?? "",
+    // Beauty & Skin Taxonomy
+    skin_type: (initialData?.skin_type as string[]) ?? [],
+    skin_concern: (initialData?.skin_concern as string[]) ?? [],
+    key_actives: (initialData?.key_actives as string[]) ?? [],
+    origin_country: (initialData?.origin_country as string) ?? (initialData?.country as string) ?? "South Korea",
+    routine_step: (initialData?.routine_step as string) ?? "",
+    batch_number: (initialData?.batch_number as string) ?? "",
+    expiry_date: (initialData?.expiry_date as string) ?? "",
+    authenticity_verified: (initialData?.authenticity_verified as boolean) ?? true,
     // Pricing
     cost_price: (initialData?.cost_price as number) ?? 0,
     regular_price: (initialData?.regular_price as number) ?? 0,
@@ -180,43 +190,66 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
     }));
   };
 
-  // Upload image to Cloudinary
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const toggleSkinType = (item: string) => {
+    setForm((prev) => {
+      const exists = prev.skin_type.includes(item);
+      return {
+        ...prev,
+        skin_type: exists ? prev.skin_type.filter((t) => t !== item) : [...prev.skin_type, item],
+      };
+    });
+  };
+
+  const toggleSkinConcern = (item: string) => {
+    setForm((prev) => {
+      const exists = prev.skin_concern.includes(item);
+      return {
+        ...prev,
+        skin_concern: exists ? prev.skin_concern.filter((c) => c !== item) : [...prev.skin_concern, item],
+      };
+    });
+  };
+
+  const toggleKeyActive = (item: string) => {
+    setForm((prev) => {
+      const exists = prev.key_actives.includes(item);
+      return {
+        ...prev,
+        key_actives: exists ? prev.key_actives.filter((a) => a !== item) : [...prev.key_actives, item],
+      };
+    });
+  };
+
+  // Upload images (handles both input change and drag & drop)
+  const [isDraggingGallery, setIsDraggingGallery] = useState(false);
+
+  const uploadFilesList = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
 
     setUploadingMedia(true);
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const signRes = await fetch("/api/media/sign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ folder: "products" }),
-        });
-
-        if (!signRes.ok) throw new Error("Failed to get upload signature");
-        const signData = await signRes.json();
+        if (!file.type.startsWith("image/")) continue;
 
         const formData = new FormData();
         formData.append("file", file);
-        formData.append("api_key", signData.apiKey);
-        formData.append("timestamp", signData.timestamp.toString());
-        formData.append("signature", signData.signature);
-        formData.append("folder", signData.folder);
+        formData.append("folder", "products");
 
-        const cloudRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`,
-          { method: "POST", body: formData }
-        );
+        const res = await fetch("/api/media/upload", {
+          method: "POST",
+          body: formData,
+        });
 
-        if (!cloudRes.ok) throw new Error("Cloudinary upload failed");
-        const asset = await cloudRes.json();
+        const data = await res.json();
+        if (!res.ok || data.error || !data.url) {
+          throw new Error(data.error || "Image upload failed");
+        }
 
         setGalleryImages((prev) => {
-          const next = [...prev, asset.secure_url];
+          const next = [...prev, data.url];
           if (!form.og_image_url) {
-            updateField("og_image_url", asset.secure_url);
+            updateField("og_image_url", data.url);
           }
           return next;
         });
@@ -226,6 +259,12 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
     } finally {
       setUploadingMedia(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      await uploadFilesList(e.target.files);
     }
   };
 
@@ -332,8 +371,18 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
       benefits: form.benefits || null,
       usage: form.usage || null,
       ingredients_specifications: form.ingredients_specifications || null,
-      country: form.country || null,
+      country: form.origin_country || form.country || null,
+      origin_country: form.origin_country || form.country || null,
       warranty: form.warranty || null,
+      // Beauty Taxonomy
+      skin_type: form.skin_type.length > 0 ? form.skin_type : null,
+      skin_concern: form.skin_concern.length > 0 ? form.skin_concern : null,
+      key_actives: form.key_actives.length > 0 ? form.key_actives : null,
+      routine_step: form.routine_step || null,
+      batch_number: form.batch_number || null,
+      expiry_date: form.expiry_date || null,
+      authenticity_verified: form.authenticity_verified,
+      // Pricing
       cost_price: form.cost_price || null,
       regular_price: form.regular_price || 0,
       sale_price: form.sale_price || null,
@@ -409,6 +458,7 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
 
   const dynamicTabs = [
     { id: "basic", label: "Basic Info", icon: Package },
+    { id: "beauty", label: "Skin & Beauty Specs", icon: Sparkles },
     { id: "content", label: "Content", icon: FileText },
     { id: "pricing", label: "Pricing", icon: DollarSign },
     { id: "combo", label: "Combo Bundles", icon: Sparkles },
@@ -545,6 +595,219 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
             </div>
           )}
 
+          {/* 1.5 Beauty & Skin Taxonomy Specs */}
+          {activeTab === "beauty" && (
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-6">
+              <div className="border-b border-gray-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-pink-600" />
+                  <h2 className="text-base font-bold text-gray-900">Beauty & Cosmetics Taxonomy Specs</h2>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Configure smart filtering attributes, routine recommendations, authenticity batch codes, and origin provenance.
+                </p>
+              </div>
+
+              {/* Skin Types (Multi-select) */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-gray-700">Suitable Skin Types (Select all that apply)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {["Oily", "Dry", "Combination", "Sensitive", "Normal", "All Skin Types"].map((type) => {
+                    const active = form.skin_type.includes(type);
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => toggleSkinType(type)}
+                        className={cn(
+                          "rounded-full px-3.5 py-1.5 text-xs font-bold transition-all border",
+                          active
+                            ? "bg-pink-600 text-white border-pink-600 shadow-xs"
+                            : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300"
+                        )}
+                      >
+                        {active && <Check className="inline-block h-3.5 w-3.5 mr-1 -mt-0.5" />}
+                        {type}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Skin Concerns (Multi-select) */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-gray-700">Target Skin Concerns (Filterable in Catalog)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Acne & Blemishes",
+                    "Brightening & Pigmentation",
+                    "Anti-Aging & Wrinkles",
+                    "Dryness & Hydration",
+                    "Pore Minimizing",
+                    "Redness & Rosacea",
+                    "Sun Protection",
+                    "Dark Circles",
+                    "Oil Control",
+                    "Barrier Repair",
+                  ].map((concern) => {
+                    const active = form.skin_concern.includes(concern);
+                    return (
+                      <button
+                        key={concern}
+                        type="button"
+                        onClick={() => toggleSkinConcern(concern)}
+                        className={cn(
+                          "rounded-full px-3 py-1.5 text-xs font-bold transition-all border",
+                          active
+                            ? "bg-purple-600 text-white border-purple-600 shadow-xs"
+                            : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300"
+                        )}
+                      >
+                        {active && <Check className="inline-block h-3.5 w-3.5 mr-1 -mt-0.5" />}
+                        {concern}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Key Actives (Multi-select + Input) */}
+              <div className="space-y-2">
+                <Label className="text-xs font-bold text-gray-700">Key Active Ingredients</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "Niacinamide",
+                    "Hyaluronic Acid",
+                    "Salicylic Acid (BHA)",
+                    "Glycolic Acid (AHA)",
+                    "Vitamin C",
+                    "Retinol",
+                    "Centella Asiatica (Cica)",
+                    "Snail Secretion Filtrate",
+                    "Ceramides",
+                    "Zinc PCA",
+                    "Alpha Arbutin",
+                    "Tea Tree",
+                    "Peptides",
+                    "Mugwort",
+                    "Galactomyces",
+                    "Tranexamic Acid",
+                  ].map((active) => {
+                    const isSelected = form.key_actives.includes(active);
+                    return (
+                      <button
+                        key={active}
+                        type="button"
+                        onClick={() => toggleKeyActive(active)}
+                        className={cn(
+                          "rounded-full px-3 py-1.5 text-xs font-bold transition-all border",
+                          isSelected
+                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                            : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300"
+                        )}
+                      >
+                        {isSelected && <Check className="inline-block h-3.5 w-3.5 mr-1 -mt-0.5" />}
+                        {active}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Provenance & Routine Step Grid */}
+              <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-gray-100">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-gray-700">Country of Origin / Sourcing Provenance</Label>
+                  <select
+                    value={form.origin_country}
+                    onChange={(e) => updateField("origin_country", e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium"
+                  >
+                    <option value="South Korea">South Korea (K-Beauty)</option>
+                    <option value="Japan">Japan (J-Beauty)</option>
+                    <option value="United Kingdom">United Kingdom (UK)</option>
+                    <option value="United States">United States (USA)</option>
+                    <option value="France">France</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Thailand">Thailand</option>
+                    <option value="Bangladesh">Bangladesh</option>
+                    <option value="India">India</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Italy">Italy</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-gray-700">Skincare Routine Step</Label>
+                  <select
+                    value={form.routine_step}
+                    onChange={(e) => updateField("routine_step", e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium"
+                  >
+                    <option value="">— Select Routine Step —</option>
+                    <option value="Cleanser">1. Cleanser (Oil / Foam)</option>
+                    <option value="Toner">2. Toner / Mist</option>
+                    <option value="Essence & Serum">3. Essence / Serum / Ampoule</option>
+                    <option value="Moisturizer & Cream">4. Moisturizer / Emulsion / Cream</option>
+                    <option value="Sunscreen / SPF">5. Sunscreen / SPF</option>
+                    <option value="Eye Cream">Eye Care / Eye Cream</option>
+                    <option value="Mask & Exfoliator">Mask / Scrub / Peeling</option>
+                    <option value="Treatment">Targeted Treatment / Spot Care</option>
+                    <option value="Lip Care">Lip Balm / Lip Mask</option>
+                    <option value="Makeup & Cushion">Makeup / Cushion / Foundation</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Batch Code & Expiry Date */}
+              <div className="grid gap-4 sm:grid-cols-2 pt-2 border-t border-gray-100">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-gray-700">Batch Code (For Customer Authenticity Verification)</Label>
+                  <Input
+                    value={form.batch_number}
+                    onChange={(e) => updateField("batch_number", e.target.value)}
+                    placeholder="e.g. LOT202408A"
+                  />
+                  <p className="text-[11px] text-gray-400">
+                    Displayed in the product page Authenticity Verification badge.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold text-gray-700">Expiry Date (PAO / Shelf Life)</Label>
+                  <Input
+                    type="date"
+                    value={form.expiry_date}
+                    onChange={(e) => updateField("expiry_date", e.target.value)}
+                  />
+                  <p className="text-[11px] text-gray-400">
+                    Helps track inventory shelf-life and display freshness seals to customers.
+                  </p>
+                </div>
+              </div>
+
+              {/* Authenticity Guarantee Toggle */}
+              <div className="flex items-center justify-between rounded-xl bg-pink-50/60 border border-pink-200 p-4">
+                <div>
+                  <h4 className="text-xs font-bold text-pink-950">100% Authentic Guaranteed Seal</h4>
+                  <p className="text-[11px] text-pink-700">
+                    Show verified authentic importer badge and direct brand provenance on storefront.
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.authenticity_verified}
+                    onChange={(e) => updateField("authenticity_verified", e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* 2. Content */}
           {activeTab === "content" && (
             <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-6">
@@ -563,7 +826,7 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
                   onChange={(e) => updateField("short_description", e.target.value)}
                   rows={2}
                   placeholder="Non-oily 24hr hydration gel with Hyaluronic Acid & Vitamin E."
-                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-medium resize-none focus:border-[#e91e63] focus:outline-none focus:ring-2 focus:ring-pink-500/10"
+                  className="w-full rounded-xl border px-3 py-2 text-xs font-medium resize-none focus:outline-none focus:ring-2 focus:ring-pink-500/10"
                 />
               </div>
 
@@ -635,9 +898,12 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
                 </div>
               </div>
               {form.regular_price > 0 && form.sale_price > 0 && (
-                <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700">
-                  💰 Discount: {Math.round((1 - form.sale_price / form.regular_price) * 100)}% off
-                  (saving ৳{(form.regular_price - form.sale_price).toFixed(2)})
+                <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-sm text-green-700 flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-green-600 shrink-0" />
+                  <span>
+                    <strong>Discount:</strong> {Math.round((1 - form.sale_price / form.regular_price) * 100)}% off
+                    (saving ৳{(form.regular_price - form.sale_price).toFixed(2)})
+                  </span>
                 </div>
               )}
             </div>
@@ -839,19 +1105,46 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
               />
 
               <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDraggingGallery(true);
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDraggingGallery(false);
+                }}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsDraggingGallery(false);
+                  if (e.dataTransfer.files) {
+                    await uploadFilesList(e.dataTransfer.files);
+                  }
+                }}
                 onClick={() => fileInputRef.current?.click()}
-                className="rounded-xl border-2 border-dashed border-primary-200 bg-primary-50/40 p-8 text-center cursor-pointer transition-colors hover:bg-primary-50"
+                className={cn(
+                  "rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-all",
+                  isDraggingGallery
+                    ? "border-[#e91e63] bg-pink-50/70 scale-[0.99] shadow-sm"
+                    : "border-primary-200 bg-primary-50/40 hover:bg-primary-50"
+                )}
               >
                 {uploadingMedia ? (
                   <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-                    <p className="text-xs font-semibold text-primary-700">Uploading to Cloudinary...</p>
+                    <Loader2 className="h-8 w-8 animate-spin text-[#e91e63]" />
+                    <p className="text-xs font-bold text-[#e91e63]">Uploading &amp; Optimizing Product Images...</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-2">
-                    <Upload className="h-8 w-8 text-primary-600" />
-                    <p className="text-sm font-semibold text-text">Click to upload product images</p>
-                    <p className="text-xs text-text-muted">JPG, PNG, WebP up to 10MB each</p>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-100 text-[#e91e63]">
+                      <Upload className="h-6 w-6" />
+                    </div>
+                    <p className="text-sm font-bold text-gray-900">
+                      <span className="text-[#e91e63] underline">Click to upload</span> or drag and drop product photos
+                    </p>
+                    <p className="text-xs text-gray-500">JPG, PNG, WebP or SVG up to 15MB each (multi-select supported)</p>
                   </div>
                 )}
               </div>
@@ -903,14 +1196,18 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
                   onChange={(e) => updateField("seo_description", e.target.value)}
                   rows={3}
                   maxLength={160}
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm resize-none focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                  className="w-full rounded-lg border bg-white px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary-500/20"
                 />
                 <p className="text-xs text-text-muted">{form.seo_description.length}/160</p>
               </div>
-              <div className="space-y-2">
-                <Label>OG Image URL</Label>
-                <Input value={form.og_image_url} onChange={(e) => updateField("og_image_url", e.target.value)} placeholder="https://res.cloudinary.com/..." />
-              </div>
+              <ImageUploadDropzone
+                label="Social Share / OG Image"
+                description="Custom preview image for Facebook, Instagram, and Twitter link shares"
+                value={form.og_image_url}
+                onChange={(url) => updateField("og_image_url", url)}
+                folder="products"
+                previewShape="banner"
+              />
             </div>
           )}
 

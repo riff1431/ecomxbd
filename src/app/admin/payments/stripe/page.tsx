@@ -111,7 +111,7 @@ export default function AdminStripePage() {
               <select
                 value={formData.environment}
                 onChange={(e) => setFormData({ ...formData, environment: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               >
                 <option value="sandbox">Test Mode (pk_test_... / sk_test_...)</option>
                 <option value="live">Live Mode (pk_live_... / sk_live_...)</option>
@@ -128,7 +128,7 @@ export default function AdminStripePage() {
                 value={formData.publishable_key}
                 onChange={(e) => setFormData({ ...formData, publishable_key: e.target.value })}
                 placeholder="pk_test_..."
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
               />
             </div>
 

@@ -16,6 +16,7 @@ import {
 import { ModuleHeader } from "@/components/admin/module-settings/module-header";
 import { Button } from "@/components/shared/ui/button";
 import { saveInvoiceSettings, type InvoiceSettings } from "@/features/settings/actions";
+import { ImageUploadDropzone } from "@/components/shared/image-upload-dropzone";
 
 interface InvoiceSettingsClientProps {
   initialSettings: InvoiceSettings;
@@ -42,9 +43,8 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
         invoice_brand_name: "BLUSH & BUDGET",
         invoice_tagline: "AUTHENTIC BEAUTY & SKINCARE ESSENTIALS",
         invoice_address: "House 42, Road 11, Banani, Dhaka-1213, Bangladesh",
-        invoice_phone: "+880 1700-000000",
-        invoice_email: "support@blushandbudget.com",
-        invoice_website: "https://blushandbudget.com",
+        invoice_email: "",
+        invoice_website: typeof window !== "undefined" && window.location?.origin ? window.location.origin : "",
         invoice_tax_id_or_bin: "BIN: 002349182-0101",
 
         invoice_title: "TAX INVOICE",
@@ -362,18 +362,14 @@ export function InvoiceSettingsClient({ initialSettings }: InvoiceSettingsClient
                         className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                       />
                     </div>
-                    <div>
-                      <label className="block font-bold text-text mb-1">
-                        Digital Signature Image URL (Optional)
-                      </label>
-                      <input
-                        type="url"
-                        placeholder="https://your-domain.com/signature.png"
-                        value={formData.invoice_signature_image_url || ""}
-                        onChange={(e) => updateField("invoice_signature_image_url", e.target.value)}
-                        className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
-                      />
-                    </div>
+                    <ImageUploadDropzone
+                      label="Digital Signature Image"
+                      description="Upload PNG transparent signature for invoice printouts"
+                      value={formData.invoice_signature_image_url || ""}
+                      onChange={(url) => updateField("invoice_signature_image_url", url)}
+                      folder="invoices"
+                      previewShape="rounded"
+                    />
                   </div>
 
                   {/* Toggle Features */}

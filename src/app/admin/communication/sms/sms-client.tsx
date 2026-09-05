@@ -79,7 +79,7 @@ export function SmsClient({ initialSettings }: SmsClientProps) {
                 <select
                   value={formData.provider_name}
                   onChange={(e) => setFormData({ ...formData, provider_name: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                 >
                   <option value="BulkSMSBD">BulkSMSBD (Recommended Bangladesh)</option>
                   <option value="MIMSMS">MIM SMS (Greenweb)</option>
@@ -95,7 +95,7 @@ export function SmsClient({ initialSettings }: SmsClientProps) {
                   required
                   value={formData.api_url}
                   onChange={(e) => setFormData({ ...formData, api_url: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                 />
               </div>
 
@@ -109,7 +109,7 @@ export function SmsClient({ initialSettings }: SmsClientProps) {
                   value={formData.sender_id}
                   onChange={(e) => setFormData({ ...formData, sender_id: e.target.value })}
                   placeholder="e.g. 8809612000000 or ecomX"
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                 />
               </div>
 
@@ -167,7 +167,7 @@ export function SmsClient({ initialSettings }: SmsClientProps) {
                 value={testPhone}
                 onChange={(e) => setTestPhone(e.target.value)}
                 placeholder="017XXXXXXXX"
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
               />
             </div>
 
@@ -180,7 +180,7 @@ export function SmsClient({ initialSettings }: SmsClientProps) {
                 required
                 value={testMessage}
                 onChange={(e) => setTestMessage(e.target.value)}
-                className="w-full rounded-xl border border-border bg-white p-3 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white p-3 text-xs text-text focus:outline-none"
               />
               <span className="text-[10px] text-text-muted mt-1 block">
                 {testMessage.length} characters (1 SMS credit)

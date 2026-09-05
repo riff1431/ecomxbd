@@ -124,7 +124,7 @@ export default function AccountReviewsPage() {
             Once your latest orders are delivered, you can write reviews and earn bonus loyalty points.
           </p>
           <Link href="/products" className="inline-block">
-            <Button className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs">Explore New Arrivals</Button>
+            <Button className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs">Explore New Arrivals</Button>
           </Link>
         </div>
       )}

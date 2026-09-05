@@ -84,7 +84,7 @@ export default function AdminEmailSettingsPage() {
                 <select
                   value={formData.provider}
                   onChange={(e) => setFormData({ ...formData, provider: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                 >
                   <option value="smtp">Custom SMTP Server</option>
                   <option value="resend">Resend API</option>
@@ -101,7 +101,7 @@ export default function AdminEmailSettingsPage() {
                     required
                     value={formData.host}
                     onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                   />
                 </div>
 
@@ -112,7 +112,7 @@ export default function AdminEmailSettingsPage() {
                     required
                     value={formData.port}
                     onChange={(e) => setFormData({ ...formData, port: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                   />
                 </div>
               </div>
@@ -125,7 +125,7 @@ export default function AdminEmailSettingsPage() {
                     required
                     value={formData.from_name}
                     onChange={(e) => setFormData({ ...formData, from_name: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                   />
                 </div>
 
@@ -136,7 +136,7 @@ export default function AdminEmailSettingsPage() {
                     required
                     value={formData.from_email}
                     onChange={(e) => setFormData({ ...formData, from_email: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                   />
                 </div>
               </div>
@@ -147,7 +147,7 @@ export default function AdminEmailSettingsPage() {
                   type="text"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                 />
               </div>
 
@@ -204,7 +204,7 @@ export default function AdminEmailSettingsPage() {
                 value={testEmail}
                 onChange={(e) => setTestEmail(e.target.value)}
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 

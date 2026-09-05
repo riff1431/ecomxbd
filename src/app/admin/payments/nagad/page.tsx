@@ -118,7 +118,7 @@ export default function AdminNagadPage() {
                 value={formData.merchant_id}
                 onChange={(e) => setFormData({ ...formData, merchant_id: e.target.value })}
                 placeholder="e.g. 683920194829102"
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
               />
             </div>
 
@@ -131,7 +131,7 @@ export default function AdminNagadPage() {
                 value={formData.merchant_number}
                 onChange={(e) => setFormData({ ...formData, merchant_number: e.target.value })}
                 placeholder="017XXXXXXXX"
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
               />
             </div>
 
@@ -142,7 +142,7 @@ export default function AdminNagadPage() {
                 value={formData.public_key}
                 onChange={(e) => setFormData({ ...formData, public_key: e.target.value })}
                 placeholder="-----BEGIN PUBLIC KEY-----..."
-                className="w-full rounded-xl border border-border bg-white p-3 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white p-3 text-xs font-mono text-text focus:outline-none"
               />
             </div>
 

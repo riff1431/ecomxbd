@@ -6,7 +6,7 @@ import { Button } from "@/components/shared/ui/button";
 
 export default function AdminThemeSettingsPage() {
   const [themeColor, setThemeColor] = useState("rose");
-  const [announcement, setAnnouncement] = useState("⚡ 100% Authentic Korean & UK Skincare | Free Delivery over ৳2,500!");
+  const [announcement, setAnnouncement] = useState("100% Authentic Korean & UK Skincare | Free Delivery over ৳2,500!");
   const [insideDhakaFree, setInsideDhakaFree] = useState(2500);
   const [outsideDhakaFree, setOutsideDhakaFree] = useState(3500);
   const [supportPhone, setSupportPhone] = useState("+880 1700-000000");
@@ -74,7 +74,7 @@ export default function AdminThemeSettingsPage() {
               required
               value={announcement}
               onChange={(e) => setAnnouncement(e.target.value)}
-              className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+              className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
             />
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function AdminThemeSettingsPage() {
                 required
                 value={insideDhakaFree}
                 onChange={(e) => setInsideDhakaFree(Number(e.target.value))}
-                className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
               />
             </div>
 
@@ -109,7 +109,7 @@ export default function AdminThemeSettingsPage() {
                 required
                 value={outsideDhakaFree}
                 onChange={(e) => setOutsideDhakaFree(Number(e.target.value))}
-                className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
               />
             </div>
           </div>

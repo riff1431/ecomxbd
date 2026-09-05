@@ -114,7 +114,7 @@ export default function AdminSslcommerzPage() {
                 value={formData.store_id}
                 onChange={(e) => setFormData({ ...formData, store_id: e.target.value })}
                 placeholder="e.g. ecomxbangladesh_live"
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
               />
             </div>
 
@@ -123,7 +123,7 @@ export default function AdminSslcommerzPage() {
               <select
                 value={formData.environment}
                 onChange={(e) => setFormData({ ...formData, environment: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               >
                 <option value="sandbox">Sandbox (SSLCommerz Test PGW)</option>
                 <option value="live">Live / Production Merchant</option>

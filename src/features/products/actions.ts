@@ -68,10 +68,22 @@ export async function createProduct(input: {
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Insert product
+  // Insert product with beauty taxonomy
   const { data: product, error: prodError } = await supabase
     .from("products")
-    .insert({ ...input.product, created_by: user?.id, updated_by: user?.id })
+    .insert({
+      ...input.product,
+      skin_type: input.product.skin_type || null,
+      skin_concern: input.product.skin_concern || null,
+      key_actives: input.product.key_actives || null,
+      origin_country: input.product.origin_country || input.product.country || null,
+      batch_number: input.product.batch_number || null,
+      expiry_date: input.product.expiry_date || null,
+      routine_step: input.product.routine_step || null,
+      authenticity_verified: input.product.authenticity_verified ?? true,
+      created_by: user?.id,
+      updated_by: user?.id,
+    })
     .select()
     .single();
 

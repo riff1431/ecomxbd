@@ -14,9 +14,10 @@ export const metadata: Metadata = {
     template: "%s | ecomXbangladesh",
   },
   description: "Premium e-commerce platform for Bangladesh — Shop the best products with fast delivery.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://blushandbudget.com"
-  ),
+  metadataBase: (() => {
+    const url = process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined);
+    return url ? new URL(url) : undefined;
+  })(),
   openGraph: {
     type: "website",
     locale: "en_BD",
@@ -29,6 +30,9 @@ export const metadata: Metadata = {
 };
 
 import { MetaPixel } from "@/components/analytics/meta-pixel";
+import { TikTokPixel } from "@/components/analytics/tiktok-pixel";
+import { GoogleTagManager } from "@/components/analytics/google-tag-manager";
+import { NavigationEvents } from "@/components/analytics/navigation-events";
 
 export default function RootLayout({
   children,
@@ -38,7 +42,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-white antialiased">
+        <GoogleTagManager />
+        <NavigationEvents />
         <MetaPixel />
+        <TikTokPixel />
         {children}
       </body>
     </html>

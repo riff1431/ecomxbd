@@ -14,44 +14,35 @@ import {
   Tag,
   AlertCircle,
   UserCheck,
-  LogIn,
-  UserPlus,
+  Phone,
+  MapPin,
+  Sparkles,
+  KeyRound,
+  ShieldAlert,
+  Clock,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, cn } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
 import { createOrder } from "@/features/orders/actions";
 import { createClient } from "@/lib/supabase/client";
-import { getCheckoutSettings } from "@/features/settings/actions";
-import { saveIncompleteLead, markLeadConverted } from "@/features/fraud/actions";
-
-const BD_DISTRICTS = [
-  "Dhaka City",
-  "Dhaka (Suburbs)",
-  "Chattogram",
-  "Sylhet",
-  "Rajshahi",
-  "Khulna",
-  "Barishal",
-  "Rangpur",
-  "Mymensingh",
-  "Gazipur",
-  "Narayanganj",
-  "Comilla",
-  "Cox's Bazar",
-  "Bogra",
-  "Jessore",
-  "Dinajpur",
-  "Tangail",
-  "Feni",
-  "Kushtia",
-  "Faridpur",
-  "Pabna",
-  "Noakhali",
-  "Brahmanbaria",
-  "Narsingdi",
-  "Other District",
-];
+import { getCheckoutAndFraudSettings, type CheckoutAndFraudSettings } from "@/features/settings/checkout-settings-actions";
+import {
+  evaluateCheckoutFraudRisk,
+  generateCheckoutOtp,
+  verifyCheckoutOtp,
+} from "@/features/fraud/anti-fraud-service";
+import { captureAbandonedCart } from "@/features/automation/abandoned-cart-service";
+import {
+  BD_GEO_HIERARCHY,
+  getShippingZoneByDistrict,
+} from "@/config/bangladesh-geo";
+import {
+  trackBeginCheckout,
+  trackAddShippingInfo,
+  trackAddPaymentInfo,
+  trackLead,
+} from "@/lib/analytics/datalayer";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -59,29 +50,73 @@ export default function CheckoutPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("cod");
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [checkoutSettings, setCheckoutSettings] = useState<any>({
-    guest_checkout_enabled: true,
-    require_phone: true,
-    require_email: false,
-    order_notes_enabled: true,
-    min_order_amount: 0,
-    cod_max_amount: 20000,
+
+  // Admin Configured Rules & Rates
+  const [settings, setSettings] = useState<CheckoutAndFraudSettings>({
+    inside_dhaka_rate: 70,
+    sub_dhaka_rate: 100,
+    outside_dhaka_rate: 130,
+    free_shipping_threshold: 2500,
+    enable_free_shipping_meter: true,
+    enable_cod_otp: true,
+    cod_otp_threshold: 3000,
+    enable_duplicate_blocker: true,
+    duplicate_window_minutes: 5,
+    enable_abandoned_cart_capture: true,
+    abandoned_cart_recovery_hours: 2,
+    abandoned_cart_discount_code: "SAVE5",
   });
 
-  // Customer Form State
+  // Customer 3-Tier Address & Form State
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
+    division: "Dhaka",
     district: "Dhaka City",
-    thana: "",
+    thana: "Gulshan",
     address: "",
     notes: "",
   });
 
-  // Fetch Auth state & Checkout Settings
+  // OTP Verification Modal State
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [debugOtpCode, setDebugOtpCode] = useState<string | null>(null);
+
+  // Calculate Shipping Zone & Dynamic Charge
+  const currentZone = getShippingZoneByDistrict(formData.district);
+  const isFreeShipping =
+    coupon?.type === "free_shipping" ||
+    (settings.free_shipping_threshold > 0 && subtotal >= settings.free_shipping_threshold);
+
+  const baseDeliveryFee =
+    currentZone === "inside_dhaka"
+      ? settings.inside_dhaka_rate
+      : settings.outside_dhaka_rate;
+
+  const shippingFee = isFreeShipping ? 0 : baseDeliveryFee;
+  const finalTotal = Math.max(0, subtotal - discount + shippingFee);
+  const amountToFreeShipping = Math.max(0, settings.free_shipping_threshold - subtotal);
+
+  // Available Districts based on selected Division
+  const currentDivisionObj = BD_GEO_HIERARCHY.find((d) => d.name === formData.division) || BD_GEO_HIERARCHY[0];
+  const availableDistricts = currentDivisionObj.districts;
+
+  // Available Thanas based on selected District
+  const currentDistrictObj = availableDistricts.find((d) => d.name === formData.district) || availableDistricts[0];
+  const availableThanas = currentDistrictObj?.thanas || [];
+
+  // Load Settings & Authenticated User Auto-fill
   useEffect(() => {
+    getCheckoutAndFraudSettings().then((res) => {
+      setSettings(res);
+    });
+
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
@@ -94,118 +129,117 @@ export default function CheckoutPage() {
         }));
       }
     });
-
-    getCheckoutSettings().then((settings) => {
-      if (settings && Object.keys(settings).length > 0) {
-        setCheckoutSettings({
-          guest_checkout_enabled: settings.guest_checkout_enabled ?? true,
-          require_phone: settings.require_phone ?? true,
-          require_email: settings.require_email ?? false,
-          order_notes_enabled: settings.order_notes_enabled ?? true,
-          min_order_amount: Number(settings.min_order_amount || 0),
-          cod_max_amount: Number(settings.cod_max_amount || 20000),
-        });
-      }
-    });
   }, []);
 
-  // Real-Time Incomplete Lead Auto-Capture (when user types Name & Phone)
+  // Track begin_checkout
   useEffect(() => {
-    if (formData.name.trim() && formData.phone.trim().length >= 10 && items.length > 0) {
-      const timer = setTimeout(() => {
-        saveIncompleteLead({
+    if (items.length > 0) {
+      trackBeginCheckout({
+        items: items.map((it) => ({
+          item_id: it.product_id || it.id,
+          item_name: it.name,
+          item_brand: it.brand_name || undefined,
+          item_variant: it.variant_label || undefined,
+          price: it.price,
+          quantity: it.quantity,
+        })),
+        value: finalTotal,
+        coupon: coupon?.code,
+        discount,
+        customer: {
           name: formData.name,
           phone: formData.phone,
           email: formData.email,
+          city: formData.district,
+          state: formData.division,
+          country: "BD",
+        },
+      });
+    }
+  }, []);
+
+  // Real-time Abandoned Cart Capture (captures as customer types)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.phone.length >= 6 && items.length > 0) {
+        captureAbandonedCart({
+          customer_name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          division: formData.division,
           district: formData.district,
+          thana: formData.thana,
           address: formData.address,
-          cartItems: items.map((i) => ({
-            name: i.name,
+          cart_items: items.map((i) => ({
+            product_id: i.product_id,
+            product_name: i.name,
             quantity: i.quantity,
             price: i.price,
           })),
-          cartTotal: subtotal - discount + (formData.district.toLowerCase().includes("dhaka") ? 60 : 120),
+          subtotal,
         });
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [formData, items, subtotal, discount]);
+        trackLead("checkout_form_fill", finalTotal);
+      }
+    }, 400);
 
-  // Shipping Fee Logic
-  const isInsideDhaka = formData.district.toLowerCase().includes("dhaka");
-  const isFreeShipping =
-    coupon?.type === "free_shipping" ||
-    (isInsideDhaka && subtotal >= 2500) ||
-    subtotal >= 3500;
+    return () => clearTimeout(timer);
+  }, [formData, items, subtotal, finalTotal]);
 
-  const baseDeliveryFee = isInsideDhaka ? 60 : 120;
-  const shippingFee = isFreeShipping ? 0 : baseDeliveryFee;
-  const finalTotal = Math.max(0, subtotal - discount + shippingFee);
+  // Handle Division Change -> Auto update District & Thana
+  const handleDivisionChange = (newDiv: string) => {
+    const divObj = BD_GEO_HIERARCHY.find((d) => d.name === newDiv) || BD_GEO_HIERARCHY[0];
+    const firstDist = divObj.districts[0];
+    setFormData({
+      ...formData,
+      division: newDiv,
+      district: firstDist.name,
+      thana: firstDist.thanas[0] || "",
+    });
+  };
 
-  const isBelowMinOrder =
-    checkoutSettings.min_order_amount > 0 && subtotal < checkoutSettings.min_order_amount;
-  const isLoginRequired = !checkoutSettings.guest_checkout_enabled && !currentUser;
+  // Handle District Change -> Auto update Thana
+  const handleDistrictChange = (newDist: string) => {
+    const distObj = availableDistricts.find((d) => d.name === newDist) || availableDistricts[0];
+    setFormData({
+      ...formData,
+      district: newDist,
+      thana: distObj?.thanas[0] || "",
+    });
+  };
 
-  const handleSubmitOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Execute Order Creation (Invoked directly or after OTP verification)
+  const processOrderSubmission = async () => {
+    setLoading(true);
     setErrorMsg(null);
 
-    // If login is required and customer is a guest
-    if (isLoginRequired) {
-      setErrorMsg("Please sign in or create an account to place your order.");
-      return;
-    }
-
-    // Minimum order validation
-    if (isBelowMinOrder) {
-      setErrorMsg(
-        `Minimum order amount is ৳${checkoutSettings.min_order_amount}. Please add ৳${
-          checkoutSettings.min_order_amount - subtotal
-        } more to place your order.`
-      );
-      return;
-    }
-
-    // Validation
-    if (!formData.name.trim()) {
-      setErrorMsg("Please enter your Full Name.");
-      return;
-    }
-
-    const cleanPhone = formData.phone.trim();
-    if (checkoutSettings.require_phone !== false) {
-      if (!cleanPhone || !/^(?:\+8801|01)[3-9]\d{8}$/.test(cleanPhone)) {
-        setErrorMsg("Please provide a valid 11-digit Bangladesh mobile number (e.g. 01712345678).");
-        return;
-      }
-    }
-
-    if (checkoutSettings.require_email && !formData.email.trim()) {
-      setErrorMsg("Email address is required for checkout.");
-      return;
-    }
-
-    if (!formData.thana.trim()) {
-      setErrorMsg("Please enter your Thana / Police Station / Upazila.");
-      return;
-    }
-    if (!formData.address.trim()) {
-      setErrorMsg("Please enter your detailed delivery street address.");
-      return;
-    }
-
-    if (items.length === 0) {
-      setErrorMsg("Your cart is empty. Add products before checking out.");
-      return;
-    }
-
-    setLoading(true);
-
     try {
+      trackAddPaymentInfo({
+        items: items.map((it) => ({
+          item_id: it.product_id || it.id,
+          item_name: it.name,
+          item_brand: it.brand_name || undefined,
+          item_variant: it.variant_label || undefined,
+          price: it.price,
+          quantity: it.quantity,
+        })),
+        value: finalTotal,
+        payment_type: selectedPaymentMethod === "cod" ? "Cash on Delivery" : "Mobile Wallet",
+        coupon: coupon?.code,
+        discount,
+        customer: {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email,
+          city: formData.district,
+          state: formData.division,
+          country: "BD",
+        },
+      });
+
       const res = await createOrder({
         customer: {
           name: formData.name.trim(),
-          phone: cleanPhone,
+          phone: formData.phone.trim(),
           email: formData.email.trim() || undefined,
           district: formData.district,
           thana: formData.thana.trim(),
@@ -220,7 +254,12 @@ export default function CheckoutPage() {
           price: i.price,
         })),
         shipping: {
-          method: isInsideDhaka ? "Inside Dhaka Express (24-48h)" : "Outside Dhaka Courier (3-5d)",
+          method:
+            currentZone === "inside_dhaka"
+              ? "Inside Dhaka Express (24-48h)"
+              : currentZone === "sub_dhaka"
+              ? "Dhaka Suburbs Courier"
+              : "Nationwide Courier (3-5d)",
           amount: shippingFee,
         },
         couponCode: coupon?.code || null,
@@ -233,13 +272,79 @@ export default function CheckoutPage() {
       }
 
       // Order created successfully!
-      markLeadConverted(cleanPhone);
       clearCart();
       router.push(`/orders/${res.orderId}/confirmation`);
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to submit order.");
+      setErrorMsg(err.message || "Failed to place order.");
       setLoading(false);
     }
+  };
+
+  // Form Submit Handler with Anti-Fraud & OTP Verification Evaluation
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    if (!formData.name.trim()) {
+      setErrorMsg("Please enter your Full Name.");
+      return;
+    }
+    if (!formData.phone.trim()) {
+      setErrorMsg("Please enter your 11-digit mobile number.");
+      return;
+    }
+    if (!formData.address.trim()) {
+      setErrorMsg("Please enter your detailed delivery street address.");
+      return;
+    }
+    if (items.length === 0) {
+      setErrorMsg("Your bag is empty.");
+      return;
+    }
+
+    setLoading(true);
+
+    // Evaluate Anti-Fraud & Risk Score
+    const fraudResult = await evaluateCheckoutFraudRisk({
+      phone: formData.phone,
+      orderTotal: finalTotal,
+      paymentMethod: selectedPaymentMethod,
+    });
+
+    if (!fraudResult.allowed) {
+      setErrorMsg(fraudResult.riskReasons[0] || "Order cannot be placed at this time.");
+      setLoading(false);
+      return;
+    }
+
+    // If High-Value COD Order Requires OTP Verification
+    if (fraudResult.requiresOtp) {
+      const otpRes = await generateCheckoutOtp(formData.phone);
+      setDebugOtpCode(otpRes.debugOtp || null);
+      setShowOtpModal(true);
+      setLoading(false);
+      return;
+    }
+
+    // Direct submission if risk is normal
+    await processOrderSubmission();
+  };
+
+  // OTP Verification Submit Handler
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOtpError(null);
+    setOtpLoading(true);
+
+    const res = await verifyCheckoutOtp(formData.phone, otpCode);
+    if (!res.valid) {
+      setOtpError(res.error || "Invalid OTP code.");
+      setOtpLoading(false);
+      return;
+    }
+
+    setShowOtpModal(false);
+    await processOrderSubmission();
   };
 
   if (items.length === 0) {
@@ -252,369 +357,537 @@ export default function CheckoutPage() {
         <p className="text-xs text-gray-500">
           Please add items to your cart before proceeding to checkout.
         </p>
-        <Link href="/products" className="inline-block mt-2">
-          <Button className="bg-[#e91e63] hover:bg-[#d81b60] text-white">Explore Products</Button>
+        <Link href="/products">
+          <Button className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-bold rounded-xl mt-2">
+            Explore Skincare Catalog
+          </Button>
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 bg-gray-50/50">
-      {/* Checkout Header */}
-      <div className="flex items-center justify-between border-b border-gray-200 pb-4">
-        <Link
-          href="/cart"
-          className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 hover:text-gray-900"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Cart
-        </Link>
-
-        <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-          <Lock className="h-3.5 w-3.5" />
-          <span>256-Bit SSL Encrypted Checkout</span>
+    <div className="container-main py-6 sm:py-10 space-y-6 max-w-6xl">
+      {/* Top Header */}
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="flex items-center gap-2">
+          <Link href="/cart" className="text-xs font-bold text-text-muted hover:text-text flex items-center gap-1">
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to Cart
+          </Link>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+          <ShieldCheck className="h-4 w-4" /> 100% Secure &amp; Verified Checkout
         </div>
       </div>
 
-      {/* Guest Checkout Disabled Alert / Sign In Prompt */}
-      {isLoginRequired && (
-        <div className="rounded-2xl border-2 border-pink-300 bg-pink-50/90 p-5 shadow-sm space-y-3">
-          <div className="flex items-center gap-2 text-sm font-black text-gray-900">
-            <UserCheck className="h-5 w-5 text-[#e91e63]" />
-            <span>Account Required to Place Order</span>
+      {/* Free Delivery Progress Meter (Controlled by Admin Settings) */}
+      {settings.enable_free_shipping_meter && settings.free_shipping_threshold > 0 && (
+        <div className="rounded-2xl border border-pink-200 bg-pink-50/70 p-4 space-y-2">
+          <div className="flex items-center justify-between text-xs font-bold">
+            <span className="flex items-center gap-1.5 text-zinc-900">
+              <Truck className="h-4 w-4 text-[#e91e63]" />
+              {isFreeShipping ? (
+                <span className="text-emerald-700 inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                  Congratulations! You have unlocked Free Nationwide Delivery!
+                </span>
+              ) : (
+                <span>
+                  Add <span className="text-[#e91e63]">৳{amountToFreeShipping}</span> more to unlock <strong>Free Nationwide Delivery!</strong>
+                </span>
+              )}
+            </span>
+            <span className="text-[11px] text-zinc-500 font-mono">
+              ৳{subtotal} / ৳{settings.free_shipping_threshold}
+            </span>
           </div>
-          <p className="text-xs text-gray-600">
-            Please sign in to your account or create a new account to complete your purchase. Your items in the cart will remain saved!
-          </p>
-          <div className="flex flex-wrap items-center gap-3 pt-1">
-            <Link
-              href="/login?redirect=/checkout"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#e91e63] px-4 py-2 text-xs font-black text-white hover:bg-[#d81b60] shadow-sm transition-all"
-            >
-              <LogIn className="h-4 w-4" />
-              Sign In
-            </Link>
-            <Link
-              href="/register?redirect=/checkout"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-black text-gray-800 hover:bg-gray-50 shadow-sm transition-all"
-            >
-              <UserPlus className="h-4 w-4" />
-              Create Account
-            </Link>
-          </div>
-        </div>
-      )}
 
-      {/* Minimum Order Warning */}
-      {isBelowMinOrder && (
-        <div className="flex items-center gap-2 rounded-2xl bg-amber-50 border border-amber-200 p-4 text-xs font-semibold text-amber-900">
-          <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
-          <span>
-            Minimum order amount is <strong>৳{checkoutSettings.min_order_amount}</strong>. Add{" "}
-            <strong>৳{checkoutSettings.min_order_amount - subtotal}</strong> more to your cart to checkout.
-          </span>
+          <div className="h-2 w-full rounded-full bg-pink-200 overflow-hidden">
+            <div
+              className="h-full bg-[#e91e63] transition-all duration-500"
+              style={{
+                width: `${Math.min(100, (subtotal / settings.free_shipping_threshold) * 100)}%`,
+              }}
+            />
+          </div>
         </div>
       )}
 
       {errorMsg && (
-        <div className="flex items-center gap-2 rounded-2xl bg-red-50 border border-red-200 p-4 text-xs font-semibold text-red-700">
-          <AlertCircle className="h-4 w-4 shrink-0" />
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-xs font-bold text-red-800 flex items-center gap-2 animate-in fade-in-0">
+          <AlertCircle className="h-4 w-4 shrink-0 text-red-600" />
           <span>{errorMsg}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmitOrder} className="grid grid-cols-1 gap-8 lg:grid-cols-12">
-        {/* Left Form: Delivery Address & Payment (7 cols) */}
+      {/* Main 2-Column Grid */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left Column: Customer Details & 3-Tier Address Selector */}
         <div className="lg:col-span-7 space-y-6">
-          {/* Step 1: Customer Info */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-              <h2 className="text-sm font-black uppercase text-gray-900 flex items-center gap-2">
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e91e63] text-white text-xs font-bold">
-                  1
-                </span>
-                Customer Contact Information
-              </h2>
-              {!currentUser && checkoutSettings.guest_checkout_enabled && (
-                <Link
-                  href="/login?redirect=/checkout"
-                  className="text-xs font-bold text-[#e91e63] hover:underline"
-                >
-                  Already have an account? Sign In
-                </Link>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block font-bold text-gray-800 mb-1">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Arifur Rahman"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#e91e63] focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-bold text-gray-800 mb-1">
-                  Mobile Number (BD) {checkoutSettings.require_phone !== false && <span className="text-red-500">*</span>}
-                </label>
-                <input
-                  type="tel"
-                  required={checkoutSettings.require_phone !== false}
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="017XXXXXXXX"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#e91e63] focus:bg-white focus:outline-none"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block font-bold text-gray-800 mb-1">
-                  Email Address {checkoutSettings.require_email ? <span className="text-red-500">*</span> : <span className="text-gray-400 font-normal">(Optional for tracking)</span>}
-                </label>
-                <input
-                  type="email"
-                  required={checkoutSettings.require_email}
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="name@example.com"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#e91e63] focus:bg-white focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Step 2: Shipping Address */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
-            <h2 className="text-sm font-black uppercase text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e91e63] text-white text-xs font-bold">
-                2
-              </span>
-              Delivery Address in Bangladesh
+          <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
+            <h2 className="text-sm font-bold text-text flex items-center gap-2 border-b border-border pb-3">
+              <MapPin className="h-4 w-4 text-[#e91e63]" />
+              1. Delivery Details (Bangladesh Address)
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block font-bold text-gray-800 mb-1">
-                  District <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={formData.district}
-                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-xs text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
-                >
-                  {BD_DISTRICTS.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
+            <div className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Tanvir Ahmed"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full rounded-xl border border-border px-3.5 py-2.5 text-xs text-text focus:outline-none focus:border-primary-500 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-text mb-1">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted font-bold text-xs">
+                      +88
+                    </span>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="017XXXXXXXX"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full rounded-xl border border-border pl-12 pr-3.5 py-2.5 text-xs font-mono text-text focus:outline-none focus:border-primary-500 font-bold"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div>
-                <label className="block font-bold text-gray-800 mb-1">
-                  Thana / Upazila / Police Station <span className="text-red-500">*</span>
-                </label>
+                <label className="block font-bold text-text mb-1">Email Address (Optional)</label>
                 <input
-                  type="text"
-                  required
-                  value={formData.thana}
-                  onChange={(e) => setFormData({ ...formData, thana: e.target.value })}
-                  placeholder="e.g. Gulshan / Dhanmondi / Mirpur"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  type="email"
+                  placeholder="name@example.com (For invoice & shipping tracking)"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full rounded-xl border border-border px-3.5 py-2.5 text-xs text-text focus:outline-none"
                 />
               </div>
 
-              <div className="sm:col-span-2">
-                <label className="block font-bold text-gray-800 mb-1">
-                  Detailed Street Address <span className="text-red-500">*</span>
+              {/* Delivery Zone Selection (Only Inside Dhaka & Outside Dhaka - Dynamic Admin Controlled Rates) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold text-gray-700 flex items-center gap-1.5">
+                    <Truck className="h-3.5 w-3.5 text-[#e91e63]" />
+                    Delivery Zone & Rate:
+                  </span>
+                  {isFreeShipping && (
+                    <span className="text-[10px] font-extrabold uppercase text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      Free Nationwide Delivery Applied
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* Inside Dhaka */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleDivisionChange("Dhaka");
+                      handleDistrictChange("Dhaka City");
+                    }}
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-2xl border-2 text-left transition-all cursor-pointer shadow-2xs",
+                      currentZone === "inside_dhaka"
+                        ? "border-[#e91e63] bg-pink-50/70 shadow-xs ring-1 ring-[#e91e63]/20"
+                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                    )}
+                  >
+                    <div>
+                      <span
+                        className={cn(
+                          "text-xs font-black uppercase tracking-wider block",
+                          currentZone === "inside_dhaka" ? "text-[#e91e63]" : "text-gray-800"
+                        )}
+                      >
+                        Inside Dhaka
+                      </span>
+                      <span className="text-[11px] font-extrabold text-gray-900 mt-0.5 block">
+                        {isFreeShipping ? (
+                          <span className="text-emerald-700 font-bold">
+                            FREE <span className="line-through text-gray-400 font-normal text-[10px]">৳{settings.inside_dhaka_rate}</span>
+                          </span>
+                        ) : (
+                          `৳${settings.inside_dhaka_rate}`
+                        )}
+                      </span>
+                    </div>
+                    <div
+                      className={cn(
+                        "h-4 w-4 rounded-full border flex items-center justify-center shrink-0",
+                        currentZone === "inside_dhaka"
+                          ? "border-[#e91e63] bg-[#e91e63] text-white"
+                          : "border-gray-300 bg-white"
+                      )}
+                    >
+                      {currentZone === "inside_dhaka" && <CheckCircle2 className="h-3 w-3" />}
+                    </div>
+                  </button>
+
+                  {/* Outside Dhaka */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (currentZone === "inside_dhaka") {
+                        handleDivisionChange("Chattogram");
+                        handleDistrictChange("Chattogram");
+                      }
+                    }}
+                    className={cn(
+                      "flex items-center justify-between p-3 rounded-2xl border-2 text-left transition-all cursor-pointer shadow-2xs",
+                      currentZone !== "inside_dhaka"
+                        ? "border-[#e91e63] bg-pink-50/70 shadow-xs ring-1 ring-[#e91e63]/20"
+                        : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                    )}
+                  >
+                    <div>
+                      <span
+                        className={cn(
+                          "text-xs font-black uppercase tracking-wider block",
+                          currentZone !== "inside_dhaka" ? "text-[#e91e63]" : "text-gray-800"
+                        )}
+                      >
+                        Outside Dhaka
+                      </span>
+                      <span className="text-[11px] font-extrabold text-gray-900 mt-0.5 block">
+                        {isFreeShipping ? (
+                          <span className="text-emerald-700 font-bold">
+                            FREE <span className="line-through text-gray-400 font-normal text-[10px]">৳{settings.outside_dhaka_rate}</span>
+                          </span>
+                        ) : (
+                          `৳${settings.outside_dhaka_rate}`
+                        )}
+                      </span>
+                    </div>
+                    <div
+                      className={cn(
+                        "h-4 w-4 rounded-full border flex items-center justify-center shrink-0",
+                        currentZone !== "inside_dhaka"
+                          ? "border-[#e91e63] bg-[#e91e63] text-white"
+                          : "border-gray-300 bg-white"
+                      )}
+                    >
+                      {currentZone !== "inside_dhaka" && <CheckCircle2 className="h-3 w-3" />}
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* 3-Tier Dynamic Location Hierarchy */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-border">
+                <div>
+                  <label className="block font-bold text-text mb-1">Division</label>
+                  <select
+                    value={formData.division}
+                    onChange={(e) => handleDivisionChange(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-text focus:outline-none"
+                  >
+                    {BD_GEO_HIERARCHY.map((div) => (
+                      <option key={div.name} value={div.name}>
+                        {div.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-text mb-1">District</label>
+                  <select
+                    value={formData.district}
+                    onChange={(e) => handleDistrictChange(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs font-bold text-text focus:outline-none"
+                  >
+                    {availableDistricts.map((dist) => (
+                      <option key={dist.name} value={dist.name}>
+                        {dist.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-text mb-1">Thana / Upazila</label>
+                  {availableThanas.length > 0 ? (
+                    <select
+                      value={formData.thana}
+                      onChange={(e) => setFormData({ ...formData, thana: e.target.value })}
+                      className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-text focus:outline-none"
+                    >
+                      {availableThanas.map((th) => (
+                        <option key={th} value={th}>
+                          {th}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="e.g. Sadar"
+                      value={formData.thana}
+                      onChange={(e) => setFormData({ ...formData, thana: e.target.value })}
+                      className="w-full rounded-xl border border-border px-3 py-2 text-xs text-text focus:outline-none"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-text mb-1">
+                  Street Address &amp; House / Apartment No. <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   rows={2}
                   required
+                  placeholder="House #, Road #, Sector/Block, Area landmarks..."
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="House / Holding Number, Road Number, Flat / Floor, Landmark..."
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50/50 p-3 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border border-border px-3.5 py-2.5 text-xs text-text focus:outline-none resize-none"
                 />
               </div>
 
-              {checkoutSettings.order_notes_enabled !== false && (
-                <div className="sm:col-span-2">
-                  <label className="block font-bold text-gray-800 mb-1">
-                    Order Notes / Delivery Instructions <span className="text-gray-400 font-normal">(Optional)</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="e.g. Call 30 mins before arriving, leave with security"
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50/50 px-3.5 py-2.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-[#e91e63] focus:bg-white focus:outline-none"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block font-bold text-text mb-1">
+                  Delivery Notes / Instructions (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Call before delivery, Leave with security..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="w-full rounded-xl border border-border px-3.5 py-2 text-xs text-text focus:outline-none"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Step 3: Payment Method */}
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
-            <h2 className="text-sm font-black uppercase text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#e91e63] text-white text-xs font-bold">
-                3
-              </span>
-              Payment Method
+          {/* Payment Method Selector */}
+          <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
+            <h2 className="text-sm font-bold text-text flex items-center gap-2 border-b border-border pb-3">
+              <Lock className="h-4 w-4 text-[#e91e63]" />
+              2. Payment Method
             </h2>
 
             <div className="space-y-3">
-              {/* Cash on Delivery */}
-              <label className="flex items-center justify-between rounded-2xl border-2 border-[#e91e63] bg-pink-50/30 p-4 cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="payment_method"
-                    defaultChecked
-                    className="h-4 w-4 accent-[#e91e63]"
-                  />
-                  <div>
-                    <span className="text-xs sm:text-sm font-bold text-gray-900 block">
-                      Cash on Delivery (COD)
-                    </span>
-                    <span className="text-[11px] text-gray-500">
-                      Pay in cash or bKash/Nagad after receiving and inspecting your parcel.
-                    </span>
-                  </div>
+              <label
+                className={`flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
+                  selectedPaymentMethod === "cod"
+                    ? "border-[#e91e63] bg-pink-50/40 ring-1 ring-[#e91e63]"
+                    : "border-border hover:bg-surface-secondary/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="cod"
+                  checked={selectedPaymentMethod === "cod"}
+                  onChange={() => setSelectedPaymentMethod("cod")}
+                  className="mt-1 h-4 w-4 text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
+                />
+                <div className="flex-1 text-xs">
+                  <span className="font-bold text-text text-sm block">Cash on Delivery (COD)</span>
+                  <span className="text-text-secondary mt-0.5 block leading-relaxed">
+                    Pay in cash directly to the courier rider when your authentic skincare parcel arrives at your doorstep.
+                  </span>
                 </div>
-                <span className="rounded-lg bg-[#e91e63] text-white px-2.5 py-0.5 text-[10px] font-black uppercase">
-                  Default
-                </span>
               </label>
 
-              {/* Online payment notice */}
-              <div className="rounded-2xl border border-gray-200 bg-gray-50/50 p-4 text-xs text-gray-400 flex items-center justify-between opacity-75">
-                <div className="flex items-center gap-2">
-                  <input type="radio" disabled className="h-4 w-4" />
-                  <span>bKash / Nagad / Visa / Mastercard</span>
+              <label
+                className={`flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all ${
+                  selectedPaymentMethod === "bkash"
+                    ? "border-[#e91e63] bg-pink-50/40 ring-1 ring-[#e91e63]"
+                    : "border-border hover:bg-surface-secondary/50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment_method"
+                  value="bkash"
+                  checked={selectedPaymentMethod === "bkash"}
+                  onChange={() => setSelectedPaymentMethod("bkash")}
+                  className="mt-1 h-4 w-4 text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
+                />
+                <div className="flex-1 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-text text-sm">bKash / Mobile Wallet</span>
+                    <span className="text-[10px] font-bold text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">
+                      Instant
+                    </span>
+                  </div>
+                  <span className="text-text-secondary mt-0.5 block leading-relaxed">
+                    Pay securely using your personal bKash account or QR code.
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold text-gray-400 uppercase">
-                  Available soon
-                </span>
-              </div>
+              </label>
             </div>
           </div>
         </div>
 
-        {/* Right Column: Order Summary & Placement (5 cols) */}
+        {/* Right Column: Order Summary & Place Order CTA */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="sticky top-24 rounded-3xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
-            <h2 className="text-sm font-black uppercase tracking-wider text-gray-900 border-b border-gray-100 pb-3">
-              Order Summary ({items.length} item{items.length === 1 ? "" : "s"})
+          <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-5 sticky top-24">
+            <h2 className="text-sm font-bold text-text flex items-center justify-between border-b border-border pb-3">
+              <span>Order Summary</span>
+              <span className="text-xs text-text-muted font-normal">{items.length} items</span>
             </h2>
 
-            {/* Line items preview */}
-            <div className="max-h-56 overflow-y-auto space-y-3 pr-1 divide-y divide-gray-100">
+            {/* Cart Items Preview */}
+            <div className="space-y-3 max-h-60 overflow-y-auto no-scrollbar divide-y divide-border">
               {items.map((item) => (
-                <div key={item.id} className="pt-2 first:pt-0 flex items-center gap-3">
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt={item.name} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-gray-400">
-                        <ShoppingBag className="h-4 w-4" />
-                      </div>
-                    )}
+                <div key={item.id} className="flex items-center gap-3 pt-2 first:pt-0">
+                  <img
+                    src={(item as any).image_url || "/images/product-placeholder.png"}
+                    alt={item.name}
+                    className="h-12 w-12 rounded-xl object-cover border border-border shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-text truncate">{item.name}</h4>
+                    <span className="text-[11px] text-text-muted">Qty: {item.quantity}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-gray-900 truncate">{item.name}</p>
-                    <p className="text-[11px] text-gray-500">
-                      Qty: {item.quantity} × {formatPrice(item.price)}
-                    </p>
-                  </div>
-                  <span className="text-xs font-black text-gray-900">
-                    {formatPrice(item.price * item.quantity)}
+                  <span className="text-xs font-bold text-text font-mono shrink-0">
+                    ৳{item.price * item.quantity}
                   </span>
                 </div>
               ))}
             </div>
 
             {/* Price Calculations */}
-            <div className="border-t border-gray-100 pt-4 space-y-2 text-xs">
-              <div className="flex justify-between text-gray-600">
+            <div className="space-y-2 pt-3 border-t border-border text-xs">
+              <div className="flex justify-between text-text-secondary">
                 <span>Subtotal</span>
-                <span className="font-bold text-gray-900">{formatPrice(subtotal)}</span>
+                <span className="font-mono font-bold text-text">৳{subtotal}</span>
               </div>
 
               {discount > 0 && (
-                <div className="flex justify-between text-emerald-600 font-bold">
-                  <span className="flex items-center gap-1">
-                    <Tag className="h-3 w-3" />
-                    Coupon Discount ({coupon?.code})
-                  </span>
-                  <span>-{formatPrice(discount)}</span>
+                <div className="flex justify-between text-emerald-700 font-semibold">
+                  <span>Coupon Discount ({coupon?.code})</span>
+                  <span className="font-mono">-৳{discount}</span>
                 </div>
               )}
 
-              <div className="flex justify-between text-gray-600">
-                <span>
-                  Delivery: {isInsideDhaka ? "Inside Dhaka (24-48h)" : "Outside Dhaka (3-5d)"}
+              <div className="flex justify-between text-text-secondary">
+                <span className="flex items-center gap-1">
+                  <Truck className="h-3.5 w-3.5 text-text-muted" />
+                  Delivery Charge ({currentZone === "inside_dhaka" ? "Inside Dhaka" : currentZone === "sub_dhaka" ? "Dhaka Suburbs" : "Outside Dhaka"})
                 </span>
-                {shippingFee === 0 ? (
-                  <span className="font-bold text-emerald-600">FREE</span>
-                ) : (
-                  <span className="font-bold text-gray-900">{formatPrice(shippingFee)}</span>
-                )}
+                <span className="font-mono font-bold">
+                  {isFreeShipping ? (
+                    <span className="text-emerald-700">FREE</span>
+                  ) : (
+                    `৳${shippingFee}`
+                  )}
+                </span>
               </div>
 
-              <div className="border-t border-gray-100 pt-3 flex justify-between items-baseline text-base font-black text-gray-900">
-                <span>Total Due</span>
-                <span className="text-[#e91e63] text-xl font-black">{formatPrice(finalTotal)}</span>
+              <div className="flex justify-between text-sm font-black text-text pt-2 border-t border-border">
+                <span>Total Payable</span>
+                <span className="font-mono text-base text-[#e91e63]">৳{finalTotal}</span>
               </div>
             </div>
 
-            {/* Submit Order CTA */}
+            {/* Place Order CTA */}
             <Button
               type="submit"
-              disabled={loading || isBelowMinOrder || isLoginRequired}
-              className="w-full py-6 text-sm font-black uppercase tracking-wider bg-[#e91e63] hover:bg-[#d81b60] text-white shadow-lg border-none rounded-2xl transition-all active:scale-98"
+              disabled={loading}
+              className="w-full h-12 rounded-2xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-black text-sm shadow-md transition-all active:scale-98"
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Placing Your Order...
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" /> Processing Order...
                 </>
-              ) : isLoginRequired ? (
-                <>Sign In Required to Order</>
-              ) : isBelowMinOrder ? (
-                <>Below Min Order (৳{checkoutSettings.min_order_amount})</>
               ) : (
-                <>Confirm Order (Cash on Delivery)</>
+                `Confirm Order — ৳${finalTotal}`
               )}
             </Button>
 
-            {/* Trust Signal Strip */}
-            <div className="pt-2 border-t border-gray-100 space-y-1.5 text-[11px] text-gray-500 font-medium">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                <span>100% authentic international products guaranteed</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Truck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                <span>Pay cash after inspecting your parcel</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                <span>Easy 7-day return & replacement</span>
-              </div>
+            <div className="flex items-center justify-center gap-4 text-[11px] text-text-muted pt-2 text-center">
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> 100% Authentic
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1">
+                <Truck className="h-3.5 w-3.5 text-primary-600" /> 24-48h Fast Dispatch
+              </span>
             </div>
           </div>
         </div>
       </form>
+
+      {/* High-Risk COD SMS OTP Verification Modal */}
+      {showOtpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in-0">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 sm:p-8 shadow-2xl border border-border space-y-5 animate-in zoom-in-95">
+            <div className="text-center space-y-2">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-pink-50 text-[#e91e63] border border-pink-200">
+                <KeyRound className="h-7 w-7" />
+              </div>
+              <h3 className="text-lg font-black text-text">Verify Cash on Delivery Order</h3>
+              <p className="text-xs text-text-secondary">
+                To prevent spam orders, we sent a 4-digit SMS verification code to{" "}
+                <strong className="text-text font-mono">+88 {formData.phone}</strong>.
+              </p>
+            </div>
+
+            {debugOtpCode && (
+              <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-center text-xs font-mono font-bold text-amber-900">
+                [Testing OTP Code]: {debugOtpCode}
+              </div>
+            )}
+
+            {otpError && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-bold text-red-800 text-center">
+                {otpError}
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-text mb-1 text-center">
+                  Enter 4-Digit SMS Code
+                </label>
+                <input
+                  type="text"
+                  maxLength={4}
+                  required
+                  autoFocus
+                  placeholder="• • • •"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                  className="w-full text-center text-2xl font-mono tracking-widest font-black py-3 rounded-xl border border-border focus:outline-none focus:border-[#e91e63]"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={otpLoading || otpCode.length < 4}
+                className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold text-xs shadow-md"
+              >
+                {otpLoading ? "Verifying..." : "Verify & Place Order"}
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => setShowOtpModal(false)}
+                className="w-full text-center text-xs text-text-muted hover:text-text font-bold"
+              >
+                Cancel &amp; Edit Details
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

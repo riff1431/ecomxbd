@@ -2,7 +2,7 @@
 
 export const siteConfig = {
   name: process.env.NEXT_PUBLIC_APP_NAME || "Blush & Budget",
-  url: process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://blushandbudget.com",
+  url: process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "",
   description: "Authentic Skincare & Beauty Imports in Bangladesh",
   defaultCurrency: "BDT",
   defaultLocale: "en-BD",
@@ -53,6 +53,16 @@ export const adminNavItems = [
     ],
   },
   {
+    title: "Blog & Editorial",
+    icon: "BookOpen",
+    children: [
+      { title: "All Articles", href: "/admin/blog" },
+      { title: "Write Article", href: "/admin/blog/create" },
+      { title: "Authors & Experts", href: "/admin/blog/authors" },
+      { title: "Blog Categories", href: "/admin/blog/categories" },
+    ],
+  },
+  {
     title: "Customers",
     icon: "Users",
     children: [
@@ -68,8 +78,8 @@ export const adminNavItems = [
       { title: "Storefront Sections", href: "/admin/marketing/homepage" },
       { title: "Coupons", href: "/admin/coupons" },
       { title: "SMS Marketing", href: "/admin/marketing/sms" },
-      { title: "Facebook / Meta", href: "/admin/marketing/meta" },
-      { title: "Meta Catalog", href: "/admin/marketing/catalog" },
+      { title: "Tracking", href: "/admin/marketing/meta" },
+      { title: "Catalog Feeds", href: "/admin/marketing/catalog" },
       { title: "Search Analytics", href: "/admin/marketing/search" },
       { title: "Marketing Settings", href: "/admin/marketing/settings" },
     ],
@@ -135,6 +145,9 @@ export const adminNavItems = [
     title: "Content",
     icon: "FileText",
     children: [
+      { title: "Blog Posts", href: "/admin/blog" },
+      { title: "Blog Authors", href: "/admin/blog/authors" },
+      { title: "Blog Categories", href: "/admin/blog/categories" },
       { title: "Pages", href: "/admin/pages" },
       { title: "Theme Customizer", href: "/admin/settings/theme" },
     ],

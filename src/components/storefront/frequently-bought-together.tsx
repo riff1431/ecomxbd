@@ -131,7 +131,7 @@ export function FrequentlyBoughtTogether({ bundleData }: FrequentlyBoughtTogethe
   };
 
   return (
-    <div className="rounded-3xl border border-pink-200/80 bg-gradient-to-br from-pink-50/50 via-white to-pink-50/30 p-5 sm:p-7 shadow-sm transition-all space-y-6 relative overflow-hidden">
+    <div className="rounded-3xl border border-pink-200/80 bg-linear-to-br from-pink-50/50 via-white to-pink-50/30 p-5 sm:p-7 shadow-sm transition-all space-y-6 relative overflow-hidden">
       {/* Decorative Brand Accent Background */}
       <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[#e91e63]/5 blur-2xl pointer-events-none" />
 
@@ -203,7 +203,7 @@ export function FrequentlyBoughtTogether({ bundleData }: FrequentlyBoughtTogethe
                         isSelected ? "bg-[#e91e63] text-white" : "bg-gray-300 text-transparent"
                       )}
                     >
-                      <Check className="h-3.5 w-3.5 stroke-[3]" />
+                      <Check className="h-3.5 w-3.5 stroke-3" />
                     </div>
 
                     {isMain && (
@@ -216,7 +216,7 @@ export function FrequentlyBoughtTogether({ bundleData }: FrequentlyBoughtTogethe
                   {/* '+' separator */}
                   {index < allProducts.length - 1 && (
                     <div className="flex h-7 w-7 items-center justify-center rounded-full bg-pink-100 text-[#e91e63] font-black text-sm shadow-xs shrink-0">
-                      <Plus className="h-4 w-4 stroke-[3]" />
+                      <Plus className="h-4 w-4 stroke-3" />
                     </div>
                   )}
                 </div>
@@ -308,7 +308,7 @@ export function FrequentlyBoughtTogether({ bundleData }: FrequentlyBoughtTogethe
                 "ripple-container w-full h-11 rounded-xl font-black text-xs shadow-md transition-all active:scale-95",
                 addedSuccess
                   ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                  : "bg-[#e91e63] hover:bg-[#d81b60] text-white"
+                  : "bg-[#e91e63] hover:bg-sg-pink-hover text-white"
               )}
             >
               {addedSuccess ? (

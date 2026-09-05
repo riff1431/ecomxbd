@@ -529,7 +529,7 @@ export default function InvoicePrintClient({
     doc.setTextColor(100, 100, 100);
     doc.setFontSize(8);
     doc.text("Payment Method: " + (isCod ? "Cash on Delivery (COD)" : order.payment_method), 15, totalY + 10);
-    doc.text("Support: " + (invoiceSettings?.invoice_email || "support@blushandbudget.com"), 15, totalY + 16);
+    doc.text("Support: " + (invoiceSettings?.invoice_email || ""), 15, totalY + 16);
 
     doc.setFont("helvetica", "bold");
     doc.setTextColor(80, 80, 80);
@@ -749,7 +749,7 @@ export default function InvoicePrintClient({
                   src={invoiceBarcodeDataUrl}
                   alt="Barcode"
                   crossOrigin="anonymous"
-                  className="h-6 w-auto max-w-[140px] object-contain"
+                  className="h-6 w-auto max-w-35 object-contain"
                 />
               </div>
             )}
@@ -901,10 +901,10 @@ export default function InvoicePrintClient({
                 {t.contactSupport}
               </span>
               <p>
-                {invoiceSettings?.invoice_email || "support@blushandbudget.com"} •{" "}
-                {invoiceSettings?.invoice_phone || "+880 1700-000000"}
+                {invoiceSettings?.invoice_email ? `${invoiceSettings.invoice_email} • ` : ""}
+                {invoiceSettings?.invoice_phone || ""}
               </p>
-              <p>{invoiceSettings?.invoice_website || "https://blushandbudget.com"}</p>
+              {invoiceSettings?.invoice_website && <p>{invoiceSettings.invoice_website}</p>}
             </div>
           </div>
 
@@ -931,14 +931,27 @@ export default function InvoicePrintClient({
               </span>
             </div>
 
+            {Number(order.advance_paid) > 0 && (
+              <div className="flex justify-between py-1 border-b border-gray-100 text-emerald-600 font-bold">
+                <span>{lang === "bn" ? "পরিশোধিত অগ্রিম:" : "Advance Paid:"}</span>
+                <span className="font-mono">-{formatCurrency(order.advance_paid)}</span>
+              </div>
+            )}
+
             {/* Grand Total Solid Box */}
             <div
               className="text-white p-2.5 rounded-xl flex justify-between items-center text-sm font-black shadow-xs mt-1"
               style={{ backgroundColor: accentColor }}
             >
-              <span className="uppercase tracking-wider">{t.grandTotal}</span>
+              <span className="uppercase tracking-wider">
+                {Number(order.advance_paid) > 0
+                  ? lang === "bn"
+                    ? "বকেয়া / COD বিল"
+                    : "Net COD Due"
+                  : t.grandTotal}
+              </span>
               <span className="text-base font-mono font-black">
-                {formatCurrency(order.total)}
+                {formatCurrency(order.amount_to_collect !== undefined ? order.amount_to_collect : order.total)}
               </span>
             </div>
 
@@ -1019,20 +1032,25 @@ export default function InvoicePrintClient({
                 src={thermalPrimaryBarcodeDataUrl}
                 alt="Tracking Barcode"
                 crossOrigin="anonymous"
-                className="h-10 w-auto max-w-[240px] object-contain"
+                className="h-10 w-auto max-w-60 object-contain"
               />
             </div>
           )}
 
-          {/* Prominent COD Badge */}
+            {/* Prominent COD Badge */}
           <div>
             <span className="inline-block border-2 border-black px-2.5 py-0.5 font-black text-xs uppercase font-mono rounded bg-white text-black">
               {isCod
-                ? `COD : ${formatCurrency(order.total)}`
+                ? `COD : ${formatCurrency(order.amount_to_collect !== undefined ? order.amount_to_collect : order.total)}`
                 : lang === "bn"
                 ? "পেইড (৳০)"
                 : "Non-COD (PAID ৳0)"}
             </span>
+            {Number(order.advance_paid) > 0 && (
+              <span className="block text-[8px] font-mono font-bold text-gray-700 mt-0.5">
+                (৳{order.advance_paid} Advance Paid)
+              </span>
+            )}
           </div>
         </div>
 
@@ -1102,7 +1120,7 @@ export default function InvoicePrintClient({
               src={thermalRoutingBarcodeDataUrl}
               alt="Routing Barcode"
               crossOrigin="anonymous"
-              className="h-7 w-auto max-w-[200px] object-contain"
+              className="h-7 w-auto max-w-50 object-contain"
             />
           </div>
         )}

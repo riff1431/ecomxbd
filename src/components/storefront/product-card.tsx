@@ -10,6 +10,12 @@ import { useCart } from "@/context/cart-context";
 import { triggerMicroRipple } from "@/lib/ui-effects";
 import { QuickViewModal } from "./quick-view-modal";
 import { type ProductCardConfig } from "@/features/marketing/homepage-types";
+import {
+  trackAddToCart as trackGA4AddToCart,
+  trackAddToWishlist as trackGA4AddToWishlist,
+  trackSelectItem,
+  trackInitiateCheckout,
+} from "@/lib/analytics/datalayer";
 
 export interface ProductCardData {
   id: string;
@@ -19,6 +25,7 @@ export interface ProductCardData {
   sale_price: number | null;
   image_url?: string | null;
   brand_name?: string | null;
+  category_name?: string | null;
   rating?: number;
   review_count?: number;
   size?: string | null;
@@ -40,6 +47,8 @@ export function ProductCard({
   const { addItem } = useCart();
   const inWishlist = isWishlisted(product.id);
 
+  const effectivePrice = product.sale_price ?? product.regular_price;
+
   const discountPercent =
     product.sale_price && product.regular_price > product.sale_price
       ? Math.round(
@@ -53,17 +62,43 @@ export function ProductCard({
     product.name.match(/\b\d+\s?(?:ml|g|gm|oz|kg)\b/i)?.[0] ||
     "Standard";
 
+  const handleProductClick = () => {
+    trackSelectItem({
+      item_id: product.id,
+      item_name: product.name,
+      item_brand: product.brand_name || undefined,
+      item_category: product.category_name || undefined,
+      price: effectivePrice,
+      quantity: 1,
+    });
+  };
+
   const handleAddToCart = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
     triggerMicroRipple(e);
+
+    trackGA4AddToCart(
+      [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.brand_name || undefined,
+          item_category: product.category_name || undefined,
+          price: effectivePrice,
+          quantity: 1,
+        },
+      ],
+      effectivePrice
+    );
+
     addItem(
       {
         id: product.id,
         product_id: product.id,
         name: product.name,
         slug: product.slug,
-        price: product.sale_price ?? product.regular_price,
+        price: effectivePrice,
         regular_price: product.regular_price,
         image_url: product.image_url || null,
         brand_name: product.brand_name || null,
@@ -78,13 +113,42 @@ export function ProductCard({
     e.preventDefault();
     e.stopPropagation();
     triggerMicroRipple(e);
+
+    trackGA4AddToCart(
+      [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.brand_name || undefined,
+          item_category: product.category_name || undefined,
+          price: effectivePrice,
+          quantity: 1,
+        },
+      ],
+      effectivePrice
+    );
+
+    trackInitiateCheckout({
+      items: [
+        {
+          item_id: product.id,
+          item_name: product.name,
+          item_brand: product.brand_name || undefined,
+          item_category: product.category_name || undefined,
+          price: effectivePrice,
+          quantity: 1,
+        },
+      ],
+      value: effectivePrice,
+    });
+
     addItem(
       {
         id: product.id,
         product_id: product.id,
         name: product.name,
         slug: product.slug,
-        price: product.sale_price ?? product.regular_price,
+        price: effectivePrice,
         regular_price: product.regular_price,
         image_url: product.image_url || null,
         brand_name: product.brand_name || null,
@@ -92,6 +156,38 @@ export function ProductCard({
       1
     );
     router.push("/checkout");
+  };
+
+  const handleWishlistToggle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    triggerMicroRipple(e, true);
+
+    if (!inWishlist) {
+      trackGA4AddToWishlist(
+        [
+          {
+            item_id: product.id,
+            item_name: product.name,
+            item_brand: product.brand_name || undefined,
+            item_category: product.category_name || undefined,
+            price: effectivePrice,
+            quantity: 1,
+          },
+        ],
+        effectivePrice
+      );
+    }
+
+    toggleWishlist({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      regular_price: product.regular_price,
+      sale_price: product.sale_price,
+      image_url: product.image_url || null,
+      brand_name: product.brand_name || null,
+    });
   };
 
   return (
@@ -115,20 +211,7 @@ export function ProductCard({
           <button
             type="button"
             style={{ position: "absolute", top: "10px", right: "10px", zIndex: 30 }}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              triggerMicroRipple(e, true);
-              toggleWishlist({
-                id: product.id,
-                name: product.name,
-                slug: product.slug,
-                regular_price: product.regular_price,
-                sale_price: product.sale_price,
-                image_url: product.image_url || null,
-                brand_name: product.brand_name || null,
-              });
-            }}
+            onClick={handleWishlistToggle}
             aria-label="Add to wishlist"
             className="ripple-container flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-md backdrop-blur-xs transition-all duration-200 hover:bg-white hover:scale-115 active:scale-90 border border-gray-200/80 text-gray-700"
           >
@@ -146,7 +229,8 @@ export function ProductCard({
         {/* Product Image Link with Fallback - 100% Full Edge-to-Edge Size with Smooth Image Zoom */}
         <Link
           href={`/products/${product.slug}`}
-          className="block h-full w-full overflow-hidden flex items-center justify-center"
+          onClick={handleProductClick}
+          className="h-full w-full overflow-hidden flex items-center justify-center"
         >
           <img
             src={imgSrc}
@@ -182,7 +266,7 @@ export function ProductCard({
         {/* Product Title */}
         <Link
           href={`/products/${product.slug}`}
-          className="line-clamp-2 text-xs sm:text-sm font-bold text-gray-900 leading-tight hover:text-[#e91e63] transition-colors min-h-[2rem]"
+          className="line-clamp-2 text-xs sm:text-sm font-bold text-gray-900 leading-tight hover:text-[#e91e63] transition-colors min-h-8"
           title={product.name}
         >
           {product.name}
@@ -238,7 +322,7 @@ export function ProductCard({
               className={cn(
                 "ripple-container w-full rounded-xl py-2 px-2 text-[11px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all active:scale-95",
                 justAdded
-                  ? "bg-emerald-600 !bg-emerald-600 text-white shadow-sm"
+                  ? "bg-emerald-600! text-white shadow-sm"
                   : product.is_in_stock === false
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                   : "btn-add-to-cart-action"
@@ -246,7 +330,7 @@ export function ProductCard({
             >
               {justAdded ? (
                 <>
-                  <Check className="h-3 w-3 stroke-[3] animate-in zoom-in-50" />
+                  <Check className="h-3 w-3 stroke-3 animate-in zoom-in-50" />
                   <span>ADDED!</span>
                 </>
               ) : product.is_in_stock === false ? (

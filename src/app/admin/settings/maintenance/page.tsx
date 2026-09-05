@@ -73,7 +73,7 @@ export default async function AdminMaintenancePage() {
                   settings.maintenance_message ||
                   "We are performing scheduled updates to improve your beauty shopping experience. We will return shortly!"
                 }
-                className="w-full rounded-xl border border-border bg-white p-3 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white p-3 text-xs text-text focus:outline-none"
               />
             </div>
 
@@ -86,7 +86,7 @@ export default async function AdminMaintenancePage() {
                 name="bypass_ips"
                 defaultValue={settings.bypass_ips || "127.0.0.1, ::1"}
                 placeholder="e.g. 103.205.71.12, 127.0.0.1"
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
               />
             </div>
           </div>

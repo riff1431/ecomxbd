@@ -27,6 +27,7 @@ import {
   Percent,
   Layers,
   ArrowRight,
+  BookOpen,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
@@ -170,7 +171,7 @@ export default function AdminAnalyticsDashboard({
   return (
     <div className="space-y-8 pb-16">
       {/* Dashboard Top Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 pb-5 bg-white p-5 sm:p-6 rounded-3xl border border-gray-200 shadow-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 bg-white p-5 sm:p-6 rounded-3xl border border-gray-200 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -193,8 +194,14 @@ export default function AdminAnalyticsDashboard({
               Storefront
             </Button>
           </Link>
+          <Link href="/admin/blog">
+            <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl border-gray-300 hover:border-pink-500 hover:text-pink-600">
+              <BookOpen className="h-3.5 w-3.5 mr-1 text-[#e91e63]" />
+              Blog & Articles
+            </Button>
+          </Link>
           <Link href="/admin/products/create">
-            <Button size="sm" className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-black rounded-xl shadow-md">
+            <Button size="sm" className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-black rounded-xl shadow-md">
               + Add Product
             </Button>
           </Link>
@@ -235,14 +242,14 @@ export default function AdminAnalyticsDashboard({
               type="date"
               value={customStart}
               onChange={(e) => setCustomStart(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-800 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+              className="rounded-xl border px-2.5 py-1.5 text-xs text-gray-800 focus:outline-none"
             />
             <span className="text-gray-400">to</span>
             <input
               type="date"
               value={customEnd}
               onChange={(e) => setCustomEnd(e.target.value)}
-              className="rounded-xl border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs text-gray-800 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+              className="rounded-xl border px-2.5 py-1.5 text-xs text-gray-800 focus:outline-none"
             />
           </div>
         )}
@@ -451,12 +458,12 @@ export default function AdminAnalyticsDashboard({
                     {/* Sales Bar */}
                     <div
                       style={{ height: `${salesHeight}%` }}
-                      className="w-full max-w-[18px] sm:max-w-[24px] bg-gradient-to-t from-emerald-600 to-emerald-400 rounded-t-lg transition-all duration-500 group-hover:brightness-110 shadow-xs"
+                      className="w-full max-w-4.5 sm:max-w-6 bg-linear-to-t from-emerald-600 to-emerald-400 rounded-t-lg transition-all duration-500 group-hover:brightness-110 shadow-xs"
                     />
                     {/* Expense Bar */}
                     <div
                       style={{ height: `${expenseHeight}%` }}
-                      className="w-full max-w-[14px] sm:max-w-[18px] bg-gradient-to-t from-red-500 to-rose-400 rounded-t-lg transition-all duration-500 group-hover:brightness-110 shadow-xs"
+                      className="w-full max-w-3.5 sm:max-w-4.5 bg-linear-to-t from-red-500 to-rose-400 rounded-t-lg transition-all duration-500 group-hover:brightness-110 shadow-xs"
                     />
                   </div>
 
@@ -481,7 +488,10 @@ export default function AdminAnalyticsDashboard({
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-bold text-xs text-gray-900 block">SteadFast Courier</span>
-                    <span className="text-[10px] text-emerald-600 font-bold">🟢 Live API Connected</span>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                      Live API Connected
+                    </span>
                   </div>
                   <span className="text-base font-black text-emerald-700 font-mono">96.4%</span>
                 </div>
@@ -500,7 +510,10 @@ export default function AdminAnalyticsDashboard({
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-bold text-xs text-gray-900 block">Pathao Express</span>
-                    <span className="text-[10px] text-emerald-600 font-bold">🟢 Live API Connected</span>
+                    <span className="inline-flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                      Live API Connected
+                    </span>
                   </div>
                   <span className="text-base font-black text-emerald-700 font-mono">94.8%</span>
                 </div>

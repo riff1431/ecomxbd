@@ -5,6 +5,7 @@ import { Globe, Save, CheckCircle2, Search, Share2 } from "lucide-react";
 import { ModuleHeader } from "@/components/admin/module-settings/module-header";
 import { Button } from "@/components/shared/ui/button";
 import { saveSeoSettings } from "@/features/settings/actions";
+import { ImageUploadDropzone } from "@/components/shared/image-upload-dropzone";
 
 interface SeoSettingsClientProps {
   initialSettings: Record<string, any>;
@@ -19,7 +20,7 @@ export function SeoSettingsClient({ initialSettings }: SeoSettingsClientProps) {
     og_image_url: initialSettings.og_image_url || "https://res.cloudinary.com/dyvma4kfc/image/upload/v1/og-default.jpg",
     canonical_url:
       initialSettings.canonical_url ||
-      (typeof window !== "undefined" ? window.location.origin : "https://blushandbudget.com"),
+      (typeof window !== "undefined" && window.location?.origin ? window.location.origin : ""),
     twitter_handle: initialSettings.twitter_handle || "@ecomxbangladesh",
   });
 
@@ -91,7 +92,7 @@ export function SeoSettingsClient({ initialSettings }: SeoSettingsClientProps) {
                 required
                 value={formData.meta_title}
                 onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 
@@ -104,7 +105,7 @@ export function SeoSettingsClient({ initialSettings }: SeoSettingsClientProps) {
                 required
                 value={formData.meta_description}
                 onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white p-3 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white p-3 text-xs text-text focus:outline-none"
               />
             </div>
           </div>
@@ -124,7 +125,7 @@ export function SeoSettingsClient({ initialSettings }: SeoSettingsClientProps) {
                 type="url"
                 value={formData.canonical_url}
                 onChange={(e) => setFormData({ ...formData, canonical_url: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 
@@ -134,17 +135,18 @@ export function SeoSettingsClient({ initialSettings }: SeoSettingsClientProps) {
                 type="text"
                 value={formData.twitter_handle}
                 onChange={(e) => setFormData({ ...formData, twitter_handle: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block font-semibold text-text mb-1">Default OG Image URL (1200x630px)</label>
-              <input
-                type="url"
+              <ImageUploadDropzone
+                label="Default Social Share Image (OG Image 1200x630px)"
+                description="Default visual shown when website link is shared on WhatsApp, Facebook, or iMessage"
                 value={formData.og_image_url}
-                onChange={(e) => setFormData({ ...formData, og_image_url: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                onChange={(url) => setFormData({ ...formData, og_image_url: url })}
+                folder="seo"
+                previewShape="banner"
               />
             </div>
           </div>

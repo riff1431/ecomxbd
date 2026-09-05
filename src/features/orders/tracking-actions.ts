@@ -107,3 +107,40 @@ export async function getLiveShipments(): Promise<ShipmentTrackingItem[]> {
 
   return shipments as unknown as ShipmentTrackingItem[];
 }
+
+export async function syncAllActiveShipmentsAction() {
+  const supabase = await createClient();
+  const { revalidatePath } = await import("next/cache");
+
+  // Fetch all orders with active consignments
+  const { data: activeOrders } = await supabase
+    .from("orders")
+    .select("id, order_number, courier_name, consignment_id, tracking_code, status")
+    .not("consignment_id", "is", null)
+    .in("status", ["shipped", "in_transit", "out_for_delivery"]);
+
+  const { checkSteadfastTracking } = await import("@/features/logistics/services/steadfast");
+
+  let syncedCount = 0;
+  for (const ord of activeOrders || []) {
+    if (ord.tracking_code || ord.consignment_id) {
+      try {
+        const trk = await checkSteadfastTracking(ord.tracking_code || ord.consignment_id);
+        if (trk?.delivery_status === "delivered" && ord.status !== "delivered") {
+          await supabase
+            .from("orders")
+            .update({ status: "delivered", payment_status: "paid", updated_at: new Date().toISOString() })
+            .eq("id", ord.id);
+          syncedCount++;
+        }
+      } catch (err) {
+        console.warn("Tracking sync notice for", ord.order_number);
+      }
+    }
+  }
+
+  revalidatePath("/admin/orders/tracking");
+  revalidatePath("/admin/orders");
+  return { success: true, count: activeOrders?.length || 0, updated: syncedCount };
+}
+

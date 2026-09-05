@@ -209,7 +209,7 @@ export default function OrderAutomationSettingsClient({
 
                 <div className="space-y-2.5">
                   <div>
-                    <label className="block font-bold text-gray-800 mb-1 flex items-center justify-between">
+                    <label className="font-bold text-gray-800 mb-1 flex items-center justify-between">
                       <span>API Key</span>
                       <span className="text-[10px] text-gray-400 font-normal">From SteadFast Portal</span>
                     </label>
@@ -220,13 +220,13 @@ export default function OrderAutomationSettingsClient({
                         placeholder="e.g. sf_live_xxxxxxxxxxxxxxxx"
                         value={sfForm.api_key}
                         onChange={(e) => setSfForm({ ...sfForm, api_key: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 py-2 font-mono text-xs font-bold text-gray-900 focus:border-emerald-500 focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border pl-9 pr-3 py-2 font-mono text-xs font-bold text-gray-900 focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-bold text-gray-800 mb-1 flex items-center justify-between">
+                    <label className="font-bold text-gray-800 mb-1 flex items-center justify-between">
                       <span>Secret Key</span>
                       <span className="text-[10px] text-gray-400 font-normal">Secret Token</span>
                     </label>
@@ -237,7 +237,7 @@ export default function OrderAutomationSettingsClient({
                         placeholder="••••••••••••••••"
                         value={sfForm.secret_key}
                         onChange={(e) => setSfForm({ ...sfForm, secret_key: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 py-2 font-mono text-xs font-bold text-gray-900 focus:border-emerald-500 focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border pl-9 pr-3 py-2 font-mono text-xs font-bold text-gray-900 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -248,7 +248,7 @@ export default function OrderAutomationSettingsClient({
                       type="text"
                       value={sfForm.api_base_url}
                       onChange={(e) => setSfForm({ ...sfForm, api_base_url: e.target.value })}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-[11px] text-gray-600 focus:border-emerald-500 focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 font-mono text-[11px] text-gray-600 focus:outline-none"
                     />
                   </div>
                 </div>
@@ -305,7 +305,7 @@ export default function OrderAutomationSettingsClient({
 
                 <div className="space-y-2.5">
                   <div>
-                    <label className="block font-bold text-gray-800 mb-1 flex items-center justify-between">
+                    <label className="font-bold text-gray-800 mb-1 flex items-center justify-between">
                       <span>Client ID</span>
                       <span className="text-[10px] text-gray-400 font-normal">OAuth2 Client ID</span>
                     </label>
@@ -316,13 +316,13 @@ export default function OrderAutomationSettingsClient({
                         placeholder="e.g. pathao_client_id_xxxxxxxx"
                         value={pathaoForm.client_id}
                         onChange={(e) => setPathaoForm({ ...pathaoForm, client_id: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 py-2 font-mono text-xs font-bold text-gray-900 focus:border-red-500 focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border pl-9 pr-3 py-2 font-mono text-xs font-bold text-gray-900 focus:outline-none"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block font-bold text-gray-800 mb-1 flex items-center justify-between">
+                    <label className="font-bold text-gray-800 mb-1 flex items-center justify-between">
                       <span>Client Secret</span>
                       <span className="text-[10px] text-gray-400 font-normal">Secret Token</span>
                     </label>
@@ -333,7 +333,7 @@ export default function OrderAutomationSettingsClient({
                         placeholder="••••••••••••••••"
                         value={pathaoForm.client_secret}
                         onChange={(e) => setPathaoForm({ ...pathaoForm, client_secret: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3 py-2 font-mono text-xs font-bold text-gray-900 focus:border-red-500 focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border pl-9 pr-3 py-2 font-mono text-xs font-bold text-gray-900 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -346,7 +346,7 @@ export default function OrderAutomationSettingsClient({
                         placeholder="e.g. 12948"
                         value={pathaoForm.store_id}
                         onChange={(e) => setPathaoForm({ ...pathaoForm, store_id: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-xs text-gray-800 focus:border-red-500 focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border px-3 py-2 font-mono text-xs text-gray-800 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -354,7 +354,7 @@ export default function OrderAutomationSettingsClient({
                       <select
                         value={pathaoForm.environment}
                         onChange={(e) => setPathaoForm({ ...pathaoForm, environment: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:border-red-500 focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                       >
                         <option value="sandbox">Sandbox (Testing)</option>
                         <option value="live">Live Production</option>
@@ -424,12 +424,12 @@ export default function OrderAutomationSettingsClient({
               <select
                 value={form.defaultCourier}
                 onChange={(e) => setForm({ ...form, defaultCourier: e.target.value as any })}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs font-bold text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                className="w-full rounded-xl border px-3.5 py-2.5 text-xs font-bold text-gray-900 focus:outline-none"
               >
-                <option value="smart">🌟 Smart Route (Inside Dhaka ➔ Pathao, Outside ➔ SteadFast)</option>
-                <option value="steadfast">⚡ SteadFast Courier (Priority Gateway)</option>
-                <option value="pathao">🚀 Pathao Express (Priority Gateway)</option>
-                <option value="manual">🖐️ Manual Selection (Choose per Order Dispatch)</option>
+                <option value="smart">Smart Route (Inside Dhaka &rarr; Pathao, Outside &rarr; SteadFast)</option>
+                <option value="steadfast">SteadFast Courier (Priority Gateway)</option>
+                <option value="pathao">Pathao Express (Priority Gateway)</option>
+                <option value="manual">Manual Selection (Choose per Order Dispatch)</option>
               </select>
               <p className="text-[10px] text-gray-500 mt-1">
                 Controls which courier API endpoint is automatically invoked during 1-click & auto dispatches.
@@ -486,7 +486,7 @@ export default function OrderAutomationSettingsClient({
                   max="30"
                   value={form.reviewRequestDays}
                   onChange={(e) => setForm({ ...form, reviewRequestDays: Number(e.target.value) })}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 font-bold font-mono text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border px-3.5 py-2 font-bold font-mono text-gray-900 focus:outline-none"
                 />
                 <span className="text-gray-500 whitespace-nowrap">Days after Delivery</span>
               </div>
@@ -503,7 +503,7 @@ export default function OrderAutomationSettingsClient({
                   max="120"
                   value={form.replenishmentDays}
                   onChange={(e) => setForm({ ...form, replenishmentDays: Number(e.target.value) })}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 font-bold font-mono text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border px-3.5 py-2 font-bold font-mono text-gray-900 focus:outline-none"
                 />
                 <span className="text-gray-500 whitespace-nowrap">Days</span>
               </div>
@@ -521,7 +521,7 @@ export default function OrderAutomationSettingsClient({
                   max="500"
                   value={form.autoLoyaltyPoints}
                   onChange={(e) => setForm({ ...form, autoLoyaltyPoints: Number(e.target.value) })}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 font-bold font-mono text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border px-3.5 py-2 font-bold font-mono text-gray-900 focus:outline-none"
                 />
                 <span className="text-gray-500 whitespace-nowrap">Points</span>
               </div>

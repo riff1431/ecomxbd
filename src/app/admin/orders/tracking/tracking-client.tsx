@@ -32,11 +32,16 @@ export function TrackingClient({ initialShipments }: TrackingClientProps) {
   const [selectedShipment, setSelectedShipment] = useState<ShipmentTrackingItem | null>(initialShipments[0] || null);
   const [refreshing, setRefreshing] = useState(false);
 
-  const handleSyncAll = () => {
+  const handleSyncAll = async () => {
     setRefreshing(true);
-    setTimeout(() => {
+    try {
+      const { syncAllActiveShipmentsAction } = await import("@/features/orders/tracking-actions");
+      await syncAllActiveShipmentsAction();
+    } catch (err) {
+      console.warn("Tracking sync notice:", err);
+    } finally {
       setRefreshing(false);
-    }, 1200);
+    }
   };
 
   const filteredShipments = shipments.filter((s) => {
@@ -122,7 +127,7 @@ export function TrackingClient({ initialShipments }: TrackingClientProps) {
                 placeholder="Search by Order #, Consignment Code, Phone, or Name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-xl border border-border bg-surface-secondary/50 pl-9 pr-4 py-2 text-xs text-text placeholder:text-text-muted focus:border-primary-600 focus:bg-white focus:outline-none"
+                className="w-full rounded-xl border border-border bg-surface-secondary/50 pl-9 pr-4 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none"
               />
             </div>
 

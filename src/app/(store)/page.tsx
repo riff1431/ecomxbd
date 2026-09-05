@@ -24,7 +24,8 @@ export default async function HomePage() {
         sale_price,
         og_image_url,
         brands (name),
-        inventory (available)
+        inventory (available),
+        reviews (rating, status)
       `)
       .eq("status", "active")
       .is("deleted_at", null)
@@ -33,11 +34,26 @@ export default async function HomePage() {
     getHomepageConfig(),
   ]);
 
-  // Map to ProductCardData
-  const productCardItems: ProductCardData[] = (products || []).map((p) => {
+  // Map to ProductCardData with dynamic review rating calculation
+  const productCardItems: ProductCardData[] = (products || []).map((p: any) => {
     const inv = p.inventory as Array<{ available: number }> | null;
     const isAvailable = inv ? inv.some((i) => i.available > 0) : true;
     const brandData = (Array.isArray(p.brands) ? p.brands[0] : p.brands) as { name: string } | null;
+
+    // Filter approved reviews only
+    const approvedReviews = (p.reviews || []).filter(
+      (r: any) => r.status === "approved"
+    );
+    const reviewCount = approvedReviews.length;
+    const averageRating =
+      reviewCount > 0
+        ? Number(
+            (
+              approvedReviews.reduce((acc: number, r: any) => acc + (r.rating || 5), 0) /
+              reviewCount
+            ).toFixed(1)
+          )
+        : 4.8; // High standard beauty default when new
 
     return {
       id: p.id,
@@ -48,8 +64,8 @@ export default async function HomePage() {
       image_url: p.og_image_url || null,
       brand_name: brandData?.name || null,
       is_in_stock: isAvailable,
-      rating: 5.0,
-      review_count: 18,
+      rating: averageRating,
+      review_count: reviewCount > 0 ? reviewCount : undefined,
     };
   });
 

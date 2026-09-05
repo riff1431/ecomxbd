@@ -153,7 +153,7 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
                   placeholder="e.g. Excellent texture, leaves skin glowing!"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs focus:outline-none"
                 />
               </div>
 
@@ -165,7 +165,7 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
                   placeholder="Share your genuine experience with this skincare product..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
-                  className="w-full rounded-xl border border-border bg-white p-3 text-xs focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white p-3 text-xs focus:outline-none"
                 />
               </div>
 
@@ -257,7 +257,7 @@ export function ProductReviewsQA({ productId }: ProductReviewsQAProps) {
                 placeholder="e.g. Is this suitable for sensitive acne-prone skin?"
                 value={questionText}
                 onChange={(e) => setQuestionText(e.target.value)}
-                className="flex-1 rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="flex-1 rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
               <Button type="submit" size="sm" disabled={submittingQuestion} className="text-xs font-semibold">
                 {submittingQuestion ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}

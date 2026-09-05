@@ -38,6 +38,7 @@ import {
   type ImageBannerItem,
   DEFAULT_HOMEPAGE_CONFIG,
 } from "@/features/marketing/homepage-types";
+import { ImageUploadDropzone } from "@/components/shared/image-upload-dropzone";
 
 export default function AdminHomepageManagerPage() {
   const [loading, setLoading] = useState(true);
@@ -163,7 +164,7 @@ export default function AdminHomepageManagerPage() {
   return (
     <div className="space-y-6 w-full max-w-[1700px] mx-auto pb-24">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-4 bg-white p-4 sm:p-6 rounded-2xl border border-gray-200/80 shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 bg-white p-4 sm:p-6 rounded-2xl border border-gray-200 shadow-xs">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-gray-900">Storefront Section Control Center</h1>
           <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
@@ -182,7 +183,7 @@ export default function AdminHomepageManagerPage() {
             onClick={handleSave}
             disabled={saving}
             size="sm"
-            className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-black text-xs rounded-xl shadow-md"
+            className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-black text-xs rounded-xl shadow-md"
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
             {saving ? "Publishing..." : "Publish to Live Site"}
@@ -271,7 +272,7 @@ export default function AdminHomepageManagerPage() {
                       type="text"
                       value={deal.title}
                       onChange={(e) => updateBannerList("dealsYouCannotMiss", idx, "title", e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                     />
                   </div>
                   <div>
@@ -280,7 +281,7 @@ export default function AdminHomepageManagerPage() {
                       type="text"
                       value={deal.href}
                       onChange={(e) => updateBannerList("dealsYouCannotMiss", idx, "href", e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                   </div>
                   <div>
@@ -290,7 +291,7 @@ export default function AdminHomepageManagerPage() {
                         type="text"
                         value={deal.image}
                         onChange={(e) => updateBannerList("dealsYouCannotMiss", idx, "image", e.target.value)}
-                        className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                        className="flex-1 rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                       />
                       {deal.image && <img src={deal.image} alt="preview" className="h-10 w-10 object-cover rounded-lg border border-gray-200 shrink-0" />}
                     </div>
@@ -340,7 +341,7 @@ export default function AdminHomepageManagerPage() {
                       type="text"
                       value={brand.title}
                       onChange={(e) => updateBannerList("topBrandsAndOffers", idx, "title", e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                     />
                   </div>
                   <div>
@@ -349,7 +350,7 @@ export default function AdminHomepageManagerPage() {
                       type="text"
                       value={brand.href}
                       onChange={(e) => updateBannerList("topBrandsAndOffers", idx, "href", e.target.value)}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                   </div>
                   <div>
@@ -359,7 +360,7 @@ export default function AdminHomepageManagerPage() {
                         type="text"
                         value={brand.image}
                         onChange={(e) => updateBannerList("topBrandsAndOffers", idx, "image", e.target.value)}
-                        className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                        className="flex-1 rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                       />
                       {brand.image && <img src={brand.image} alt="preview" className="h-10 w-16 object-cover rounded-lg border border-gray-200 shrink-0" />}
                     </div>
@@ -410,7 +411,7 @@ export default function AdminHomepageManagerPage() {
                         type="text"
                         value={slide.title}
                         onChange={(e) => updateBannerList("heroSlides", idx, "title", e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                       />
                     </div>
                     <div>
@@ -419,7 +420,7 @@ export default function AdminHomepageManagerPage() {
                         type="text"
                         value={slide.href}
                         onChange={(e) => updateBannerList("heroSlides", idx, "href", e.target.value)}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -429,7 +430,7 @@ export default function AdminHomepageManagerPage() {
                           type="text"
                           value={slide.image}
                           onChange={(e) => updateBannerList("heroSlides", idx, "image", e.target.value)}
-                          className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                          className="flex-1 rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                         />
                         {slide.image && <img src={slide.image} alt="preview" className="h-10 w-24 object-cover rounded-lg border border-gray-200 shrink-0" />}
                       </div>
@@ -454,7 +455,7 @@ export default function AdminHomepageManagerPage() {
                   type="text"
                   value={config.stripBanner?.title || ""}
                   onChange={(e) => setConfig({ ...config, stripBanner: { ...config.stripBanner, title: e.target.value } })}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                 />
               </div>
               <div>
@@ -463,7 +464,7 @@ export default function AdminHomepageManagerPage() {
                   type="text"
                   value={config.stripBanner?.href || ""}
                   onChange={(e) => setConfig({ ...config, stripBanner: { ...config.stripBanner, href: e.target.value } })}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                 />
               </div>
               <div className="sm:col-span-2">
@@ -473,7 +474,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.stripBanner?.image || ""}
                     onChange={(e) => setConfig({ ...config, stripBanner: { ...config.stripBanner, image: e.target.value } })}
-                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="flex-1 rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                   />
                   {config.stripBanner?.image && <img src={config.stripBanner.image} alt="preview" className="h-10 w-28 object-contain rounded-lg border border-gray-200 shrink-0" />}
                 </div>
@@ -500,7 +501,7 @@ export default function AdminHomepageManagerPage() {
                         list[idx] = { ...list[idx], ribbonText: e.target.value };
                         setConfig({ ...config, limitedTimeOffers: list });
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                     />
                   </div>
                   <div>
@@ -513,7 +514,7 @@ export default function AdminHomepageManagerPage() {
                         list[idx] = { ...list[idx], mainText: e.target.value };
                         setConfig({ ...config, limitedTimeOffers: list });
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black uppercase text-[#e91e63] focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-black uppercase text-[#e91e63] focus:outline-none"
                     />
                   </div>
                   <div>
@@ -526,7 +527,7 @@ export default function AdminHomepageManagerPage() {
                         list[idx] = { ...list[idx], href: e.target.value };
                         setConfig({ ...config, limitedTimeOffers: list });
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                   </div>
                 </div>
@@ -553,7 +554,7 @@ export default function AdminHomepageManagerPage() {
                         list[idx] = { ...list[idx], name: e.target.value };
                         setConfig({ ...config, shopByCategories: list });
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                     />
                   </div>
                   <div>
@@ -566,7 +567,7 @@ export default function AdminHomepageManagerPage() {
                         list[idx] = { ...list[idx], slug: e.target.value };
                         setConfig({ ...config, shopByCategories: list });
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                   </div>
                   <div>
@@ -580,7 +581,7 @@ export default function AdminHomepageManagerPage() {
                           list[idx] = { ...list[idx], image: e.target.value };
                           setConfig({ ...config, shopByCategories: list });
                         }}
-                        className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                        className="flex-1 rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                       />
                       {cat.image && <img src={cat.image} alt="preview" className="h-8 w-8 object-contain rounded-md border border-gray-200 shrink-0" />}
                     </div>
@@ -640,7 +641,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                   />
                 </div>
                 <div>
@@ -657,7 +658,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-medium focus:outline-none"
                   />
                 </div>
 
@@ -665,7 +666,7 @@ export default function AdminHomepageManagerPage() {
                 <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 rounded-xl bg-pink-50/40 p-4 border border-pink-100">
                   <div>
                     <label className="block text-[11px] font-bold text-gray-800 mb-1">
-                      📸 Photo Focus & Fit (Prevents Zoom & Cropping)
+                      Photo Focus & Fit (Prevents Zoom & Cropping)
                     </label>
                     <select
                       value={config.beforeAfterSection?.imageFit || "top"}
@@ -678,17 +679,17 @@ export default function AdminHomepageManagerPage() {
                           },
                         })
                       }
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold focus:border-[#e91e63] focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-semibold focus:outline-none"
                     >
-                      <option value="top">🎯 Focus on Face / Top (Recommended for Skincare Photos)</option>
-                      <option value="cover">📐 Center Fill (Standard Cover)</option>
-                      <option value="contain">🔍 Contain (Full Uncropped Photo)</option>
+                      <option value="top">Focus on Face / Top (Recommended for Skincare Photos)</option>
+                      <option value="cover">Center Fill (Standard Cover)</option>
+                      <option value="contain">Contain (Full Uncropped Photo)</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-[11px] font-bold text-gray-800 mb-1">
-                      📐 Comparison Card Aspect Ratio
+                      Comparison Card Aspect Ratio
                     </label>
                     <select
                       value={config.beforeAfterSection?.aspectRatio || "4/3"}
@@ -701,7 +702,7 @@ export default function AdminHomepageManagerPage() {
                           },
                         })
                       }
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold focus:border-[#e91e63] focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-semibold focus:outline-none"
                     >
                       <option value="4/3">4:3 Natural Face Ratio (Recommended)</option>
                       <option value="16/10">16:10 Landscape Ratio</option>
@@ -712,8 +713,8 @@ export default function AdminHomepageManagerPage() {
 
                   <div className="sm:col-span-2 pt-2 border-t border-pink-100/80">
                     <div className="rounded-lg bg-white/80 p-2.5 border border-pink-100 text-[11px] text-gray-700 space-y-1">
-                      <div className="font-bold text-gray-900 flex items-center gap-1.5 text-pink-700">
-                        <span>📐 Exact Recommended Dimensions & Alignment Blueprint:</span>
+                      <div className="font-bold flex items-center gap-1.5 text-pink-700">
+                        <span>Exact Recommended Dimensions & Alignment Blueprint:</span>
                       </div>
                       <ul className="list-disc list-inside space-y-0.5 text-gray-600 font-medium">
                         <li><strong>Optimal Resolution:</strong> <code className="bg-pink-50 px-1 py-0.5 rounded text-pink-800 font-bold">1200 × 900 px</code> (Standard 4:3 Aspect Ratio).</li>
@@ -752,7 +753,7 @@ export default function AdminHomepageManagerPage() {
                           },
                         })
                       }
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-800 focus:border-[#e91e63] focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-800 focus:outline-none"
                     />
                   </div>
 
@@ -771,12 +772,12 @@ export default function AdminHomepageManagerPage() {
                           },
                         })
                       }
-                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                   </div>
 
                   {/* Large Before Preview */}
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-gray-200 bg-white flex items-center justify-center">
+                  <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl border border-gray-200 bg-white flex items-center justify-center">
                     {config.beforeAfterSection?.beforeImage ? (
                       <img
                         src={config.beforeAfterSection.beforeImage}
@@ -820,7 +821,7 @@ export default function AdminHomepageManagerPage() {
                           },
                         })
                       }
-                      className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-700 focus:border-[#e91e63] focus:outline-none"
+                      className="w-full rounded-xl border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 focus:outline-none"
                     />
                   </div>
 
@@ -839,12 +840,12 @@ export default function AdminHomepageManagerPage() {
                           },
                         })
                       }
-                      className="w-full rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:outline-none"
+                      className="w-full rounded-xl border border-emerald-200 px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                   </div>
 
                   {/* Large After Preview */}
-                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-emerald-200 bg-white flex items-center justify-center">
+                  <div className="relative aspect-4/3 w-full overflow-hidden rounded-xl border border-emerald-200 bg-white flex items-center justify-center">
                     {config.beforeAfterSection?.afterImage ? (
                       <img
                         src={config.beforeAfterSection.afterImage}
@@ -878,7 +879,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black uppercase text-[#e91e63] focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-black uppercase text-[#e91e63] focus:outline-none"
                   />
                 </div>
 
@@ -896,7 +897,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   />
                 </div>
 
@@ -914,7 +915,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-medium focus:outline-none"
                   />
                 </div>
 
@@ -934,7 +935,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-medium focus:outline-none"
                   />
                   <input
                     type="text"
@@ -949,7 +950,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-medium focus:outline-none"
                   />
                   <input
                     type="text"
@@ -964,7 +965,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-medium focus:outline-none"
                   />
                 </div>
 
@@ -982,7 +983,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black uppercase text-[#e91e63] focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-black uppercase text-[#e91e63] focus:outline-none"
                   />
                 </div>
 
@@ -1000,7 +1001,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                   />
                 </div>
               </div>
@@ -1022,7 +1023,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.trendingTitle || ""}
                     onChange={(e) => setConfig({ ...config, trendingTitle: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1031,7 +1032,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.trendingSubtitle || ""}
                     onChange={(e) => setConfig({ ...config, trendingSubtitle: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-medium focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1040,7 +1041,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.trendingViewAllText || ""}
                     onChange={(e) => setConfig({ ...config, trendingViewAllText: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                   />
                 </div>
               </div>
@@ -1066,7 +1067,7 @@ export default function AdminHomepageManagerPage() {
                         } as any,
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black uppercase text-[#e91e63] focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-black uppercase text-[#e91e63] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1083,7 +1084,7 @@ export default function AdminHomepageManagerPage() {
                         } as any,
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1100,7 +1101,7 @@ export default function AdminHomepageManagerPage() {
                         } as any,
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-[#e91e63] focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-[#e91e63] focus:outline-none"
                   />
                 </div>
               </div>
@@ -1228,7 +1229,7 @@ export default function AdminHomepageManagerPage() {
                           list[idx] = { ...list[idx], title: e.target.value };
                           setConfig({ ...config, trustPillars: list });
                         }}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                       />
                     </div>
                     <div>
@@ -1241,7 +1242,7 @@ export default function AdminHomepageManagerPage() {
                           list[idx] = { ...list[idx], subtitle: e.target.value };
                           setConfig({ ...config, trustPillars: list });
                         }}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border px-3 py-2 text-xs font-medium focus:outline-none"
                       />
                     </div>
                   </div>
@@ -1256,13 +1257,13 @@ export default function AdminHomepageManagerPage() {
                           list[idx] = { ...list[idx], iconName: e.target.value };
                           setConfig({ ...config, trustPillars: list });
                         }}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-semibold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                        className="w-full rounded-xl border px-3 py-2 text-xs font-semibold focus:outline-none"
                       >
-                        <option value="shield">🛡️ Shield (100% Authentic)</option>
-                        <option value="truck">🚚 Truck (Fast Delivery)</option>
-                        <option value="zap">⚡ Zap (Express / COD)</option>
-                        <option value="clock">⏰ Clock (24/7 Support)</option>
-                        <option value="rotate">🔄 Rotate (Easy 7-Day Returns)</option>
+                        <option value="shield">Shield (100% Authentic)</option>
+                        <option value="truck">Truck (Fast Delivery)</option>
+                        <option value="zap">Zap (Express / COD)</option>
+                        <option value="clock">Clock (24/7 Support)</option>
+                        <option value="rotate">Rotate (Easy 7-Day Returns)</option>
                       </select>
                     </div>
 
@@ -1278,7 +1279,7 @@ export default function AdminHomepageManagerPage() {
                             list[idx] = { ...list[idx], imageUrl: e.target.value };
                             setConfig({ ...config, trustPillars: list });
                           }}
-                          className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                          className="flex-1 rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                         />
                         {tp.imageUrl && (
                           <img
@@ -1314,7 +1315,7 @@ export default function AdminHomepageManagerPage() {
                         list[idx] = { ...list[idx], label: e.target.value };
                         setConfig({ ...config, campaignPills: list });
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black uppercase focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-black uppercase focus:outline-none"
                     />
                   </div>
                   <div>
@@ -1327,7 +1328,7 @@ export default function AdminHomepageManagerPage() {
                         list[idx] = { ...list[idx], href: e.target.value };
                         setConfig({ ...config, campaignPills: list });
                       }}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                   </div>
                 </div>
@@ -1349,7 +1350,7 @@ export default function AdminHomepageManagerPage() {
                   Controls the logo on desktop screens. When an image URL is provided, the image is displayed and text is hidden.
                 </p>
                 <div className="mt-2 inline-flex items-center gap-2 rounded-lg bg-pink-50/70 border border-pink-100 px-3 py-1.5 text-[11px] font-semibold text-pink-700">
-                  <span>📐 Recommended: 400×90px to 500×100px (4:1 ratio, transparent PNG/SVG). Desktop displays at 44px height.</span>
+                  <span>Recommended: 400×90px to 500×100px (4:1 ratio, transparent PNG/SVG). Desktop displays at 44px height.</span>
                 </div>
               </div>
 
@@ -1369,36 +1370,27 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black tracking-wider focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-black tracking-wider focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-bold text-gray-700 mb-1">Desktop Logo Image URL (Hides text when set)</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      placeholder="e.g. /banners/logo.png"
-                      value={config.headerConfig?.logoImageUrl ?? ""}
-                      onChange={(e) =>
-                        setConfig({
-                          ...config,
-                          headerConfig: {
-                            ...(config.headerConfig || DEFAULT_HOMEPAGE_CONFIG.headerConfig),
-                            logoImageUrl: e.target.value,
-                          },
-                        })
-                      }
-                      className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
-                    />
-                    {config.headerConfig?.logoImageUrl && (
-                      <img
-                        src={config.headerConfig.logoImageUrl}
-                        alt="desktop logo preview"
-                        className="h-8 max-h-8 w-auto max-w-[80px] object-contain rounded-md border border-gray-200 shrink-0 bg-gray-50 p-1"
-                      />
-                    )}
-                  </div>
+                  <ImageUploadDropzone
+                    label="Desktop Logo Image"
+                    description="Upload brand logo for desktop navbar (Hides text when image is uploaded)"
+                    value={config.headerConfig?.logoImageUrl ?? ""}
+                    onChange={(url) =>
+                      setConfig({
+                        ...config,
+                        headerConfig: {
+                          ...(config.headerConfig || DEFAULT_HOMEPAGE_CONFIG.headerConfig),
+                          logoImageUrl: url,
+                        },
+                      })
+                    }
+                    folder="logos"
+                    previewShape="rounded"
+                  />
                 </div>
 
                 <div>
@@ -1416,7 +1408,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                   />
                 </div>
               </div>
@@ -1449,7 +1441,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black tracking-wider focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-black tracking-wider focus:outline-none"
                   />
                 </div>
 
@@ -1469,13 +1461,13 @@ export default function AdminHomepageManagerPage() {
                           },
                         })
                       }
-                      className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="flex-1 rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                     {(config.headerConfig?.mobileLogoImageUrl || config.headerConfig?.logoImageUrl) && (
                       <img
                         src={config.headerConfig.mobileLogoImageUrl || config.headerConfig.logoImageUrl}
                         alt="mobile logo preview"
-                        className="h-8 max-h-8 w-auto max-w-[80px] object-contain rounded-md border border-gray-200 shrink-0 bg-gray-50 p-1"
+                        className="h-8 max-h-8 w-auto max-w-20 object-contain rounded-md border border-gray-200 shrink-0 bg-gray-50 p-1"
                       />
                     )}
                   </div>
@@ -1510,7 +1502,7 @@ export default function AdminHomepageManagerPage() {
                         },
                       })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-black tracking-wider focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-black tracking-wider focus:outline-none"
                   />
                 </div>
 
@@ -1530,13 +1522,13 @@ export default function AdminHomepageManagerPage() {
                           },
                         })
                       }
-                      className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="flex-1 rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                     {(config.headerConfig?.drawerLogoImageUrl || config.headerConfig?.mobileLogoImageUrl || config.headerConfig?.logoImageUrl) && (
                       <img
                         src={config.headerConfig.drawerLogoImageUrl || config.headerConfig.mobileLogoImageUrl || config.headerConfig.logoImageUrl}
                         alt="drawer logo preview"
-                        className="h-8 max-h-8 w-auto max-w-[80px] object-contain rounded-md border border-gray-200 shrink-0 bg-gray-50 p-1"
+                        className="h-8 max-h-8 w-auto max-w-20 object-contain rounded-md border border-gray-200 shrink-0 bg-gray-50 p-1"
                       />
                     )}
                   </div>
@@ -1568,7 +1560,7 @@ export default function AdminHomepageManagerPage() {
                     },
                   });
                 }}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                className="w-full rounded-xl border p-3 text-xs font-medium focus:outline-none"
               />
             </div>
 
@@ -1613,7 +1605,7 @@ export default function AdminHomepageManagerPage() {
                               },
                             });
                           }}
-                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:outline-none"
+                          className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                         />
                       </div>
 
@@ -1633,7 +1625,7 @@ export default function AdminHomepageManagerPage() {
                               },
                             });
                           }}
-                          className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:outline-none"
+                          className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                         />
                       </div>
                     </div>
@@ -1663,7 +1655,7 @@ export default function AdminHomepageManagerPage() {
                                   },
                                 });
                               }}
-                              className="w-1/2 rounded-lg border border-gray-100 bg-gray-50 px-2 py-1 text-[11px] font-semibold focus:border-[#e91e63] focus:outline-none"
+                              className="w-1/2 rounded-lg border px-2 py-1 text-[11px] font-semibold focus:outline-none"
                             />
                             <input
                               type="text"
@@ -1682,7 +1674,7 @@ export default function AdminHomepageManagerPage() {
                                   },
                                 });
                               }}
-                              className="w-1/2 rounded-lg border border-gray-100 bg-gray-50 px-2 py-1 text-[11px] font-mono focus:border-[#e91e63] focus:outline-none"
+                              className="w-1/2 rounded-lg border px-2 py-1 text-[11px] font-mono focus:outline-none"
                             />
                           </div>
                         ))}
@@ -1709,7 +1701,7 @@ export default function AdminHomepageManagerPage() {
                             },
                           });
                         }}
-                        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold focus:border-[#e91e63] focus:outline-none"
+                        className="w-full rounded-xl border px-3 py-2 text-xs font-semibold focus:outline-none"
                       />
                     </div>
 
@@ -1740,7 +1732,7 @@ export default function AdminHomepageManagerPage() {
                               },
                             });
                           }}
-                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold focus:border-[#e91e63] focus:outline-none"
+                          className="rounded-lg border px-3 py-1.5 text-xs font-bold focus:outline-none"
                         />
                         <input
                           type="text"
@@ -1763,7 +1755,7 @@ export default function AdminHomepageManagerPage() {
                               },
                             });
                           }}
-                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-mono focus:border-[#e91e63] focus:outline-none"
+                          className="rounded-lg border px-3 py-1.5 text-xs font-mono focus:outline-none"
                         />
                         <input
                           type="text"
@@ -1786,7 +1778,7 @@ export default function AdminHomepageManagerPage() {
                               },
                             });
                           }}
-                          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-mono focus:border-[#e91e63] focus:outline-none"
+                          className="rounded-lg border px-3 py-1.5 text-xs font-mono focus:outline-none"
                         />
                       </div>
                     </div>
@@ -1813,7 +1805,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.announcementBadgeText ?? ""}
                     onChange={(e) => setConfig({ ...config, announcementBadgeText: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-[#e91e63] focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-[#e91e63] focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1822,7 +1814,7 @@ export default function AdminHomepageManagerPage() {
                     type="number"
                     value={config.freeDeliveryThreshold ?? 2000}
                     onChange={(e) => setConfig({ ...config, freeDeliveryThreshold: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                   />
                 </div>
                 <div className="sm:col-span-2">
@@ -1831,7 +1823,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.announcementText ?? ""}
                     onChange={(e) => setConfig({ ...config, announcementText: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-medium focus:outline-none"
                   />
                 </div>
 
@@ -1841,7 +1833,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.routineFinderText ?? ""}
                     onChange={(e) => setConfig({ ...config, routineFinderText: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-pink-600 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-pink-600 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1850,7 +1842,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.routineFinderHref ?? ""}
                     onChange={(e) => setConfig({ ...config, routineFinderHref: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                   />
                 </div>
 
@@ -1860,7 +1852,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.trackOrderText ?? ""}
                     onChange={(e) => setConfig({ ...config, trackOrderText: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                   />
                 </div>
                 <div>
@@ -1869,7 +1861,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.authenticGuaranteeText ?? ""}
                     onChange={(e) => setConfig({ ...config, authenticGuaranteeText: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-emerald-700 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-emerald-700 focus:outline-none"
                   />
                 </div>
 
@@ -1879,7 +1871,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.supportPhone ?? ""}
                     onChange={(e) => setConfig({ ...config, supportPhone: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                   />
                 </div>
               </div>
@@ -1906,7 +1898,7 @@ export default function AdminHomepageManagerPage() {
                     placeholder="e.g. Blush & Budget (defaults to header logo text)"
                     value={config.footerBrandText ?? ""}
                     onChange={(e) => setConfig({ ...config, footerBrandText: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold focus:outline-none"
                   />
                 </div>
 
@@ -1920,13 +1912,13 @@ export default function AdminHomepageManagerPage() {
                       placeholder="e.g. /banners/footer-logo.png (defaults to header logo)"
                       value={config.footerLogoImageUrl ?? ""}
                       onChange={(e) => setConfig({ ...config, footerLogoImageUrl: e.target.value })}
-                      className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-mono focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                      className="flex-1 rounded-xl border px-3 py-2 text-xs font-mono focus:outline-none"
                     />
                     {(config.footerLogoImageUrl || config.headerConfig?.logoImageUrl) && (
                       <img
                         src={config.footerLogoImageUrl || config.headerConfig?.logoImageUrl}
                         alt="footer logo preview"
-                        className="h-8 max-h-8 w-auto max-w-[80px] object-contain rounded-md border border-gray-200 shrink-0 bg-slate-900 p-1"
+                        className="h-8 max-h-8 w-auto max-w-20 object-contain rounded-md border border-gray-200 shrink-0 bg-slate-900 p-1"
                       />
                     )}
                   </div>
@@ -1940,7 +1932,7 @@ export default function AdminHomepageManagerPage() {
                     rows={2}
                     value={config.footerAboutText ?? ""}
                     onChange={(e) => setConfig({ ...config, footerAboutText: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs font-medium focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border p-3 text-xs font-medium focus:outline-none"
                   />
                 </div>
 
@@ -1952,7 +1944,7 @@ export default function AdminHomepageManagerPage() {
                     type="text"
                     value={config.footerCopyright ?? ""}
                     onChange={(e) => setConfig({ ...config, footerCopyright: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-medium text-gray-600 focus:outline-none"
                   />
                 </div>
               </div>
@@ -2113,7 +2105,7 @@ export default function AdminHomepageManagerPage() {
                     onChange={(e) =>
                       setCheckoutSettings({ ...checkoutSettings, min_order_amount: Number(e.target.value) })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs font-bold text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3.5 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   />
                   <span className="text-[10px] text-gray-500 mt-1 block">
                     Customers must have at least this amount to place an order (Set to 0 for no minimum).
@@ -2131,7 +2123,7 @@ export default function AdminHomepageManagerPage() {
                     onChange={(e) =>
                       setCheckoutSettings({ ...checkoutSettings, cod_max_amount: Number(e.target.value) })
                     }
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs font-bold text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3.5 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   />
                   <span className="text-[10px] text-gray-500 mt-1 block">
                     Orders above this amount require advance online prepayment.
@@ -2147,7 +2139,7 @@ export default function AdminHomepageManagerPage() {
           <Button
             type="submit"
             disabled={saving}
-            className="rounded-2xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-sm px-8 py-3.5 shadow-xl transition-all active:scale-95"
+            className="rounded-2xl bg-[#e91e63] hover:bg-sg-pink-hover text-white font-extrabold text-sm px-8 py-3.5 shadow-xl transition-all active:scale-95"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             {saving ? "Publishing Changes..." : "Save & Publish All Sections"}

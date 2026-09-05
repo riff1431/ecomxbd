@@ -200,7 +200,7 @@ export function BeforeAfterSlider({
               <img
                 src={beforeImage}
                 alt="Before Treatment"
-                className={`absolute inset-0 h-full w-full ${fitClass} filter grayscale-[20%] contrast-[95%]`}
+                className={`absolute inset-0 h-full w-full ${fitClass} filter grayscale-20 contrast-95`}
                 draggable={false}
               />
             </div>
@@ -223,11 +223,11 @@ export function BeforeAfterSlider({
               style={{ left: `${sliderPos}%` }}
             >
               {/* Vertical White Line */}
-              <div className="absolute inset-y-0 -left-[1.5px] w-[3px] bg-white shadow-[0_0_12px_rgba(0,0,0,0.6)]" />
+              <div className="absolute inset-y-0 left-[-1.5px] w-0.75 bg-white shadow-[0_0_12px_rgba(0,0,0,0.6)]" />
 
               {/* Center Floating Handle Thumb */}
               <div className="absolute top-1/2 -left-5 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#e91e63] shadow-xl border-2 border-[#e91e63] transition-transform duration-100 hover:scale-110 active:scale-95">
-                <ArrowLeftRight className="h-4 w-4 stroke-[3]" />
+                <ArrowLeftRight className="h-4 w-4 stroke-3" />
               </div>
             </div>
           </div>
@@ -275,10 +275,10 @@ export function BeforeAfterSlider({
           <div className="pt-2">
             <Link
               href={buttonHref}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e91e63] px-6 py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-white shadow-md transition-all duration-200 hover:bg-[#d81b60] hover:shadow-lg active:scale-98"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#e91e63] px-6 py-3 text-xs sm:text-sm font-black uppercase tracking-wider text-white shadow-md transition-all duration-200 hover:bg-sg-pink-hover hover:shadow-lg active:scale-98"
             >
               <span>{buttonText}</span>
-              <ChevronRight className="h-4 w-4 stroke-[3]" />
+              <ChevronRight className="h-4 w-4 stroke-3" />
             </Link>
           </div>
         </div>

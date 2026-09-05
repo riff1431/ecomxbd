@@ -12,6 +12,7 @@ import {
   Search,
   CheckCircle2,
   Loader2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import { addBlacklistEntry, removeBlacklistEntry, type FraudProfile } from "@/features/fraud/actions";
@@ -85,8 +86,8 @@ export default function FraudBlacklistClient({ initialProfiles }: FraudBlacklist
       {msg && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-bold text-emerald-800 flex justify-between">
           <span>{msg}</span>
-          <button onClick={() => setMsg(null)} className="opacity-60 hover:opacity-100 font-bold">
-            ✕
+          <button onClick={() => setMsg(null)} className="opacity-60 hover:opacity-100 p-1">
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}

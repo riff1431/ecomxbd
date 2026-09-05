@@ -16,6 +16,7 @@ import {
 import { getOrderById } from "@/features/orders/actions";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
+import { PurchaseTracker } from "@/components/analytics/purchase-tracker";
 
 export default async function OrderConfirmationPage({
   params,
@@ -32,8 +33,41 @@ export default async function OrderConfirmationPage({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8 space-y-8">
+      {/* 1. GA4 DataLayer Purchase Event Dispatcher */}
+      <PurchaseTracker
+        orderData={{
+          transaction_id: order.order_number || order.id,
+          order_id: order.order_number || order.id,
+          value: Number(order.total) || 0,
+          currency: "BDT",
+          tax: 0,
+          shipping: Number(order.shipping_amount) || 0,
+          coupon: order.coupon_code || undefined,
+          discount: Number(order.discount_amount) || 0,
+          payment_type: order.payment_method || "Cash on Delivery",
+          customer: {
+            email: order.customer_email || address.email || undefined,
+            phone: order.customer_phone || address.phone || undefined,
+            first_name: address.first_name || (order.customer_name ? order.customer_name.split(" ")[0] : undefined),
+            last_name: address.last_name || (order.customer_name ? order.customer_name.split(" ").slice(1).join(" ") : undefined),
+            external_id: order.customer_id || undefined,
+            city: address.city || address.district || "Dhaka",
+            state: address.state || address.division || "Dhaka",
+            country: address.country || "BD",
+            zip: address.zip || address.postal_code || "",
+          },
+          items: items.map((it: any, idx: number) => ({
+            item_id: it.product_id || it.id,
+            item_name: it.product_name_snapshot || "Product",
+            price: Number(it.unit_price) || 0,
+            quantity: Number(it.quantity) || 1,
+            index: idx + 1,
+          })),
+        }}
+      />
+
       {/* Celebratory Banner */}
-      <div className="rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-500/10 via-emerald-50 to-white p-8 text-center shadow-card space-y-5">
+      <div className="rounded-3xl border border-emerald-200 bg-linear-to-br from-emerald-500/10 via-emerald-50 to-white p-8 text-center shadow-card space-y-5">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500 text-white shadow-md">
           <CheckCircle2 className="h-10 w-10" />
         </div>
@@ -57,7 +91,7 @@ export default async function OrderConfirmationPage({
           </div>
 
           <Link href={`/orders/${order.id}/invoice`} target="_blank">
-            <Button className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-md">
+            <Button className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-extrabold text-xs px-5 py-2.5 rounded-xl shadow-md">
               <Printer className="h-4 w-4 mr-1.5" />
               Download &amp; Print Invoice
             </Button>
@@ -184,7 +218,7 @@ export default async function OrderConfirmationPage({
           </Button>
         </Link>
         <Link href="/products">
-          <Button size="lg" className="px-8 shadow-md bg-[#e91e63] hover:bg-[#d81b60] text-white font-bold">
+          <Button size="lg" className="px-8 shadow-md bg-[#e91e63] hover:bg-sg-pink-hover text-white font-bold">
             Continue Shopping
             <ArrowRight className="h-4 w-4 ml-2" />
           </Button>

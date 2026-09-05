@@ -73,7 +73,7 @@ export default async function AdminMarketingSettingsPage() {
               defaultValue={settings.abandoned_cart_hours || 2}
               min={1}
               max={48}
-              className="w-48 rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+              className="w-48 rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
             />
           </div>
         </div>

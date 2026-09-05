@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Save,
   Eye,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import { ModuleHeader } from "@/components/admin/module-settings/module-header";
@@ -118,7 +119,7 @@ export function PagesClient({ initialPages }: PagesClientProps) {
             placeholder="Search pages by title or slug..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface-secondary/50 pl-9 pr-4 py-2 text-xs text-text placeholder:text-text-muted focus:border-primary-600 focus:bg-white focus:outline-none"
+            className="w-full rounded-xl border border-border bg-surface-secondary/50 pl-9 pr-4 py-2 text-xs text-text placeholder:text-text-muted focus:outline-none"
           />
         </div>
       </div>
@@ -222,7 +223,7 @@ export function PagesClient({ initialPages }: PagesClientProps) {
                 onClick={() => setEditingPage(null)}
                 className="text-text-muted hover:text-text p-1 rounded-lg"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
@@ -236,7 +237,7 @@ export function PagesClient({ initialPages }: PagesClientProps) {
                     value={editingPage.title || ""}
                     onChange={(e) => setEditingPage({ ...editingPage, title: e.target.value })}
                     placeholder="e.g. About Our Company"
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs focus:outline-none"
                   />
                 </div>
 
@@ -248,7 +249,7 @@ export function PagesClient({ initialPages }: PagesClientProps) {
                     value={editingPage.slug || ""}
                     onChange={(e) => setEditingPage({ ...editingPage, slug: e.target.value })}
                     placeholder="e.g. about-us"
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono focus:outline-none"
                   />
                 </div>
               </div>
@@ -260,7 +261,7 @@ export function PagesClient({ initialPages }: PagesClientProps) {
                   value={editingPage.content || ""}
                   onChange={(e) => setEditingPage({ ...editingPage, content: e.target.value })}
                   placeholder="Enter markdown or plain text page content here..."
-                  className="w-full rounded-xl border border-border bg-white p-3.5 text-xs font-mono leading-relaxed focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white p-3.5 text-xs font-mono leading-relaxed focus:outline-none"
                 />
               </div>
 
@@ -274,7 +275,7 @@ export function PagesClient({ initialPages }: PagesClientProps) {
                       value={editingPage.seo_title || ""}
                       onChange={(e) => setEditingPage({ ...editingPage, seo_title: e.target.value })}
                       placeholder="e.g. About Us — ecomXbangladesh"
-                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs focus:outline-none"
                     />
                   </div>
                   <div>
@@ -284,7 +285,7 @@ export function PagesClient({ initialPages }: PagesClientProps) {
                       value={editingPage.seo_description || ""}
                       onChange={(e) => setEditingPage({ ...editingPage, seo_description: e.target.value })}
                       placeholder="Brief search engine summary..."
-                      className="w-full rounded-xl border border-border bg-white p-3 text-xs focus:border-primary-600 focus:outline-none"
+                      className="w-full rounded-xl border border-border bg-white p-3 text-xs focus:outline-none"
                     />
                   </div>
                 </div>
@@ -296,7 +297,7 @@ export function PagesClient({ initialPages }: PagesClientProps) {
                   <select
                     value={editingPage.status || "published"}
                     onChange={(e) => setEditingPage({ ...editingPage, status: e.target.value as any })}
-                    className="rounded-xl border border-border bg-white px-3 py-1.5 text-xs focus:border-primary-600 focus:outline-none"
+                    className="rounded-xl border border-border bg-white px-3 py-1.5 text-xs focus:outline-none"
                   >
                     <option value="published">Published</option>
                     <option value="draft">Draft</option>

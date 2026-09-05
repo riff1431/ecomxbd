@@ -8,15 +8,16 @@ import {
   ShieldCheck,
   UserCheck,
   Banknote,
-  Lock,
-  Mail,
-  Phone,
-  FileText,
-  UserPlus,
+  Truck,
+  ShieldAlert,
+  Clock,
+  Tag,
+  Radio,
 } from "lucide-react";
 import { ModuleHeader } from "@/components/admin/module-settings/module-header";
 import { Button } from "@/components/shared/ui/button";
 import { saveCheckoutSettings } from "@/features/settings/actions";
+import { saveCheckoutAndFraudSettings } from "@/features/settings/checkout-settings-actions";
 
 interface CheckoutSettingsClientProps {
   initialSettings: Record<string, any>;
@@ -24,6 +25,7 @@ interface CheckoutSettingsClientProps {
 
 export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClientProps) {
   const [formData, setFormData] = useState({
+    // Basic Access
     guest_checkout_enabled: initialSettings.guest_checkout_enabled ?? true,
     allow_customer_registration: initialSettings.allow_customer_registration ?? true,
     cod_enabled: initialSettings.cod_enabled ?? true,
@@ -32,6 +34,24 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
     require_phone: initialSettings.require_phone ?? true,
     require_email: initialSettings.require_email ?? false,
     order_notes_enabled: initialSettings.order_notes_enabled ?? true,
+
+    // Dynamic Delivery Charges (BDT)
+    inside_dhaka_rate: initialSettings.inside_dhaka_rate ? Number(initialSettings.inside_dhaka_rate) : 70,
+    sub_dhaka_rate: initialSettings.sub_dhaka_rate ? Number(initialSettings.sub_dhaka_rate) : 100,
+    outside_dhaka_rate: initialSettings.outside_dhaka_rate ? Number(initialSettings.outside_dhaka_rate) : 130,
+    free_shipping_threshold: initialSettings.free_shipping_threshold ? Number(initialSettings.free_shipping_threshold) : 2500,
+    enable_free_shipping_meter: initialSettings.enable_free_shipping_meter !== false,
+
+    // Anti-Fraud & OTP
+    enable_cod_otp: initialSettings.enable_cod_otp !== false,
+    cod_otp_threshold: initialSettings.cod_otp_threshold ? Number(initialSettings.cod_otp_threshold) : 3000,
+    enable_duplicate_blocker: initialSettings.enable_duplicate_blocker !== false,
+    duplicate_window_minutes: initialSettings.duplicate_window_minutes ? Number(initialSettings.duplicate_window_minutes) : 5,
+
+    // Abandoned Cart
+    enable_abandoned_cart_capture: initialSettings.enable_abandoned_cart_capture !== false,
+    abandoned_cart_recovery_hours: initialSettings.abandoned_cart_recovery_hours ? Number(initialSettings.abandoned_cart_recovery_hours) : 2,
+    abandoned_cart_discount_code: initialSettings.abandoned_cart_discount_code || "SAVE5",
   });
 
   const [saving, setSaving] = useState(false);
@@ -43,7 +63,33 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
     setSuccessMsg(false);
 
     try {
-      await saveCheckoutSettings(formData);
+      await Promise.all([
+        saveCheckoutSettings({
+          guest_checkout_enabled: formData.guest_checkout_enabled,
+          allow_customer_registration: formData.allow_customer_registration,
+          cod_enabled: formData.cod_enabled,
+          cod_max_amount: formData.cod_max_amount,
+          min_order_amount: formData.min_order_amount,
+          require_phone: formData.require_phone,
+          require_email: formData.require_email,
+          order_notes_enabled: formData.order_notes_enabled,
+        }),
+        saveCheckoutAndFraudSettings({
+          inside_dhaka_rate: formData.inside_dhaka_rate,
+          sub_dhaka_rate: formData.sub_dhaka_rate,
+          outside_dhaka_rate: formData.outside_dhaka_rate,
+          free_shipping_threshold: formData.free_shipping_threshold,
+          enable_free_shipping_meter: formData.enable_free_shipping_meter,
+          enable_cod_otp: formData.enable_cod_otp,
+          cod_otp_threshold: formData.cod_otp_threshold,
+          enable_duplicate_blocker: formData.enable_duplicate_blocker,
+          duplicate_window_minutes: formData.duplicate_window_minutes,
+          enable_abandoned_cart_capture: formData.enable_abandoned_cart_capture,
+          abandoned_cart_recovery_hours: formData.abandoned_cart_recovery_hours,
+          abandoned_cart_discount_code: formData.abandoned_cart_discount_code,
+        }),
+      ]);
+
       setSuccessMsg(true);
       setTimeout(() => setSuccessMsg(false), 4000);
     } finally {
@@ -54,36 +100,272 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
   return (
     <div className="space-y-6 max-w-4xl">
       <ModuleHeader
-        title="Customer Login, Registration & Checkout Rules"
-        description="Control customer login requirements, guest purchasing privileges, registration availability, and order placement rules."
+        title="Checkout, Delivery Rates & Anti-Fraud Shield"
+        description="Configure Bangladesh location-based shipping charges, free delivery thresholds, COD SMS OTP verification, and abandoned cart capture."
         icon={ShoppingCart}
         isCore
       />
 
       {successMsg && (
-        <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-xs font-semibold text-emerald-800">
+        <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 p-4 text-xs font-semibold text-emerald-800 animate-in fade-in-0">
           <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-          <span>Customer login & checkout rules updated successfully!</span>
+          <span>Checkout, delivery rates and anti-fraud rules saved successfully!</span>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6 text-xs">
-        {/* 1. Customer Authentication & Access Permissions */}
+        {/* 1. Dynamic Delivery Charges (BDT) */}
         <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
-          <h2 className="text-sm font-bold text-text border-b border-border pb-2 flex items-center gap-2">
-            <UserCheck className="h-4 w-4 text-[#e91e63]" />
-            Customer Account & Login Requirements
-          </h2>
+          <div className="border-b border-border pb-2 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-text flex items-center gap-2">
+              <Truck className="h-4 w-4 text-[#e91e63]" />
+              Bangladesh Dynamic Delivery Charges (BDT)
+            </h2>
+            <span className="text-[11px] font-bold text-[#e91e63] bg-pink-50 px-2.5 py-0.5 rounded-full border border-pink-200">
+              Location Auto-Calculated
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="p-4 rounded-2xl border-2 border-pink-200 bg-pink-50/30 space-y-1.5">
+              <label className="block font-bold text-text text-xs">
+                Inside Dhaka Rate (৳)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={formData.inside_dhaka_rate}
+                onChange={(e) =>
+                  setFormData({ ...formData, inside_dhaka_rate: Number(e.target.value) })
+                }
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs font-bold text-text focus:outline-none focus:border-primary-500"
+              />
+              <span className="text-[10px] text-text-muted block">
+                Applied for Dhaka Metropolitan areas. Controls the price on the &ldquo;Inside Dhaka&rdquo; checkout button.
+              </span>
+            </div>
+
+            <div className="p-4 rounded-2xl border-2 border-pink-200 bg-pink-50/30 space-y-1.5">
+              <label className="block font-bold text-text text-xs">
+                Outside Dhaka / Nationwide Rate (৳)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={formData.outside_dhaka_rate}
+                onChange={(e) =>
+                  setFormData({ ...formData, outside_dhaka_rate: Number(e.target.value) })
+                }
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs font-bold text-text focus:outline-none focus:border-primary-500"
+              />
+              <span className="text-[10px] text-text-muted block">
+                Applied for all 63 districts nationwide. Controls the price on the &ldquo;Outside Dhaka&rdquo; checkout button.
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-border">
+            <div>
+              <label className="block font-bold text-text mb-1">
+                Free Nationwide Delivery Threshold (৳)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={formData.free_shipping_threshold}
+                onChange={(e) =>
+                  setFormData({ ...formData, free_shipping_threshold: Number(e.target.value) })
+                }
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-bold text-emerald-700 focus:outline-none"
+              />
+              <span className="text-[10px] text-text-muted mt-1 block">
+                Cart subtotal needed to grant free delivery (Set to 0 to disable free delivery).
+              </span>
+            </div>
+
+            <div className="flex items-center pt-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.enable_free_shipping_meter}
+                  onChange={(e) =>
+                    setFormData({ ...formData, enable_free_shipping_meter: e.target.checked })
+                  }
+                  className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
+                />
+                <div>
+                  <span className="font-bold text-text block">
+                    Show Free Shipping Progress Bar
+                  </span>
+                  <span className="text-[10px] text-text-muted">
+                    Displays animated progress bar in cart drawer &amp; checkout.
+                  </span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Anti-Fraud & Risk Protection (Bangladesh COD Verification) */}
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
+          <div className="border-b border-border pb-2 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-text flex items-center gap-2">
+              <ShieldAlert className="h-4 w-4 text-[#e91e63]" />
+              Anti-Fraud &amp; COD Verification Shield
+            </h2>
+            <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 uppercase">
+              RTO / Return Reducer
+            </span>
+          </div>
 
           <div className="space-y-3">
-            {/* Guest Checkout Toggle */}
+            {/* COD OTP Toggle */}
             <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
               <div>
                 <span className="font-bold text-text text-xs sm:text-sm block">
-                  Allow Guest Checkout (No Login Required)
+                  Enable SMS OTP Verification for High-Risk COD Orders
                 </span>
                 <span className="text-text-muted text-[11px]">
-                  When ON, customers can place Cash on Delivery orders without signing in. When OFF, customers MUST log in or register before ordering.
+                  Requires a 4-digit SMS OTP code before confirming Cash on Delivery orders to eliminate fake numbers and duplicate spam orders.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={formData.enable_cod_otp}
+                onChange={(e) =>
+                  setFormData({ ...formData, enable_cod_otp: e.target.checked })
+                }
+                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
+              />
+            </label>
+
+            {formData.enable_cod_otp && (
+              <div className="p-4 rounded-2xl bg-surface-secondary/50 border border-border space-y-2">
+                <label className="block font-bold text-text">
+                  Trigger OTP for COD Orders Above Amount (৳)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={formData.cod_otp_threshold}
+                  onChange={(e) =>
+                    setFormData({ ...formData, cod_otp_threshold: Number(e.target.value) })
+                  }
+                  className="w-full sm:w-64 rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-bold text-text focus:outline-none"
+                />
+                <span className="text-[10px] text-text-muted block">
+                  Orders exceeding this BDT amount will be prompted for instant SMS OTP verification.
+                </span>
+              </div>
+            )}
+
+            {/* Duplicate Order Blocker */}
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
+              <div>
+                <span className="font-bold text-text text-xs sm:text-sm block">
+                  Duplicate Order Blocker
+                </span>
+                <span className="text-text-muted text-[11px]">
+                  Prevents customers from accidentally submitting multiple identical orders from the same phone number within {formData.duplicate_window_minutes} minutes.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={formData.enable_duplicate_blocker}
+                onChange={(e) =>
+                  setFormData({ ...formData, enable_duplicate_blocker: e.target.checked })
+                }
+                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
+              />
+            </label>
+          </div>
+        </div>
+
+        {/* 3. Abandoned Cart Live Capture */}
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
+          <div className="border-b border-border pb-2 flex items-center justify-between">
+            <h2 className="text-sm font-bold text-text flex items-center gap-2">
+              <Clock className="h-4 w-4 text-[#e91e63]" />
+              Real-Time Abandoned Cart Capture &amp; Recovery
+            </h2>
+            <span className="text-[10px] font-bold text-purple-800 bg-purple-50 px-2 py-0.5 rounded-full border border-purple-200 uppercase">
+              Sales Recovery
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
+              <div>
+                <span className="font-bold text-text text-xs sm:text-sm block">
+                  Live Capture Abandoned Checkouts
+                </span>
+                <span className="text-text-muted text-[11px]">
+                  Automatically saves customer phone number and cart contents in real-time as soon as typed into checkout fields before final submission.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={formData.enable_abandoned_cart_capture}
+                onChange={(e) =>
+                  setFormData({ ...formData, enable_abandoned_cart_capture: e.target.checked })
+                }
+                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
+              />
+            </label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="block font-bold text-text mb-1">
+                  Recovery SMS Delay (Hours)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={48}
+                  value={formData.abandoned_cart_recovery_hours}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      abandoned_cart_recovery_hours: Number(e.target.value),
+                    })
+                  }
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-text mb-1">
+                  Incentive Voucher Code (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. SAVE5"
+                  value={formData.abandoned_cart_discount_code}
+                  onChange={(e) =>
+                    setFormData({ ...formData, abandoned_cart_discount_code: e.target.value })
+                  }
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Customer Access & Login Requirements */}
+        <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
+          <h2 className="text-sm font-bold text-text border-b border-border pb-2 flex items-center gap-2">
+            <UserCheck className="h-4 w-4 text-[#e91e63]" />
+            Customer Account &amp; Order Permissions
+          </h2>
+
+          <div className="space-y-3">
+            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
+              <div>
+                <span className="font-bold text-text text-xs sm:text-sm block">
+                  Allow Guest Checkout
+                </span>
+                <span className="text-text-muted text-[11px]">
+                  When enabled, customers can buy in 1-click without creating a password.
                 </span>
               </div>
               <input
@@ -96,64 +378,13 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
               />
             </label>
 
-            {/* Public Registration Toggle */}
             <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
               <div>
                 <span className="font-bold text-text text-xs sm:text-sm block">
-                  Allow New Customer Registrations
+                  Require Email Address (Optional for fast mobile buy)
                 </span>
                 <span className="text-text-muted text-[11px]">
-                  Permit new visitors to create accounts via the Sign Up form.
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={formData.allow_customer_registration}
-                onChange={(e) =>
-                  setFormData({ ...formData, allow_customer_registration: e.target.checked })
-                }
-                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
-              />
-            </label>
-          </div>
-        </div>
-
-        {/* 2. Customer Form Fields on Order Placement */}
-        <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
-          <h2 className="text-sm font-bold text-text border-b border-border pb-2 flex items-center gap-2">
-            <FileText className="h-4 w-4 text-[#e91e63]" />
-            Checkout Form Fields & Customer Information Rules
-          </h2>
-
-          <div className="space-y-3">
-            {/* Mandatory Phone */}
-            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
-              <div>
-                <span className="font-bold text-text text-xs sm:text-sm block">
-                  Require Valid Bangladesh Mobile Number (Mandatory)
-                </span>
-                <span className="text-text-muted text-[11px]">
-                  Enforces valid 11-digit mobile format (01XXXXXXXXX) during checkout for courier dispatch.
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={formData.require_phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, require_phone: e.target.checked })
-                }
-                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
-              />
-            </label>
-
-            {/* Mandatory Email */}
-            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
-              <div>
-                <span className="font-bold text-text text-xs sm:text-sm block">
-                  Require Customer Email Address
-                </span>
-                <span className="text-text-muted text-[11px]">
-                  When OFF, email is optional for fast 1-click mobile checkouts. When ON, valid email is required.
+                  When unchecked, only phone number is required for fast Bangladesh mobile orders.
                 </span>
               </div>
               <input
@@ -165,72 +396,6 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
                 className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
               />
             </label>
-
-            {/* Order Notes */}
-            <label className="flex items-center justify-between p-3.5 rounded-2xl border border-border hover:bg-surface-secondary/40 cursor-pointer transition-colors">
-              <div>
-                <span className="font-bold text-text text-xs sm:text-sm block">
-                  Allow Customer Order Delivery Instructions
-                </span>
-                <span className="text-text-muted text-[11px]">
-                  Displays special notes field on checkout (e.g. &quot;Call before arriving&quot;).
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={formData.order_notes_enabled}
-                onChange={(e) =>
-                  setFormData({ ...formData, order_notes_enabled: e.target.checked })
-                }
-                className="h-5 w-5 rounded border-border text-[#e91e63] focus:ring-[#e91e63] accent-[#e91e63]"
-              />
-            </label>
-          </div>
-        </div>
-
-        {/* 3. Monetary Limits & Thresholds */}
-        <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-4">
-          <h2 className="text-sm font-bold text-text border-b border-border pb-2 flex items-center gap-2">
-            <Banknote className="h-4 w-4 text-[#e91e63]" />
-            Order Spending Limits & Thresholds (BDT)
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-bold text-text mb-1">
-                Minimum Cart Subtotal to Place Order (৳)
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={formData.min_order_amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, min_order_amount: Number(e.target.value) })
-                }
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs text-text focus:border-[#e91e63] focus:outline-none"
-              />
-              <span className="text-[10px] text-text-muted mt-1 block">
-                Customers must have at least this amount in their bag to place an order (Set to 0 for no minimum).
-              </span>
-            </div>
-
-            <div>
-              <label className="block font-bold text-text mb-1">
-                Maximum Cash on Delivery Limit per Order (৳)
-              </label>
-              <input
-                type="number"
-                min={100}
-                value={formData.cod_max_amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, cod_max_amount: Number(e.target.value) })
-                }
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-xs text-text focus:border-[#e91e63] focus:outline-none"
-              />
-              <span className="text-[10px] text-text-muted mt-1 block">
-                Orders above this amount require advance online payment.
-              </span>
-            </div>
           </div>
         </div>
 
@@ -241,7 +406,7 @@ export function CheckoutSettingsClient({ initialSettings }: CheckoutSettingsClie
             className="rounded-2xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold px-8 py-3 text-xs shadow-lg transition-all active:scale-95"
           >
             <Save className="h-4 w-4 mr-1.5" />
-            {saving ? "Saving Changes..." : "Save Customer & Checkout Rules"}
+            {saving ? "Saving Changes..." : "Save All Checkout & Anti-Fraud Rules"}
           </Button>
         </div>
       </form>

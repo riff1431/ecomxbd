@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -15,10 +15,14 @@ import {
   Filter,
   DollarSign,
   Search,
+  Globe,
+  Droplets,
+  Zap,
 } from "lucide-react";
 import { ProductCard, type ProductCardData } from "@/components/storefront/product-card";
 import { Button } from "@/components/shared/ui/button";
 import { cn } from "@/lib/utils";
+import { trackViewItemList } from "@/lib/analytics/datalayer";
 
 interface ProductsListingClientProps {
   products: ProductCardData[];
@@ -30,6 +34,12 @@ interface ProductsListingClientProps {
   currentSearch?: string;
   currentMinPrice?: string;
   currentMaxPrice?: string;
+  currentSkinType?: string;
+  currentSkinConcern?: string;
+  currentKeyActive?: string;
+  currentOrigin?: string;
+  currentInStock?: boolean;
+  enableBeautyFilters?: boolean;
 }
 
 const PRICE_PRESETS = [
@@ -38,6 +48,46 @@ const PRICE_PRESETS = [
   { label: "৳500 - ৳1,000", min: "500", max: "1000" },
   { label: "৳1,000 - ৳2,000", min: "1000", max: "2000" },
   { label: "Above ৳2,000", min: "2000", max: null },
+];
+
+const SKIN_CONCERNS = [
+  "Acne & Blemishes",
+  "Brightening & Pigmentation",
+  "Anti-Aging & Wrinkles",
+  "Dryness & Hydration",
+  "Pore Minimizing",
+  "Redness & Rosacea",
+  "Sun Protection",
+  "Oil Control",
+  "Barrier Repair",
+];
+
+const SKIN_TYPES = ["Oily", "Dry", "Combination", "Sensitive", "Normal", "All Skin Types"];
+
+const KEY_ACTIVES = [
+  "Niacinamide",
+  "Hyaluronic Acid",
+  "Salicylic Acid (BHA)",
+  "Glycolic Acid (AHA)",
+  "Vitamin C",
+  "Retinol",
+  "Centella Asiatica (Cica)",
+  "Snail Secretion Filtrate",
+  "Ceramides",
+  "Tea Tree",
+  "Alpha Arbutin",
+];
+
+const ORIGINS = [
+  { label: "South Korea (K-Beauty)", value: "South Korea" },
+  { label: "Japan (J-Beauty)", value: "Japan" },
+  { label: "United Kingdom (UK)", value: "United Kingdom" },
+  { label: "United States (USA)", value: "United States" },
+  { label: "France", value: "France" },
+  { label: "Germany", value: "Germany" },
+  { label: "Thailand", value: "Thailand" },
+  { label: "Bangladesh", value: "Bangladesh" },
+  { label: "India", value: "India" },
 ];
 
 export function ProductsListingClient({
@@ -50,10 +100,43 @@ export function ProductsListingClient({
   currentSearch,
   currentMinPrice,
   currentMaxPrice,
+  currentSkinType,
+  currentSkinConcern,
+  currentKeyActive,
+  currentOrigin,
+  currentInStock,
+  enableBeautyFilters = true,
 }: ProductsListingClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  // Track view_item_list event on product catalog load
+  useEffect(() => {
+    if (products && products.length > 0) {
+      const listName = currentCategory
+        ? `Category: ${categories.find((c) => c.slug === currentCategory)?.name || currentCategory}`
+        : currentBrand
+        ? `Brand: ${brands.find((b) => b.slug === currentBrand)?.name || currentBrand}`
+        : currentSkinConcern
+        ? `Concern: ${currentSkinConcern}`
+        : currentSearch
+        ? `Search: "${currentSearch}"`
+        : "Product Catalog";
+
+      trackViewItemList(
+        products.map((p, idx) => ({
+          item_id: p.id,
+          item_name: p.name,
+          item_brand: p.brand_name || undefined,
+          item_category: p.category_name || undefined,
+          price: p.sale_price ?? p.regular_price,
+          index: idx + 1,
+        })),
+        listName
+      );
+    }
+  }, [products, currentCategory, currentBrand, currentSkinConcern, currentSearch]);
 
   // Custom price input local state
   const [customMin, setCustomMin] = useState(currentMinPrice || "");
@@ -67,6 +150,11 @@ export function ProductsListingClient({
     currentCategory,
     currentBrand,
     currentSearch,
+    currentSkinType,
+    currentSkinConcern,
+    currentKeyActive,
+    currentOrigin,
+    currentInStock ? "instock" : null,
     currentMinPrice || currentMaxPrice ? "price" : null,
   ].filter(Boolean).length;
 
@@ -119,8 +207,188 @@ export function ProductsListingClient({
   // Filter content component reused in both desktop sidebar & mobile drawer
   const FilterContent = () => (
     <div className="space-y-6">
-      {/* 1. FILTER BY PRICE (Top Section) */}
-      <div className="space-y-3">
+      {/* 1. FILTER BY SKIN CONCERN (Beauty Exclusive) */}
+      {enableBeautyFilters && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-purple-600" /> Skin Concern
+            </span>
+            {currentSkinConcern && (
+              <button
+                type="button"
+                onClick={() => updateParam("skin_concern", null)}
+                className="text-[10px] font-bold text-red-600 hover:underline"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {SKIN_CONCERNS.map((concern) => {
+              const isSelected = currentSkinConcern === concern;
+              return (
+                <button
+                  key={concern}
+                  type="button"
+                  onClick={() => {
+                    updateParam("skin_concern", isSelected ? null : concern);
+                    setMobileFilterOpen(false);
+                  }}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-[11px] font-bold transition-all border text-left",
+                    isSelected
+                      ? "bg-purple-600 text-white border-purple-600 shadow-2xs"
+                      : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
+                  )}
+                >
+                  {isSelected && <Check className="inline-block h-3 w-3 mr-1 -mt-0.5" />}
+                  {concern}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 2. FILTER BY SKIN TYPE (Beauty Exclusive) */}
+      {enableBeautyFilters && (
+        <div className="space-y-3 pt-5 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+              <Droplets className="h-3.5 w-3.5 text-pink-600" /> Skin Type
+            </span>
+            {currentSkinType && (
+              <button
+                type="button"
+                onClick={() => updateParam("skin_type", null)}
+                className="text-[10px] font-bold text-red-600 hover:underline"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {SKIN_TYPES.map((type) => {
+              const isSelected = currentSkinType === type;
+              return (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => {
+                    updateParam("skin_type", isSelected ? null : type);
+                    setMobileFilterOpen(false);
+                  }}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-[11px] font-bold transition-all border",
+                    isSelected
+                      ? "bg-pink-600 text-white border-pink-600 shadow-2xs"
+                      : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
+                  )}
+                >
+                  {isSelected && <Check className="inline-block h-3 w-3 mr-1 -mt-0.5" />}
+                  {type}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 3. KEY ACTIVE INGREDIENTS */}
+      {enableBeautyFilters && (
+        <div className="space-y-3 pt-5 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+              <Zap className="h-3.5 w-3.5 text-emerald-600" /> Key Actives
+            </span>
+            {currentKeyActive && (
+              <button
+                type="button"
+                onClick={() => updateParam("key_actives", null)}
+                className="text-[10px] font-bold text-red-600 hover:underline"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+            {KEY_ACTIVES.map((active) => {
+              const isSelected = currentKeyActive === active;
+              return (
+                <button
+                  key={active}
+                  type="button"
+                  onClick={() => {
+                    updateParam("key_actives", isSelected ? null : active);
+                    setMobileFilterOpen(false);
+                  }}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 text-[11px] font-bold transition-all border",
+                    isSelected
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-2xs"
+                      : "bg-gray-50 text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
+                  )}
+                >
+                  {isSelected && <Check className="inline-block h-3 w-3 mr-1 -mt-0.5" />}
+                  {active}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 4. COUNTRY OF ORIGIN */}
+      {enableBeautyFilters && (
+        <div className="space-y-3 pt-5 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5 text-blue-600" /> Provenance / Origin
+            </span>
+            {currentOrigin && (
+              <button
+                type="button"
+                onClick={() => updateParam("origin", null)}
+                className="text-[10px] font-bold text-red-600 hover:underline"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            {ORIGINS.map((orig) => {
+              const isSelected = currentOrigin === orig.value;
+              return (
+                <button
+                  key={orig.value}
+                  type="button"
+                  onClick={() => {
+                    updateParam("origin", isSelected ? null : orig.value);
+                    setMobileFilterOpen(false);
+                  }}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-left",
+                    isSelected
+                      ? "bg-blue-50 text-blue-700 font-bold border border-blue-200 shadow-2xs"
+                      : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                  )}
+                >
+                  <span>{orig.label}</span>
+                  {isSelected && <Check className="h-3.5 w-3.5 text-blue-600" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 5. FILTER BY PRICE */}
+      <div className="space-y-3 pt-5 border-t border-gray-100">
         <div className="flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
             <span className="text-[#e91e63]">৳</span> Filter by Price
@@ -175,7 +443,7 @@ export function ProductsListingClient({
                 placeholder="Min"
                 value={customMin}
                 onChange={(e) => setCustomMin(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-6 pr-2 py-1.5 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                className="w-full rounded-xl border pl-6 pr-2 py-1.5 text-xs font-bold focus:outline-none"
               />
             </div>
             <span className="text-gray-400 font-bold text-xs">-</span>
@@ -186,7 +454,7 @@ export function ProductsListingClient({
                 placeholder="Max"
                 value={customMax}
                 onChange={(e) => setCustomMax(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-6 pr-2 py-1.5 text-xs font-bold focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                className="w-full rounded-xl border pl-6 pr-2 py-1.5 text-xs font-bold focus:outline-none"
               />
             </div>
           </div>
@@ -199,7 +467,7 @@ export function ProductsListingClient({
         </form>
       </div>
 
-      {/* 2. FILTER BY BRAND (Middle Section) */}
+      {/* 6. FILTER BY BRAND */}
       <div className="space-y-3 pt-5 border-t border-gray-100">
         <div className="flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-wider text-gray-900">
@@ -224,11 +492,11 @@ export function ProductsListingClient({
             placeholder="Search brands..."
             value={brandSearchTerm}
             onChange={(e) => setBrandSearchTerm(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-gray-50 pl-7 pr-2 py-1 text-[11px] focus:border-[#e91e63] focus:bg-white focus:outline-none"
+            className="w-full rounded-lg border pl-7 pr-2 py-1 text-[11px] focus:outline-none"
           />
         </div>
 
-        <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
           <button
             type="button"
             onClick={() => {
@@ -236,7 +504,7 @@ export function ProductsListingClient({
               setMobileFilterOpen(false);
             }}
             className={cn(
-              "flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-colors text-left",
+              "flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-left",
               !currentBrand
                 ? "bg-pink-50 text-[#e91e63] font-bold border border-pink-200 shadow-2xs"
                 : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -257,7 +525,7 @@ export function ProductsListingClient({
                   setMobileFilterOpen(false);
                 }}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-colors text-left",
+                  "flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-left",
                   isSelected
                     ? "bg-pink-50 text-[#e91e63] font-bold border border-pink-200 shadow-2xs"
                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -271,7 +539,7 @@ export function ProductsListingClient({
         </div>
       </div>
 
-      {/* 3. PRODUCT CATEGORIES (Bottom Section) */}
+      {/* 7. PRODUCT CATEGORIES */}
       <div className="space-y-3 pt-5 border-t border-gray-100">
         <div className="flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-wider text-gray-900">
@@ -288,7 +556,6 @@ export function ProductsListingClient({
           )}
         </div>
 
-        {/* Category Search Filter if > 6 categories */}
         {categories.length > 6 && (
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
@@ -297,12 +564,12 @@ export function ProductsListingClient({
               placeholder="Search categories..."
               value={catSearchTerm}
               onChange={(e) => setCatSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 pl-7 pr-2 py-1 text-[11px] focus:border-[#e91e63] focus:bg-white focus:outline-none"
+              className="w-full rounded-lg border pl-7 pr-2 py-1 text-[11px] focus:outline-none"
             />
           </div>
         )}
 
-        <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
+        <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
           <button
             type="button"
             onClick={() => {
@@ -310,7 +577,7 @@ export function ProductsListingClient({
               setMobileFilterOpen(false);
             }}
             className={cn(
-              "flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-colors text-left",
+              "flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-left",
               !currentCategory
                 ? "bg-pink-50 text-[#e91e63] font-bold border border-pink-200 shadow-2xs"
                 : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -331,7 +598,7 @@ export function ProductsListingClient({
                   setMobileFilterOpen(false);
                 }}
                 className={cn(
-                  "flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition-colors text-left",
+                  "flex w-full items-center justify-between rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors text-left",
                   isSelected
                     ? "bg-pink-50 text-[#e91e63] font-bold border border-pink-200 shadow-2xs"
                     : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
@@ -352,227 +619,224 @@ export function ProductsListingClient({
       {/* 1. Mobile Filter & Sort Toolbar */}
       <div className="flex items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-gray-200 lg:hidden shadow-xs">
         <Button
+          type="button"
           variant="outline"
           size="sm"
           onClick={() => setMobileFilterOpen(true)}
-          className="flex-1 h-9 rounded-xl text-xs font-bold gap-1.5 border-gray-200 text-gray-800"
+          className="flex-1 rounded-xl text-xs font-extrabold border-gray-200 hover:bg-pink-50 hover:text-[#e91e63] hover:border-pink-200"
         >
-          <SlidersHorizontal className="h-3.5 w-3.5 text-[#e91e63]" />
-          <span>Filters</span>
-          {activeFiltersCount > 0 && (
-            <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[10px] font-black text-white">
-              {activeFiltersCount}
-            </span>
-          )}
+          <Filter className="h-3.5 w-3.5 mr-1.5 text-[#e91e63]" />
+          Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
         </Button>
 
-        <div className="flex-1">
+        <div className="relative flex-1">
           <select
             value={currentSort || "default"}
             onChange={(e) => handleSortChange(e.target.value)}
-            className="w-full h-9 rounded-xl border border-gray-200 bg-gray-50 px-3 text-xs font-bold text-gray-800 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+            className="w-full appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs font-bold text-gray-800 shadow-2xs focus:outline-none"
           >
             <option value="default">Sort: Newest</option>
             <option value="price_asc">Price: Low to High</option>
             <option value="price_desc">Price: High to Low</option>
           </select>
+          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
         </div>
       </div>
 
-      {/* 2. Active Filter Chips */}
-      {activeFiltersCount > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-          <span className="text-gray-500 font-semibold">Active Filters:</span>
-
-          {currentMinPrice && (
-            <button
-              onClick={() => updatePriceRange(null, currentMaxPrice || null)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 font-bold text-[#e91e63] hover:bg-pink-100 transition-colors"
-            >
-              <span>Min Price: ৳{currentMinPrice}</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
-
-          {currentMaxPrice && (
-            <button
-              onClick={() => updatePriceRange(currentMinPrice || null, null)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 font-bold text-[#e91e63] hover:bg-pink-100 transition-colors"
-            >
-              <span>Max Price: ৳{currentMaxPrice}</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
-
-          {currentCategory && (
-            <button
-              onClick={() => updateParam("category", null)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 font-bold text-[#e91e63] hover:bg-pink-100 transition-colors"
-            >
-              <span>Category: {categories.find((c) => c.slug === currentCategory)?.name || currentCategory}</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
-
-          {currentBrand && (
-            <button
-              onClick={() => updateParam("brand", null)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 font-bold text-[#e91e63] hover:bg-pink-100 transition-colors"
-            >
-              <span>Brand: {brands.find((b) => b.slug === currentBrand)?.name || currentBrand}</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
-
-          {currentSearch && (
-            <button
-              onClick={() => updateParam("search", null)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 font-bold text-[#e91e63] hover:bg-pink-100 transition-colors"
-            >
-              <span>Search: "{currentSearch}"</span>
-              <X className="h-3 w-3" />
-            </button>
-          )}
-
-          <button
-            onClick={clearAllFilters}
-            className="text-[11px] font-bold text-red-600 hover:underline ml-1"
-          >
-            Clear All
-          </button>
-        </div>
-      )}
-
-      {/* 3. Main Grid Layout: Sidebar + Products Grid */}
+      {/* 2. Main Layout Grid */}
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-4 items-start">
-        {/* Desktop Sidebar (Left 1 Col) - Structured exactly: Filter by Price -> Product Categories -> Filter by Brand */}
-        <aside className="hidden lg:block space-y-6 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs sticky top-24">
-          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-            <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4 text-[#e91e63]" />
-              Filter Catalogue
+        {/* Desktop Sidebar (Sticky, Left 1 Col) */}
+        <aside className="hidden lg:block lg:col-span-1 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs sticky top-24 max-h-[85vh] overflow-y-auto no-scrollbar">
+          <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+            <h3 className="font-black text-sm uppercase tracking-wider text-gray-900 flex items-center gap-2">
+              <SlidersHorizontal className="h-4 w-4 text-[#e91e63]" /> Filter Catalog
             </h3>
             {activeFiltersCount > 0 && (
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="text-xs font-bold text-red-600 hover:underline"
+                className="text-[11px] font-bold text-[#e91e63] hover:underline"
               >
-                Reset All
+                Clear all ({activeFiltersCount})
               </button>
             )}
           </div>
 
-          {/* Render Reusable Filter Content */}
-          <FilterContent />
+          <div className="pt-4">
+            <FilterContent />
+          </div>
         </aside>
 
-        {/* Products Grid Column (Right 3 Cols) */}
-        <div className="lg:col-span-3 space-y-5">
-          {/* Top Desktop Sort & Results Counter */}
-          <div className="hidden lg:flex items-center justify-between border-b border-gray-100 pb-3">
-            <p className="text-xs font-bold text-gray-500">
-              Showing <strong className="text-gray-900">{products.length}</strong> authentic products
-            </p>
+        {/* Product Grid Area (Right 3 Cols) */}
+        <main className="lg:col-span-3 space-y-4">
+          {/* Desktop Sort Header & Active Filter Chips */}
+          <div className="hidden lg:flex items-center justify-between pb-2">
+            <div className="text-xs font-bold text-gray-500">
+              Showing <span className="font-extrabold text-gray-900">{products.length}</span> authentic products
+            </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 font-medium">Sort by:</span>
-              <select
-                value={currentSort || "default"}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="h-8 rounded-xl border border-gray-200 bg-white px-3 text-xs font-bold text-gray-800 focus:border-[#e91e63] focus:outline-none"
-              >
-                <option value="default">Newest Additions</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
-              </select>
+              <span className="text-xs font-bold text-gray-500">Sort by:</span>
+              <div className="relative">
+                <select
+                  value={currentSort || "default"}
+                  onChange={(e) => handleSortChange(e.target.value)}
+                  className="appearance-none rounded-xl border border-gray-200 bg-white py-1.5 pl-3 pr-8 text-xs font-extrabold text-gray-800 shadow-2xs focus:outline-none cursor-pointer"
+                >
+                  <option value="default">Featured / Newest</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              </div>
             </div>
           </div>
 
-          {/* Product Cards Grid with Staggered Fade-In */}
+          {/* Active Filter Chips Bar */}
+          {activeFiltersCount > 0 && (
+            <div className="flex flex-wrap items-center gap-2 bg-pink-50/50 border border-pink-100 p-2.5 rounded-2xl">
+              <span className="text-[11px] font-bold text-pink-950">Active Filters:</span>
+              {currentCategory && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-2.5 py-0.5 text-xs font-bold text-pink-700 shadow-2xs">
+                  Category: {categories.find((c) => c.slug === currentCategory)?.name || currentCategory}
+                  <button onClick={() => updateParam("category", null)} className="hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {currentBrand && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-2.5 py-0.5 text-xs font-bold text-pink-700 shadow-2xs">
+                  Brand: {brands.find((b) => b.slug === currentBrand)?.name || currentBrand}
+                  <button onClick={() => updateParam("brand", null)} className="hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {currentSkinConcern && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-purple-200 px-2.5 py-0.5 text-xs font-bold text-purple-700 shadow-2xs">
+                  Concern: {currentSkinConcern}
+                  <button onClick={() => updateParam("skin_concern", null)} className="hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {currentSkinType && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-2.5 py-0.5 text-xs font-bold text-pink-700 shadow-2xs">
+                  Skin: {currentSkinType}
+                  <button onClick={() => updateParam("skin_type", null)} className="hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {currentKeyActive && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700 shadow-2xs">
+                  Active: {currentKeyActive}
+                  <button onClick={() => updateParam("key_actives", null)} className="hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {currentOrigin && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-blue-200 px-2.5 py-0.5 text-xs font-bold text-blue-700 shadow-2xs">
+                  Origin: {currentOrigin}
+                  <button onClick={() => updateParam("origin", null)} className="hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {(currentMinPrice || currentMaxPrice) && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-2.5 py-0.5 text-xs font-bold text-pink-700 shadow-2xs">
+                  Price: ৳{currentMinPrice || "0"} – ৳{currentMaxPrice || "Any"}
+                  <button onClick={() => updatePriceRange(null, null)} className="hover:text-red-500">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+
+              <button
+                onClick={clearAllFilters}
+                className="text-[11px] font-extrabold text-red-600 hover:underline ml-auto"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
+
+          {/* Product Cards Grid */}
           {products.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-gray-200 bg-white p-16 text-center space-y-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 mx-auto text-gray-400">
-                <ShoppingBag className="h-7 w-7 stroke-[1.2]" />
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-white p-12 text-center space-y-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-pink-50 text-[#e91e63]">
+                <ShoppingBag className="h-8 w-8 stroke-1" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-base font-bold text-gray-900">No Products Match Your Filter</h3>
-                <p className="text-xs text-gray-500 max-w-sm mx-auto">
-                  Try adjusting the price range, category, or brand filter to see more results.
+                <h3 className="text-base font-black text-gray-900">No matching products found</h3>
+                <p className="text-xs text-gray-500 max-w-sm">
+                  We couldn&apos;t find any items matching your selected filters. Try clearing some filters or searching for another term.
                 </p>
               </div>
               <Button
-                variant="outline"
-                size="sm"
                 onClick={clearAllFilters}
-                className="rounded-xl text-xs font-bold text-[#e91e63] border-pink-200 hover:bg-pink-50"
+                className="rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-xs"
               >
                 Reset All Filters
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
-              {products.map((p, idx) => (
-                <div
-                  key={p.id}
-                  className="animate-stagger-item"
-                  style={{ animationDelay: `${idx * 0.05}s` }}
-                >
-                  <ProductCard product={p} />
-                </div>
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-3">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}
-        </div>
+        </main>
       </div>
 
-      {/* 4. Mobile Slide-Over Filter Drawer */}
+      {/* 3. Mobile Filter Drawer Modal */}
       {mobileFilterOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           {/* Backdrop */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity animate-in fade-in-0"
             onClick={() => setMobileFilterOpen(false)}
           />
 
-          {/* Drawer Body */}
-          <div className="relative ml-auto flex h-full w-full max-w-xs flex-col bg-white shadow-2xl animate-in slide-in-from-right duration-300">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-gray-100 p-4">
+          {/* Drawer Content */}
+          <div className="relative ml-auto flex h-full w-full max-w-xs flex-col bg-white p-6 shadow-2xl animate-in slide-in-from-right duration-200">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="h-4 w-4 text-[#e91e63]" />
-                <h3 className="text-sm font-black text-gray-900">Filter Products</h3>
+                <h3 className="font-black text-sm uppercase tracking-wider text-gray-900">
+                  Filter Products
+                </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setMobileFilterOpen(false)}
-                className="p-1 rounded-lg text-gray-400 hover:text-gray-700"
+                className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-900"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            {/* Scrollable Filters */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto py-4 no-scrollbar">
               <FilterContent />
             </div>
 
-            {/* Footer Actions */}
-            <div className="border-t border-gray-100 p-4 space-y-2 bg-gray-50">
+            <div className="border-t border-gray-100 pt-4 space-y-2">
               <Button
                 onClick={() => setMobileFilterOpen(false)}
-                className="w-full rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-black text-xs py-2.5 shadow-md"
+                className="w-full rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-xs"
               >
-                Show Results ({products.length})
+                View {products.length} Results
               </Button>
               {activeFiltersCount > 0 && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={clearAllFilters}
-                  className="w-full text-center text-xs font-bold text-gray-500 hover:text-red-600"
+                  className="w-full text-xs font-bold text-gray-500 hover:text-red-600"
                 >
-                  Reset All Filters
-                </button>
+                  Clear All Filters
+                </Button>
               )}
             </div>
           </div>

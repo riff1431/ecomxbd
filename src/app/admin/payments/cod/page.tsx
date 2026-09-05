@@ -57,7 +57,7 @@ export default async function AdminCodPage() {
                 name="min_amount"
                 defaultValue={settings.min_amount || 0}
                 min={0}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 
@@ -70,7 +70,7 @@ export default async function AdminCodPage() {
                 name="max_amount"
                 defaultValue={settings.max_amount || 20000}
                 min={100}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 
@@ -83,7 +83,7 @@ export default async function AdminCodPage() {
                 name="cod_charge"
                 defaultValue={settings.cod_charge || 0}
                 min={0}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
           </div>
@@ -106,7 +106,7 @@ export default async function AdminCodPage() {
                 defaultValue={settings.block_fraud_score || 70}
                 min={10}
                 max={100}
-                className="w-48 rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-48 rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
               <span className="text-[10px] text-text-muted mt-0.5 block">
                 Customers with courier return abuse or fake order flags above this threshold must prepay online.

@@ -5,9 +5,12 @@ import Link from "next/link";
 import { ShieldCheck, Truck, RotateCcw, Clock, Mail, Phone, MapPin, Banknote } from "lucide-react";
 import { type HomepageFullConfig, DEFAULT_HOMEPAGE_CONFIG } from "@/features/marketing/homepage-types";
 import { getHomepageConfig } from "@/features/marketing/homepage-actions";
+import { trackSubscribe, trackContact } from "@/lib/analytics/datalayer";
 
 export function StorefrontFooter({ config: initialConfig }: { config?: HomepageFullConfig }) {
   const [config, setConfig] = useState<HomepageFullConfig>(initialConfig || DEFAULT_HOMEPAGE_CONFIG);
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
     if (!initialConfig) {
@@ -26,6 +29,7 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
     config.footerCopyright ||
     `© ${new Date().getFullYear()} ${brandName}. All rights reserved. 100% Genuine Certified Cosmetics.`;
   const supportPhone = config.supportPhone || "+880 1700-000000";
+  const supportEmail = config.supportEmail || "support@example.com";
 
   return (
     <footer className="border-t border-gray-800 bg-[#0d131f] text-zinc-300 pb-20 lg:pb-0">
@@ -34,7 +38,7 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
         <div className="container-main grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
           <div className="flex items-center gap-3.5 sm:gap-4 p-2 sm:p-3 rounded-2xl bg-zinc-900/40 border border-zinc-800/50">
             <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-pink-500/15 text-[#e91e63] border border-pink-500/30 shadow-xs">
-              <ShieldCheck className="h-6 w-6 sm:h-7 sm:w-7 stroke-[2]" />
+              <ShieldCheck className="h-6 w-6 sm:h-7 sm:w-7 stroke-2" />
             </div>
             <div>
               <p className="text-sm sm:text-base font-black text-white">100% Authentic</p>
@@ -44,7 +48,7 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
 
           <div className="flex items-center gap-3.5 sm:gap-4 p-2 sm:p-3 rounded-2xl bg-zinc-900/40 border border-zinc-800/50">
             <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-pink-500/15 text-[#e91e63] border border-pink-500/30 shadow-xs">
-              <Truck className="h-6 w-6 sm:h-7 sm:w-7 stroke-[2]" />
+              <Truck className="h-6 w-6 sm:h-7 sm:w-7 stroke-2" />
             </div>
             <div>
               <p className="text-sm sm:text-base font-black text-white">Fast Delivery</p>
@@ -54,7 +58,7 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
 
           <div className="flex items-center gap-3.5 sm:gap-4 p-2 sm:p-3 rounded-2xl bg-zinc-900/40 border border-zinc-800/50">
             <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-pink-500/15 text-[#e91e63] border border-pink-500/30 shadow-xs">
-              <RotateCcw className="h-6 w-6 sm:h-7 sm:w-7 stroke-[2]" />
+              <RotateCcw className="h-6 w-6 sm:h-7 sm:w-7 stroke-2" />
             </div>
             <div>
               <p className="text-sm sm:text-base font-black text-white">7 Days Return</p>
@@ -64,7 +68,7 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
 
           <div className="flex items-center gap-3.5 sm:gap-4 p-2 sm:p-3 rounded-2xl bg-zinc-900/40 border border-zinc-800/50">
             <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl bg-pink-500/15 text-[#e91e63] border border-pink-500/30 shadow-xs">
-              <Clock className="h-6 w-6 sm:h-7 sm:w-7 stroke-[2]" />
+              <Clock className="h-6 w-6 sm:h-7 sm:w-7 stroke-2" />
             </div>
             <div>
               <p className="text-sm sm:text-base font-black text-white">Cash on Delivery</p>
@@ -84,7 +88,7 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
                 <img
                   src={footerLogo}
                   alt={brandName}
-                  className="h-10 sm:h-12 max-h-12 w-auto max-w-[200px] sm:max-w-[240px] object-contain shrink-0"
+                  className="h-10 sm:h-12 max-h-12 w-auto max-w-50 sm:max-w-60 object-contain shrink-0"
                 />
               ) : (
                 <span className="text-2xl sm:text-3xl font-black text-white tracking-[0.15em] uppercase font-sans">
@@ -100,16 +104,32 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
             {/* Newsletter */}
             <div className="space-y-2.5 pt-2">
               <span className="text-xs sm:text-sm font-bold text-white block">Get Exclusive Deals & Beauty Tips</span>
-              <div className="flex max-w-sm gap-2">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!newsletterEmail.trim()) return;
+                  trackSubscribe("newsletter", newsletterEmail);
+                  setSubscribed(true);
+                  setNewsletterEmail("");
+                  setTimeout(() => setSubscribed(false), 3000);
+                }}
+                className="flex max-w-sm gap-2"
+              >
                 <input
                   type="email"
+                  required
+                  value={newsletterEmail}
+                  onChange={(e) => setNewsletterEmail(e.target.value)}
                   placeholder="Enter your email address"
-                  className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900/90 px-4 py-2.5 text-sm text-white placeholder:text-zinc-500 focus:border-[#e91e63] focus:outline-none"
+                  className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900/90 px-4 py-2.5 text-sm text-white focus:outline-none"
                 />
-                <button className="rounded-xl bg-[#e91e63] px-5 py-2.5 text-sm font-black text-white hover:bg-[#d81b60] transition-colors shadow-md">
-                  Subscribe
+                <button
+                  type="submit"
+                  className="rounded-xl bg-[#e91e63] px-5 py-2.5 text-sm font-black text-white hover:bg-sg-pink-hover transition-colors shadow-md"
+                >
+                  {subscribed ? "Subscribed!" : "Subscribe"}
                 </button>
-              </div>
+              </form>
             </div>
           </div>
 
@@ -122,6 +142,7 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
               <li><Link href="/products?category=makeup" className="hover:text-[#e91e63] transition-colors block py-0.5">Makeup</Link></li>
               <li><Link href="/products?category=body-care" className="hover:text-[#e91e63] transition-colors block py-0.5">Body Care</Link></li>
               <li><Link href="/brands" className="hover:text-[#e91e63] transition-colors block py-0.5">Top Brands</Link></li>
+              <li><Link href="/blog" className="hover:text-[#e91e63] font-bold text-pink-400 transition-colors block py-0.5">Beauty Journal &amp; Guides</Link></li>
               <li><Link href="/products?discount=true" className="hover:text-[#e91e63] text-pink-400 font-bold transition-colors block py-0.5">Special Offers</Link></li>
             </ul>
           </div>
@@ -149,14 +170,22 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
                   <MapPin className="h-5 w-5 text-[#e91e63] shrink-0 mt-0.5" />
                   <span>Gulshan, Dhaka, Bangladesh</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <a
+                  href={`tel:${supportPhone}`}
+                  onClick={() => trackContact("phone", supportPhone)}
+                  className="flex items-center gap-3 hover:text-white transition-colors"
+                >
                   <Phone className="h-5 w-5 text-[#e91e63] shrink-0" />
                   <span className="font-bold">{supportPhone}</span>
-                </div>
-                <div className="flex items-center gap-3">
+                </a>
+                <a
+                  href={`mailto:${supportEmail}`}
+                  onClick={() => trackContact("email", supportEmail)}
+                  className="flex items-center gap-3 hover:text-white transition-colors"
+                >
                   <Mail className="h-5 w-5 text-[#e91e63] shrink-0" />
-                  <span className="font-bold">support@blushandbudget.com</span>
-                </div>
+                  <span className="font-bold">{supportEmail}</span>
+                </a>
               </div>
             </div>
 
@@ -190,7 +219,7 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
                 </div>
 
                 {/* 4. Mastercard SVG Logo Card */}
-                <div className="flex items-center gap-1.5 rounded-xl bg-[#1e293b] px-3 py-1.5 shadow-sm border border-slate-700 hover:scale-105 transition-transform" title="Mastercard">
+                <div className="flex items-center gap-1.5 rounded-xl bg-admin-sidebar-hover px-3 py-1.5 shadow-sm border border-slate-700 hover:scale-105 transition-transform" title="Mastercard">
                   <div className="relative flex items-center h-4 w-6">
                     <div className="absolute left-0 h-4 w-4 rounded-full bg-[#eb001b]" />
                     <div className="absolute right-0 h-4 w-4 rounded-full bg-[#f79e1b] opacity-85" />

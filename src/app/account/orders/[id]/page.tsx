@@ -10,10 +10,12 @@ import {
   CheckCircle2,
   Printer,
   ExternalLink,
+  AlertOctagon,
 } from "lucide-react";
 import { getCustomerOrderById } from "@/features/account/actions";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
+import { OrderCancelDialog } from "./order-cancel-dialog";
 
 export const metadata = {
   title: "Order Details — My Account",
@@ -34,6 +36,11 @@ export default async function CustomerOrderDetailPage({
   const address = order.shipping_address_snapshot || {};
   const items = order.order_items || [];
   const history = order.order_status_history || [];
+
+  const isCancelled = order.status === "cancelled";
+  const canCancel =
+    ["pending", "confirmed", "processing"].includes(order.status) &&
+    !order.consignment_id;
 
   const statusSteps = [
     { key: "pending", label: "Order Placed" },
@@ -79,7 +86,15 @@ export default async function CustomerOrderDetailPage({
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-text flex items-center gap-2">
               <span>Order {order.order_number}</span>
-              <span className="rounded-full bg-primary-50 text-primary-700 text-xs px-2.5 py-0.5 border border-primary-200 uppercase font-extrabold">
+              <span
+                className={`rounded-full text-xs px-2.5 py-0.5 border uppercase font-extrabold ${
+                  isCancelled
+                    ? "bg-red-50 text-red-700 border-red-200"
+                    : order.status === "delivered"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-primary-50 text-primary-700 border-primary-200"
+                }`}
+              >
                 {order.status}
               </span>
             </h1>
@@ -89,7 +104,10 @@ export default async function CustomerOrderDetailPage({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {canCancel && (
+            <OrderCancelDialog orderId={order.id} orderNumber={order.order_number} />
+          )}
           <Link href={`/orders/${order.id}/invoice`} target="_blank">
             <Button variant="outline" size="sm" className="text-xs font-bold text-gray-800 hover:text-black">
               <Printer className="h-3.5 w-3.5 mr-1 text-[#e91e63]" />
@@ -97,7 +115,7 @@ export default async function CustomerOrderDetailPage({
             </Button>
           </Link>
           <Link href={`/track-order`}>
-            <Button size="sm" className="text-xs font-bold bg-[#e91e63] hover:bg-[#d81b60] text-white shadow-xs">
+            <Button size="sm" className="text-xs font-bold bg-[#e91e63] hover:bg-sg-pink-hover text-white shadow-xs">
               <Truck className="h-3.5 w-3.5 mr-1" />
               Live Tracking
             </Button>
@@ -105,59 +123,95 @@ export default async function CustomerOrderDetailPage({
         </div>
       </div>
 
-      {/* 5-step status progress bar */}
-      <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-4">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-text-muted">
-          Delivery Progress
-        </h2>
-
-        <div className="grid grid-cols-5 gap-1 text-center">
-          {statusSteps.map((step, idx) => {
-            const isCompleted = idx <= currentStep;
-            const isCurrent = idx === currentStep;
-
-            return (
-              <div key={step.key} className="space-y-2">
-                <div
-                  className={`h-2 rounded-full transition-all ${
-                    isCompleted ? "bg-primary-600" : "bg-zinc-200"
-                  }`}
-                />
-                <span
-                  className={`block text-[11px] leading-tight ${
-                    isCurrent
-                      ? "font-extrabold text-primary-600"
-                      : isCompleted
-                      ? "font-bold text-text"
-                      : "text-text-muted"
-                  }`}
-                >
-                  {step.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {history.length > 0 && (
-          <div className="pt-4 border-t border-border space-y-2">
-            <h3 className="text-xs font-bold text-text">Fulfillment Timeline</h3>
-            <div className="space-y-2 text-xs">
-              {history.map((h: any) => (
-                <div key={h.id} className="flex items-start gap-2 text-text-secondary">
-                  <div className="h-2 w-2 rounded-full bg-primary-600 mt-1 shrink-0" />
-                  <p>
-                    <strong className="text-text capitalize">{h.status}:</strong> {h.note} —{" "}
-                    <span className="text-[10px] text-text-muted">
-                      {new Date(h.created_at).toLocaleString("en-GB")}
-                    </span>
-                  </p>
-                </div>
-              ))}
-            </div>
+      {/* Cancelled Banner if cancelled */}
+      {isCancelled && (
+        <div className="rounded-2xl border border-red-200 bg-red-50/70 p-5 flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-700">
+            <AlertOctagon className="h-5 w-5" />
           </div>
-        )}
-      </div>
+          <div>
+            <h2 className="text-sm font-bold text-red-900">This order has been cancelled</h2>
+            <p className="text-xs text-red-700 mt-0.5">
+              All reserved items have been restored to store inventory. If you were charged or need assistance, please reach out to our customer support team.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* 5-step status progress bar */}
+      {!isCancelled && (
+        <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-4">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-text-muted">
+            Delivery Progress
+          </h2>
+
+          <div className="grid grid-cols-5 gap-1 text-center">
+            {statusSteps.map((step, idx) => {
+              const isCompleted = idx <= currentStep;
+              const isCurrent = idx === currentStep;
+
+              return (
+                <div key={step.key} className="space-y-2">
+                  <div
+                    className={`h-2 rounded-full transition-all ${
+                      isCompleted ? "bg-primary-600" : "bg-zinc-200"
+                    }`}
+                  />
+                  <span
+                    className={`block text-[11px] leading-tight ${
+                      isCurrent
+                        ? "font-extrabold text-primary-600"
+                        : isCompleted
+                        ? "font-bold text-text"
+                        : "text-text-muted"
+                    }`}
+                  >
+                    {step.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {history.length > 0 && (
+            <div className="pt-4 border-t border-border space-y-2">
+              <h3 className="text-xs font-bold text-text">Fulfillment Timeline</h3>
+              <div className="space-y-2 text-xs">
+                {history.map((h: any) => (
+                  <div key={h.id} className="flex items-start gap-2 text-text-secondary">
+                    <div className="h-2 w-2 rounded-full bg-primary-600 mt-1 shrink-0" />
+                    <p>
+                      <strong className="text-text capitalize">{h.status}:</strong> {h.note} —{" "}
+                      <span className="text-[10px] text-text-muted">
+                        {new Date(h.created_at).toLocaleString("en-GB")}
+                      </span>
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isCancelled && history.length > 0 && (
+        <div className="rounded-2xl border border-border bg-white p-5 shadow-card space-y-3">
+          <h3 className="text-xs font-bold text-text uppercase tracking-wider">Order History & Notes</h3>
+          <div className="space-y-2 text-xs">
+            {history.map((h: any) => (
+              <div key={h.id} className="flex items-start gap-2 text-text-secondary">
+                <div className="h-2 w-2 rounded-full bg-red-500 mt-1 shrink-0" />
+                <p>
+                  <strong className="text-text capitalize">{h.status}:</strong> {h.note} —{" "}
+                  <span className="text-[10px] text-text-muted">
+                    {new Date(h.created_at).toLocaleString("en-GB")}
+                  </span>
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Line Items */}

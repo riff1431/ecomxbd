@@ -50,7 +50,7 @@ export default function AccountWishlistPage() {
       </nav>
 
       {/* Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-200 pb-4 bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-gray-900 flex items-center gap-2">
             <Heart className="h-6 w-6 text-[#e91e63] fill-[#e91e63]" />
@@ -87,7 +87,7 @@ export default function AccountWishlistPage() {
             </p>
           </div>
           <Link href="/products" className="inline-block pt-2">
-            <Button className="rounded-xl text-xs font-black px-6 h-11 bg-[#e91e63] hover:bg-[#d81b60] text-white shadow-md">
+            <Button className="rounded-xl text-xs font-black px-6 h-11 bg-[#e91e63] hover:bg-sg-pink-hover text-white shadow-md">
               Start Exploring Products
               <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
@@ -147,7 +147,7 @@ export default function AccountWishlistPage() {
                   )}
                   <Link
                     href={`/products/${item.slug}`}
-                    className="mt-0.5 line-clamp-2 text-xs sm:text-sm font-bold text-gray-900 hover:text-[#e91e63] transition-colors leading-snug min-h-[34px]"
+                    className="mt-0.5 line-clamp-2 text-xs sm:text-sm font-bold text-gray-900 hover:text-[#e91e63] transition-colors leading-snug min-h-8.5"
                   >
                     {item.name}
                   </Link>
@@ -182,7 +182,7 @@ export default function AccountWishlistPage() {
                     <button
                       type="button"
                       onClick={() => handleOrderNow(item)}
-                      className="w-full py-2 px-3 rounded-xl text-xs font-black bg-[#e91e63] hover:bg-[#d81b60] text-white transition-all shadow-xs active:scale-98"
+                      className="w-full py-2 px-3 rounded-xl text-xs font-black bg-[#e91e63] hover:bg-sg-pink-hover text-white transition-all shadow-xs active:scale-98"
                     >
                       ORDER NOW
                     </button>

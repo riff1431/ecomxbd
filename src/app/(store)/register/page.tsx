@@ -23,6 +23,7 @@ import { Label } from "@/components/shared/ui/label";
 import { getHomepageConfig } from "@/features/marketing/homepage-actions";
 import { registerUserAccount } from "@/features/account/actions";
 import { type HomepageFullConfig, DEFAULT_HOMEPAGE_CONFIG } from "@/features/marketing/homepage-types";
+import { trackCompleteRegistration } from "@/lib/analytics/datalayer";
 
 function RegisterForm() {
   const router = useRouter();
@@ -87,6 +88,8 @@ function RegisterForm() {
         setLoading(false);
         return;
       }
+
+      trackCompleteRegistration("email", "success");
 
       // 2. Establish active client session immediately
       const supabase = createClient();

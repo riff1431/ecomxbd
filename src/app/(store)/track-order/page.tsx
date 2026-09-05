@@ -105,7 +105,7 @@ export default function TrackOrderPage() {
               placeholder="e.g. ORD-2026-895823"
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface-secondary/50 px-3.5 py-2.5 text-xs text-text font-mono font-bold uppercase placeholder:text-text-muted focus:border-primary-600 focus:bg-white focus:outline-none"
+              className="w-full rounded-xl border border-border bg-surface-secondary/50 px-3.5 py-2.5 text-xs text-text font-mono font-bold uppercase placeholder:text-text-muted focus:outline-none"
             />
           </div>
 
@@ -119,7 +119,7 @@ export default function TrackOrderPage() {
               placeholder="e.g. 01712345678"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-xl border border-border bg-surface-secondary/50 px-3.5 py-2.5 text-xs text-text placeholder:text-text-muted focus:border-primary-600 focus:bg-white focus:outline-none"
+              className="w-full rounded-xl border border-border bg-surface-secondary/50 px-3.5 py-2.5 text-xs text-text placeholder:text-text-muted focus:outline-none"
             />
           </div>
 

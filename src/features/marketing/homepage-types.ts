@@ -108,6 +108,7 @@ export interface HomepageFullConfig {
   trackOrderHref: string;
   authenticGuaranteeText: string;
   supportPhone: string;
+  supportEmail?: string;
   campaignPills: CampaignPillItem[];
   heroSlides: ImageBannerItem[];
   stripBanner: ImageBannerItem;
@@ -280,6 +281,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
 
   // Top Subnavigation Campaign Badges
   campaignPills: [
+    { id: "pill-blog", label: "BEAUTY BLOG", href: "/blog", bgClass: "bg-[#e11d48]" },
     { id: "pill-1", label: "UNDERGARMENTS", href: "/products?category=body-care", bgClass: "bg-[#2563eb]" },
     { id: "pill-2", label: "COMBO", href: "/products?category=combo", bgClass: "bg-[#c026d3]" },
     { id: "pill-3", label: "JEWELLERY", href: "/products?category=jewellery", bgClass: "bg-[#9333ea]" },

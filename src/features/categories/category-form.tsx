@@ -8,6 +8,7 @@ import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
 import { generateSlug } from "@/lib/utils";
 import { createCategory, updateCategory, getCategories } from "@/features/categories/actions";
+import { ImageUploadDropzone } from "@/components/shared/image-upload-dropzone";
 
 interface CategoryFormProps {
   initialData?: {
@@ -142,7 +143,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
                 id="parent_id"
                 value={form.parent_id ?? ""}
                 onChange={(e) => updateField("parent_id", e.target.value || null)}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                className="w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               >
                 <option value="">— No parent (top-level) —</option>
                 {allCategories.map((cat) => (
@@ -160,63 +161,18 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
                 rows={4}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
+                className="w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="image_url">Category Image</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="image_url"
-                  value={form.image_url}
-                  onChange={(e) => updateField("image_url", e.target.value)}
-                  placeholder="https://res.cloudinary.com/..."
-                  className="flex-1"
-                />
-                <label className="cursor-pointer">
-                  <span className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface-secondary px-3 py-2 text-xs font-semibold hover:bg-surface-tertiary">
-                    Upload
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const signRes = await fetch("/api/media/sign", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ folder: "categories" }),
-                        });
-                        const signData = await signRes.json();
-                        const formData = new FormData();
-                        formData.append("file", file);
-                        formData.append("api_key", signData.apiKey);
-                        formData.append("timestamp", signData.timestamp.toString());
-                        formData.append("signature", signData.signature);
-                        formData.append("folder", signData.folder);
-                        const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`, {
-                          method: "POST",
-                          body: formData,
-                        });
-                        const asset = await cloudRes.json();
-                        updateField("image_url", asset.secure_url);
-                      } catch (err) {
-                        alert("Upload failed");
-                      }
-                    }}
-                  />
-                </label>
-              </div>
-              {form.image_url && (
-                <div className="mt-2">
-                  <img src={form.image_url} alt="Category Preview" className="h-16 w-16 rounded-lg object-cover border border-border" />
-                </div>
-              )}
-            </div>
+            <ImageUploadDropzone
+              label="Category Image / Banner"
+              description="Upload category display visual or icon"
+              value={form.image_url || ""}
+              onChange={(url) => updateField("image_url", url)}
+              folder="categories"
+              previewShape="banner"
+            />
           </div>
 
           {/* SEO */}
@@ -240,7 +196,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
                 onChange={(e) => updateField("seo_description", e.target.value)}
                 rows={3}
                 maxLength={160}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
+                className="w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
               />
               <p className="text-xs text-text-muted">{form.seo_description.length}/160</p>
             </div>
@@ -257,7 +213,7 @@ export default function CategoryForm({ initialData }: CategoryFormProps) {
                 id="status"
                 value={form.status}
                 onChange={(e) => updateField("status", e.target.value as "active" | "inactive")}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                className="w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>

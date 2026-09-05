@@ -3,42 +3,54 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { getStoreFeatureSettings } from "@/features/settings/feature-settings-actions";
 
 export async function submitReview(input: {
   product_id: string;
   rating: number;
   title?: string;
   comment?: string;
+  reviewer_name?: string;
+  reviewer_email?: string;
+  skin_type?: string;
 }) {
+  const featureSettings = await getStoreFeatureSettings();
+  if (featureSettings.enable_customer_reviews === false) {
+    return { error: "Customer reviews are currently disabled by store management." };
+  }
+
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getUser();
   const user = authData?.user;
 
-  if (!user) {
-    return { error: "You must be signed in to submit a review." };
-  }
-
   const adminClient = createAdminClient();
 
   // Check if user has purchased this product for verified badge
-  const { data: orderItem } = await adminClient
-    .from("order_items")
-    .select("id, order_id, orders!inner(user_id)")
-    .eq("product_id", input.product_id)
-    .eq("orders.user_id", user.id)
-    .limit(1)
-    .maybeSingle();
+  let orderItemId: string | null = null;
+  if (user) {
+    const { data: orderItem } = await adminClient
+      .from("order_items")
+      .select("id, order_id, orders!inner(user_id)")
+      .eq("product_id", input.product_id)
+      .eq("orders.user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    orderItemId = orderItem?.id || null;
+  }
+
+  const reviewStatus = featureSettings.auto_approve_reviews ? "approved" : "pending";
 
   const { data: review, error } = await adminClient
     .from("reviews")
     .insert({
       product_id: input.product_id,
-      user_id: user.id,
-      order_item_id: orderItem?.id || null,
+      user_id: user?.id || null,
+      order_item_id: orderItemId,
       rating: input.rating,
       title: input.title?.trim() || null,
       comment: input.comment?.trim() || null,
-      status: "approved", // Auto-approved for fast feedback, admins can moderate
+      status: reviewStatus,
     })
     .select()
     .single();
@@ -49,7 +61,11 @@ export async function submitReview(input: {
   }
 
   revalidatePath(`/products`);
-  return { success: true, review };
+  return {
+    success: true,
+    review: reviewStatus === "approved" ? review : null,
+    pendingModeration: reviewStatus === "pending",
+  };
 }
 
 export async function getProductReviews(productId: string) {

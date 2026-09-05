@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { getStoreFeatureSettings } from "@/features/settings/feature-settings-actions";
 import { revalidatePath } from "next/cache";
 
 export interface ReturnRequest {
@@ -18,7 +20,7 @@ export interface ReturnRequest {
   created_at: string;
   order?: {
     order_number: string;
-    total_amount: number;
+    total: number;
     payment_status: string;
     customer_phone?: string;
   };
@@ -29,6 +31,108 @@ export interface ReturnRequest {
   };
 }
 
+export async function submitCustomerReturnRequest(input: {
+  order_number: string;
+  customer_phone?: string;
+  item_name?: string;
+  reason: string;
+  refund_method?: string;
+  customer_notes?: string;
+  images?: string[];
+}): Promise<{ success: boolean; error?: string; returnRequest?: any }> {
+  try {
+    const featureSettings = await getStoreFeatureSettings();
+    if (featureSettings.enable_return_portal === false) {
+      return { success: false, error: "Customer return & exchange portal is currently inactive." };
+    }
+
+    const supabaseAdmin = createAdminClient();
+    const supabaseUser = await createClient();
+    const { data: authData } = await supabaseUser.auth.getUser();
+    const user = authData?.user || null;
+
+    // Lookup order by order_number
+    const cleanOrderNumber = input.order_number.trim().toUpperCase();
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id, order_number, total, status, created_at, guest_phone, guest_name")
+      .eq("order_number", cleanOrderNumber)
+      .maybeSingle();
+
+    if (!order) {
+      return { success: false, error: "Order not found. Please verify your Order Number (e.g. ORD-2026-XXXXXX)." };
+    }
+
+    // Check return window
+    const orderDate = new Date(order.created_at);
+    const windowDays = featureSettings.return_window_days || 7;
+    const daysSinceOrder = (Date.now() - orderDate.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (daysSinceOrder > windowDays) {
+      return {
+        success: false,
+        error: `This order is outside our ${windowDays}-day return window policy. Please contact support directly for assistance.`,
+      };
+    }
+
+    const returnNumber = `RET-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const { data: newReturn, error: returnErr } = await supabaseAdmin
+      .from("returns")
+      .insert({
+        order_id: order.id,
+        user_id: user?.id || null,
+        return_number: returnNumber,
+        reason: input.reason,
+        status: "pending",
+        refund_method: input.refund_method || "original_payment",
+        refund_amount: Number(order.total) || 0,
+        customer_notes: input.customer_notes?.trim() || null,
+        images: input.images || [],
+      })
+      .select()
+      .single();
+
+    if (returnErr) {
+      console.error("Return insertion error:", returnErr);
+      return { success: false, error: returnErr.message };
+    }
+
+    revalidatePath("/account/returns");
+    revalidatePath("/admin/returns");
+
+    return {
+      success: true,
+      returnRequest: newReturn,
+    };
+  } catch (err: unknown) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to submit return request",
+    };
+  }
+}
+
+export async function getCustomerReturns(): Promise<ReturnRequest[]> {
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  const user = authData?.user;
+
+  if (!user) return [];
+
+  const { data, error } = await supabase
+    .from("returns")
+    .select(`
+      *,
+      order:orders(order_number, total, payment_status)
+    `)
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data as unknown as ReturnRequest[];
+}
+
 export async function getAdminReturns(): Promise<ReturnRequest[]> {
   const supabase = await createClient();
 
@@ -37,90 +141,13 @@ export async function getAdminReturns(): Promise<ReturnRequest[]> {
     .from("returns")
     .select(`
       *,
-      order:orders(order_number, total_amount, payment_status),
+      order:orders(order_number, total, payment_status),
       customer:profiles!returns_user_id_fkey(full_name, email, phone)
     `)
     .order("created_at", { ascending: false });
 
-  if (error || !data || data.length === 0) {
-    // If no returns currently in DB, return high-fidelity fallback mock returns for demo
-    return [
-      {
-        id: "ret-1001",
-        order_id: "ord-8891",
-        user_id: "user-1",
-        return_number: "RET-2026-0891",
-        reason: "Defective item — Bottle pump dispenser broken upon delivery",
-        status: "pending",
-        refund_method: "bkash",
-        refund_amount: 1450.0,
-        customer_notes: "Please refund to my bKash number: 01711223344",
-        admin_notes: "Awaiting photo verification from customer",
-        images: ["https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=400&q=80"],
-        created_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
-        order: {
-          order_number: "ORD-92812",
-          total_amount: 1450.0,
-          payment_status: "paid",
-          customer_phone: "01711223344",
-        },
-        customer: {
-          full_name: "Tanvir Ahmed",
-          email: "tanvir.ahmed@example.com",
-          phone: "01711223344",
-        },
-      },
-      {
-        id: "ret-1002",
-        order_id: "ord-8874",
-        user_id: "user-2",
-        return_number: "RET-2026-0874",
-        reason: "Wrong item delivered — Ordered COSRX Snail Cream, received Cleanser",
-        status: "approved",
-        refund_method: "original_payment",
-        refund_amount: 2200.0,
-        customer_notes: "Packaging is sealed and unused.",
-        admin_notes: "Steadfast courier pickup scheduled for exchange/return",
-        images: [],
-        created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-        order: {
-          order_number: "ORD-92750",
-          total_amount: 2200.0,
-          payment_status: "paid",
-          customer_phone: "01822334455",
-        },
-        customer: {
-          full_name: "Farhana Rahman",
-          email: "farhana.r@example.com",
-          phone: "01822334455",
-        },
-      },
-      {
-        id: "ret-1003",
-        order_id: "ord-8812",
-        user_id: "user-3",
-        return_number: "RET-2026-0812",
-        reason: "Expired batch received",
-        status: "refunded",
-        refund_method: "nagad",
-        refund_amount: 3100.0,
-        customer_notes: "Refund received in Nagad wallet.",
-        admin_notes: "Refund processed via Nagad Direct Merchant Transfer. Ref #NGD88291",
-        images: [],
-        created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-        order: {
-          order_number: "ORD-92410",
-          total_amount: 3100.0,
-          payment_status: "paid",
-          customer_phone: "01933445566",
-        },
-        customer: {
-          full_name: "Sadia Chowdhury",
-          email: "sadia.c@example.com",
-          phone: "01933445566",
-        },
-      },
-    ];
+  if (error || !data) {
+    return [];
   }
 
   return data as unknown as ReturnRequest[];
@@ -146,9 +173,9 @@ export async function updateReturnStatus(
 
   if (error) {
     console.error("Failed to update return status:", error);
-    // Non-fatal if using fallback id
   }
 
   revalidatePath("/admin/returns");
+  revalidatePath("/account/returns");
   return { success: true };
 }

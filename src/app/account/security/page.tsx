@@ -134,7 +134,7 @@ export default function AccountSecurityPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold px-6 py-2.5 text-xs rounded-xl shadow-md transition-all active:scale-95"
+            className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-extrabold px-6 py-2.5 text-xs rounded-xl shadow-md transition-all active:scale-95"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <ShieldCheck className="h-4 w-4 mr-1.5" />}
             {loading ? "Updating Password..." : "Update Password"}

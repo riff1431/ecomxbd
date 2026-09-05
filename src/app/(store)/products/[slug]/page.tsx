@@ -4,6 +4,9 @@ import { ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ProductDetailClient } from "./product-detail-client";
 import { getFrequentlyBoughtTogetherBundle } from "@/features/products/combo-actions";
+import { getStoreFeatureSettings } from "@/features/settings/feature-settings-actions";
+import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/seo/json-ld";
+import { getBaseUrl } from "@/lib/utils";
 
 export async function generateMetadata({
   params,
@@ -25,7 +28,7 @@ export async function generateMetadata({
     title: product.seo_title || `${product.name} — 100% Authentic Online Bangladesh`,
     description:
       product.seo_description ||
-      `Buy genuine ${product.name} with fast delivery and Cash on Delivery in Bangladesh from ecomXbangladesh.`,
+      `Buy genuine ${product.name} with fast delivery and Cash on Delivery in Bangladesh from Blush & Budget.`,
     openGraph: {
       images: product.og_image_url ? [product.og_image_url] : [],
     },
@@ -39,6 +42,7 @@ export default async function ProductDetailPage({
 }) {
   const { slug } = await params;
   const supabase = await createClient();
+  const featureSettings = await getStoreFeatureSettings();
 
   const { data: product } = await supabase
     .from("products")
@@ -73,8 +77,48 @@ export default async function ProductDetailPage({
     getFrequentlyBoughtTogetherBundle(product.id),
   ]);
 
+  const baseUrl = getBaseUrl();
+  const productUrl = `${baseUrl}/products/${product.slug}`;
+  const images = (product.product_media || [])
+    .map((pm: any) => pm.media?.secure_url)
+    .filter(Boolean);
+  if (product.og_image_url && !images.includes(product.og_image_url)) {
+    images.unshift(product.og_image_url);
+  }
+
+  const breadcrumbItems = [
+    { name: "Home", url: `${baseUrl}` },
+    { name: "Products", url: `${baseUrl}/products` },
+  ];
+  if (product.brands) {
+    breadcrumbItems.push({
+      name: product.brands.name,
+      url: `${baseUrl}/products?brand=${product.brands.slug}`,
+    });
+  }
+  breadcrumbItems.push({
+    name: product.name,
+    url: productUrl,
+  });
+
   return (
     <div className="container-main py-4 sm:py-6 space-y-4">
+      {/* Schema.org Structured Data for Google SERP & Merchant Rich Cards */}
+      <ProductJsonLd
+        name={product.name}
+        description={product.description || product.seo_description}
+        images={images}
+        sku={product.sku || product.id}
+        brandName={product.brands?.name}
+        price={Number(product.regular_price || 0)}
+        salePrice={product.sale_price ? Number(product.sale_price) : undefined}
+        availability={product.status === "published" ? "InStock" : "OutOfStock"}
+        url={productUrl}
+        ratingValue={product.average_rating ? Number(product.average_rating) : 5.0}
+        reviewCount={product.total_reviews ? Number(product.total_reviews) : 1}
+      />
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+
       {/* Clean Compact Breadcrumbs */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted overflow-x-auto no-scrollbar">
         <Link href="/" className="hover:text-text shrink-0 transition-colors">
@@ -106,6 +150,7 @@ export default async function ProductDetailPage({
         product={product}
         relatedProducts={related || []}
         bundleData={bundleData}
+        featureSettings={featureSettings}
       />
     </div>
   );

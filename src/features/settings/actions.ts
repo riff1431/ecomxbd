@@ -2,6 +2,7 @@
 
 import { getSettingsByGroup, updateGroupSettings } from "@/lib/settings/config-service";
 import { revalidatePath } from "next/cache";
+import { getBaseUrl } from "@/lib/utils";
 
 // Store Settings
 export async function getStoreSettings() {
@@ -105,8 +106,8 @@ export async function getInvoiceSettings(): Promise<InvoiceSettings> {
     invoice_tagline: settings.invoice_tagline || "AUTHENTIC BEAUTY & SKINCARE ESSENTIALS",
     invoice_address: settings.invoice_address || "House 42, Road 11, Banani, Dhaka-1213, Bangladesh",
     invoice_phone: settings.invoice_phone || "+880 1700-000000",
-    invoice_email: settings.invoice_email || "support@blushandbudget.com",
-    invoice_website: settings.invoice_website || "https://blushandbudget.com",
+    invoice_email: settings.invoice_email || "",
+    invoice_website: settings.invoice_website || getBaseUrl() || "",
     invoice_tax_id_or_bin: settings.invoice_tax_id_or_bin || "BIN: 002349182-0101",
 
     invoice_title: settings.invoice_title || "TAX INVOICE",

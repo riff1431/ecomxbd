@@ -183,7 +183,7 @@ export function CouponListClient({ initialCoupons }: CouponListClientProps) {
                   placeholder="e.g. FLASH20"
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
-                  className="w-full rounded-xl border border-border px-3 py-2 uppercase font-mono font-bold text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border px-3 py-2 uppercase font-mono font-bold text-text focus:outline-none"
                 />
               </div>
 
@@ -193,7 +193,7 @@ export function CouponListClient({ initialCoupons }: CouponListClientProps) {
                   <select
                     value={form.type}
                     onChange={(e) => setForm({ ...form, type: e.target.value as any })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-text focus:outline-none"
                   >
                     <option value="percentage">Percentage (%)</option>
                     <option value="fixed">Fixed Amount (৳)</option>
@@ -209,7 +209,7 @@ export function CouponListClient({ initialCoupons }: CouponListClientProps) {
                     required
                     value={form.value}
                     onChange={(e) => setForm({ ...form, value: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-text focus:outline-none"
                   />
                 </div>
               </div>
@@ -222,7 +222,7 @@ export function CouponListClient({ initialCoupons }: CouponListClientProps) {
                     min={0}
                     value={form.min_cart_amount}
                     onChange={(e) => setForm({ ...form, min_cart_amount: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-text focus:outline-none"
                   />
                 </div>
 
@@ -233,7 +233,7 @@ export function CouponListClient({ initialCoupons }: CouponListClientProps) {
                     min={0}
                     value={form.max_discount}
                     onChange={(e) => setForm({ ...form, max_discount: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-text focus:outline-none"
                   />
                 </div>
               </div>
@@ -245,7 +245,7 @@ export function CouponListClient({ initialCoupons }: CouponListClientProps) {
                   min={1}
                   value={form.usage_limit}
                   onChange={(e) => setForm({ ...form, usage_limit: Number(e.target.value) })}
-                  className="w-full rounded-xl border border-border px-3 py-2 text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border px-3 py-2 text-text focus:outline-none"
                 />
               </div>
 

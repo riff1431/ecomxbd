@@ -25,7 +25,7 @@ let memorySmsLogs: SmsLogItem[] = [
   {
     id: "sms-1",
     recipient_phone: "01712345678",
-    message: "Dear Tanvir Ahmed, your order ORD-2026-895823 of BDT 1365 has been confirmed! We will dispatch soon. Track: https://blushandbudget.com/account/track",
+    message: "Dear Tanvir Ahmed, your order ORD-2026-895823 of BDT 1365 has been confirmed! We will dispatch soon. Track: /account/track",
     status: "delivered",
     provider: "BulkSMSBD",
     sent_at: new Date(Date.now() - 7200000).toISOString(),

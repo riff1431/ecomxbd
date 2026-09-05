@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   X,
@@ -15,9 +15,14 @@ import {
   Sparkles,
   ShieldCheck,
 } from "lucide-react";
-import { useCart } from "@/context/cart-context";
+import { useCart, CartItem } from "@/context/cart-context";
 import { formatPrice, cn } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
+import {
+  trackViewCart,
+  trackRemoveFromCart as trackGA4RemoveFromCart,
+  trackBeginCheckout,
+} from "@/lib/analytics/datalayer";
 
 const FREE_SHIPPING_THRESHOLD = 2000;
 
@@ -45,6 +50,56 @@ export function CartDrawer() {
   const amountNeeded = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
   const total = Math.max(0, subtotal - discount);
 
+  // Trigger view_cart event when drawer opens
+  useEffect(() => {
+    if (isCartOpen && items.length > 0) {
+      trackViewCart(
+        items.map((it) => ({
+          item_id: it.product_id || it.id,
+          item_name: it.name,
+          item_brand: it.brand_name || undefined,
+          item_variant: it.variant_label || undefined,
+          price: it.price,
+          quantity: it.quantity,
+        })),
+        total
+      );
+    }
+  }, [isCartOpen]);
+
+  const handleRemoveItem = (item: CartItem) => {
+    trackGA4RemoveFromCart(
+      [
+        {
+          item_id: item.product_id || item.id,
+          item_name: item.name,
+          item_brand: item.brand_name || undefined,
+          item_variant: item.variant_label || undefined,
+          price: item.price,
+          quantity: item.quantity,
+        },
+      ],
+      item.price * item.quantity
+    );
+    removeItem(item.id);
+  };
+
+  const handleProceedToCheckout = () => {
+    trackBeginCheckout(
+      items.map((it) => ({
+        item_id: it.product_id || it.id,
+        item_name: it.name,
+        item_brand: it.brand_name || undefined,
+        item_variant: it.variant_label || undefined,
+        price: it.price,
+        quantity: it.quantity,
+      })),
+      total,
+      coupon?.code
+    );
+    closeCart();
+  };
+
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!couponCode.trim()) return;
@@ -65,8 +120,8 @@ export function CartDrawer() {
         className="hidden md:flex flex-col fixed right-0 top-[38%] z-30 border-t border-l border-b border-[#e91e63] rounded-tl-xl rounded-bl-xl text-white text-xs cursor-pointer shadow-xl transition-transform hover:scale-105"
         aria-label="Open mini cart"
       >
-        <div className="bg-[#111827] rounded-tl-xl flex flex-col text-center px-2 pt-2.5 pb-1.5 items-center w-full min-w-[70px]">
-          <ShoppingBag className="h-5 w-5 text-white stroke-[2]" />
+        <div className="bg-sg-black rounded-tl-xl flex flex-col text-center px-2 pt-2.5 pb-1.5 items-center w-full min-w-17.5">
+          <ShoppingBag className="h-5 w-5 text-white stroke-2" />
           <div className="flex flex-col text-xs font-bold items-center leading-none mt-1">
             <span>{itemCount}</span>
             <span className="text-[10px] text-zinc-400 uppercase tracking-wider mt-0.5">ITEMS</span>
@@ -94,10 +149,10 @@ export function CartDrawer() {
                 <button
                   type="button"
                   onClick={closeCart}
-                  className="p-1 text-[#e91e63] hover:text-[#d81b60] transition-colors"
+                  className="p-1 text-[#e91e63] hover:text-sg-pink-hover transition-colors"
                   aria-label="Close Cart"
                 >
-                  <X className="h-5 w-5 stroke-[2.5]" />
+                  <X className="h-5 w-5 stroke-2" />
                 </button>
                 <h2 className="text-base font-bold text-gray-900">Your Shopping Bag</h2>
                 <div className="w-5" /> {/* balance spacing */}
@@ -123,7 +178,7 @@ export function CartDrawer() {
 
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-pink-100">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#e91e63] to-emerald-500 transition-all duration-500"
+                    className="h-full rounded-full bg-linear-to-r from-[#e91e63] to-emerald-500 transition-all duration-500"
                     style={{ width: `${freeShippingProgress}%` }}
                   />
                 </div>
@@ -134,7 +189,7 @@ export function CartDrawer() {
                 {items.length === 0 ? (
                   <div className="py-16 text-center space-y-4">
                     <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 mx-auto text-gray-400">
-                      <ShoppingBag className="h-10 w-10 stroke-[1.2]" />
+                      <ShoppingBag className="h-10 w-10 stroke-1" />
                     </div>
                     <p className="text-sm font-semibold text-gray-500">Your Shopping Bag is Empty</p>
                     <Link href="/products" onClick={closeCart} className="inline-block mt-2">
@@ -197,7 +252,7 @@ export function CartDrawer() {
                           </div>
 
                           <button
-                            onClick={() => removeItem(item.id)}
+                            onClick={() => handleRemoveItem(item)}
                             className="text-gray-400 hover:text-red-600 p-1 rounded-lg transition-colors"
                             title="Remove item"
                           >
@@ -220,7 +275,7 @@ export function CartDrawer() {
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                       placeholder="Coupon Code"
-                      className="flex-1 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs uppercase font-mono focus:border-[#e91e63] focus:outline-none"
+                      className="flex-1 rounded-xl border px-3 py-1.5 text-xs uppercase font-mono focus:outline-none"
                     />
                     <Button type="submit" size="sm" disabled={isApplying} className="rounded-xl text-xs font-bold bg-black text-white hover:bg-[#e91e63]">
                       Apply
@@ -251,8 +306,8 @@ export function CartDrawer() {
                     </div>
                   </div>
 
-                  <Link href="/checkout" onClick={closeCart} className="block">
-                    <Button className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-sm shadow-md transition-all active:scale-95">
+                  <Link href="/checkout" onClick={handleProceedToCheckout} className="block">
+                    <Button className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-sg-pink-hover text-white font-extrabold text-sm shadow-md transition-all active:scale-95">
                       <span>PROCEED TO CHECKOUT</span>
                       <ArrowRight className="h-4 w-4 ml-1.5" />
                     </Button>

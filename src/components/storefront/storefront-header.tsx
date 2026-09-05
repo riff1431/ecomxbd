@@ -22,6 +22,7 @@ import {
   Sparkle,
   Phone,
   Layers,
+  BookOpen,
 } from "lucide-react";
 import { formatPrice, cn } from "@/lib/utils";
 import { useWishlist } from "@/context/wishlist-context";
@@ -34,6 +35,7 @@ import {
   type HeaderNavCategory,
   DEFAULT_HOMEPAGE_CONFIG,
 } from "@/features/marketing/homepage-types";
+import { trackSearch } from "@/lib/analytics/datalayer";
 
 interface SearchResult {
   products: Array<{
@@ -47,6 +49,8 @@ interface SearchResult {
   }>;
   categories: Array<{ id: string; name: string; slug: string }>;
   brands: Array<{ id: string; name: string; slug: string }>;
+  ingredients?: Array<{ name: string; slug: string }>;
+  concerns?: Array<{ name: string; slug: string }>;
 }
 
 const TOP_BRANDS_DEFAULT = [
@@ -127,17 +131,18 @@ export function StorefrontHeader() {
     }, 3500);
     return () => clearInterval(timer);
   }, [searchPlaceholders.length]);
-
-  // Search state
+  // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
 
   // Check auth user and listen to auth state changes
   useEffect(() => {
     const supabase = createClient();
+
     const checkRole = async (currentUser: any) => {
       setUser(currentUser);
       if (currentUser) {
@@ -202,13 +207,13 @@ export function StorefrontHeader() {
     return () => clearTimeout(timeout);
   }, [searchQuery]);
 
-  // Close search dropdown on click outside
+  // Close search dropdown on click outside (handling both desktop and mobile inputs)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchContainerRef.current &&
-        !searchContainerRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      const insideDesktop = searchContainerRef.current?.contains(target);
+      const insideMobile = mobileSearchContainerRef.current?.contains(target);
+      if (!insideDesktop && !insideMobile) {
         setShowSearchDropdown(false);
       }
     };
@@ -216,9 +221,183 @@ export function StorefrontHeader() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const renderSearchDropdown = () => {
+    if (!showSearchDropdown) return null;
+
+    const hasAnyResults =
+      searchResults &&
+      (searchResults.products.length > 0 ||
+        searchResults.categories.length > 0 ||
+        searchResults.brands.length > 0 ||
+        (searchResults.ingredients && searchResults.ingredients.length > 0) ||
+        (searchResults.concerns && searchResults.concerns.length > 0));
+
+    return (
+      <div className="absolute top-full left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl animate-in fade-in-0 zoom-in-95">
+        {isSearching ? (
+          <div className="p-6 text-center text-xs text-gray-500">
+            <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#e91e63]" />
+            <p className="mt-2 font-medium">Searching authentic beauty & skincare...</p>
+          </div>
+        ) : hasAnyResults ? (
+          <div className="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
+            {/* Matching Ingredients */}
+            {searchResults.ingredients && searchResults.ingredients.length > 0 && (
+              <div>
+                <span className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-[#e91e63] flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Key Actives & Ingredients
+                </span>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {searchResults.ingredients.map((ing) => (
+                    <Link
+                      key={ing.slug}
+                      href={`/products?key_actives=${encodeURIComponent(ing.slug)}`}
+                      onClick={() => setShowSearchDropdown(false)}
+                      className="inline-flex items-center gap-1 rounded-full bg-pink-50 border border-pink-200 px-3 py-1 text-xs font-bold text-pink-700 hover:bg-pink-100 hover:border-pink-300 transition-colors"
+                    >
+                      <Sparkles className="h-2.5 w-2.5 text-pink-600 shrink-0" />
+                      <span>{ing.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Matching Concerns */}
+            {searchResults.concerns && searchResults.concerns.length > 0 && (
+              <div className="pt-2 border-t border-gray-100">
+                <span className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-purple-600 flex items-center gap-1">
+                  Skin Concerns
+                </span>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {searchResults.concerns.map((con) => (
+                    <Link
+                      key={con.slug}
+                      href={`/products?skin_concern=${encodeURIComponent(con.slug)}`}
+                      onClick={() => setShowSearchDropdown(false)}
+                      className="inline-flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-3 py-1 text-xs font-bold text-purple-700 hover:bg-purple-100 transition-colors"
+                    >
+                      <Sparkle className="h-2.5 w-2.5 text-purple-600 shrink-0" />
+                      <span>{con.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Matching Categories */}
+            {searchResults.categories.length > 0 && (
+              <div className="pt-2 border-t border-gray-100">
+                <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  Categories
+                </span>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {searchResults.categories.map((cat) => (
+                    <Link
+                      key={cat.id}
+                      href={`/products?category=${cat.slug}`}
+                      onClick={() => setShowSearchDropdown(false)}
+                      className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800 hover:bg-pink-50 hover:text-[#e91e63] transition-colors"
+                    >
+                      {cat.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Matching Brands */}
+            {searchResults.brands.length > 0 && (
+              <div className="pt-2 border-t border-gray-100">
+                <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  Brands
+                </span>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {searchResults.brands.map((b) => (
+                    <Link
+                      key={b.id}
+                      href={`/products?brand=${b.slug}`}
+                      onClick={() => setShowSearchDropdown(false)}
+                      className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-800 hover:bg-pink-50 hover:text-[#e91e63] transition-colors"
+                    >
+                      {b.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Matching Products */}
+            {searchResults.products.length > 0 && (
+              <div className="pt-2 border-t border-gray-100">
+                <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                  Products
+                </span>
+                <div className="mt-1 space-y-1">
+                  {searchResults.products.map((prod) => (
+                    <Link
+                      key={prod.id}
+                      href={`/products/${prod.slug}`}
+                      onClick={() => setShowSearchDropdown(false)}
+                      className="flex items-center justify-between gap-3 rounded-xl p-2 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {prod.og_image_url ? (
+                          <img
+                            src={prod.og_image_url}
+                            alt={prod.name}
+                            className="h-10 w-10 shrink-0 rounded-lg object-cover border border-gray-200"
+                          />
+                        ) : (
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">
+                            <ShoppingBag className="h-4 w-4 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-bold text-gray-900">{prod.name}</p>
+                          {prod.brands && (
+                            <span className="text-[10px] font-medium text-gray-500">
+                              {prod.brands.name}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-black text-gray-900">
+                          {formatPrice(prod.sale_price ?? prod.regular_price)}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Full Results CTA */}
+            <div className="pt-2 border-t border-gray-100 text-center">
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                className="w-full text-center text-xs font-bold text-[#e91e63] hover:underline py-1"
+              >
+                View all results for &ldquo;{searchQuery}&rdquo; &rarr;
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="p-4 text-center text-xs text-gray-500">
+            No results found for &ldquo;{searchQuery}&rdquo;.
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
+    trackSearch(searchQuery);
     setShowSearchDropdown(false);
     router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
   };
@@ -432,89 +611,7 @@ export function StorefrontHeader() {
             </form>
 
             {/* Instant Search Suggestions Dropdown */}
-            {showSearchDropdown && (
-              <div className="absolute top-full left-0 right-0 z-50 mt-2 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl animate-in fade-in-0 zoom-in-95">
-                {isSearching ? (
-                  <div className="p-6 text-center text-xs text-gray-500">
-                    <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#e91e63]" />
-                    <p className="mt-2 font-medium">Searching authentic products...</p>
-                  </div>
-                ) : searchResults && (searchResults.products.length > 0 || searchResults.categories.length > 0 || searchResults.brands.length > 0) ? (
-                  <div className="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
-                    {/* Matching Categories */}
-                    {searchResults.categories.length > 0 && (
-                      <div>
-                        <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                          Categories
-                        </span>
-                        <div className="mt-1 flex flex-wrap gap-1.5">
-                          {searchResults.categories.map((cat) => (
-                            <Link
-                              key={cat.id}
-                              href={`/products?category=${cat.slug}`}
-                              onClick={() => setShowSearchDropdown(false)}
-                              className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-800 hover:bg-pink-50 hover:text-[#e91e63] transition-colors"
-                            >
-                              {cat.name}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Matching Products */}
-                    {searchResults.products.length > 0 && (
-                      <div className="pt-2 border-t border-gray-100">
-                        <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                          Products
-                        </span>
-                        <div className="mt-1 space-y-1">
-                          {searchResults.products.map((prod) => (
-                            <Link
-                              key={prod.id}
-                              href={`/products/${prod.slug}`}
-                              onClick={() => setShowSearchDropdown(false)}
-                              className="flex items-center justify-between gap-3 rounded-xl p-2 hover:bg-gray-50 transition-colors"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                {prod.og_image_url ? (
-                                  <img
-                                    src={prod.og_image_url}
-                                    alt={prod.name}
-                                    className="h-10 w-10 shrink-0 rounded-lg object-cover border border-gray-200"
-                                  />
-                                ) : (
-                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100">
-                                    <ShoppingBag className="h-4 w-4 text-gray-400" />
-                                  </div>
-                                )}
-                                <div className="min-w-0">
-                                  <p className="truncate text-xs font-bold text-gray-900">{prod.name}</p>
-                                  {prod.brands && (
-                                    <span className="text-[10px] font-medium text-gray-500">
-                                      {prod.brands.name}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-right shrink-0">
-                                <p className="text-xs font-black text-gray-900">
-                                  {formatPrice(prod.sale_price ?? prod.regular_price)}
-                                </p>
-                              </div>
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="p-4 text-center text-xs text-gray-500">
-                    No results found for "{searchQuery}".
-                  </div>
-                )}
-              </div>
-            )}
+            {renderSearchDropdown()}
           </div>
 
           {/* Right: Wishlist, Account, and Cart Bag */}
@@ -536,7 +633,7 @@ export function StorefrontHeader() {
             {isAdmin ? (
               <Link
                 href="/admin"
-                className="bg-[#e91e63] hover:bg-[#d81b60] text-white flex items-center gap-1.5 text-xs font-black uppercase transition-all px-3.5 py-1.5 rounded-full shadow-xs"
+                className="bg-[#e91e63] hover:bg-sg-pink-hover text-white flex items-center gap-1.5 text-xs font-black uppercase transition-all px-3.5 py-1.5 rounded-full shadow-xs"
               >
                 <ShieldCheck className="h-4 w-4" />
                 <span>ADMIN</span>
@@ -566,7 +663,7 @@ export function StorefrontHeader() {
         </div>
 
         {/* Mobile Full-Width Pink-Bordered Pill Search Input */}
-        <div ref={searchContainerRef} className="lg:hidden mt-1">
+        <div ref={mobileSearchContainerRef} className="lg:hidden mt-1 relative">
           <form onSubmit={handleSearchSubmit} className="relative">
             <div className="relative flex items-center rounded-full border-2 border-sg-pink bg-white shadow-xs px-3.5 py-2 text-gray-900">
               <Search className="h-4 w-4 mr-2 text-gray-700 shrink-0" />
@@ -589,6 +686,7 @@ export function StorefrontHeader() {
               )}
             </div>
           </form>
+          {renderSearchDropdown()}
         </div>
       </div>
 
@@ -826,6 +924,23 @@ export function StorefrontHeader() {
                 <span className="truncate">{config.routineFinderText || "Routine Finder"}</span>
               </Link>
             </div>
+
+              {/* Beauty Blog & Editorial Guide Link */}
+              <div className="py-1">
+                <div className="flex items-center justify-between px-4 py-2.5">
+                  <Link
+                    href="/blog"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="text-xs font-black text-pink-600 hover:text-pink-700 flex items-center gap-2"
+                  >
+                    <BookOpen className="h-4 w-4 text-pink-500" />
+                    <span>Beauty Blog & Guides</span>
+                  </Link>
+                  <span className="text-[10px] font-extrabold text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">
+                    Journal
+                  </span>
+                </div>
+              </div>
 
             {/* Scrollable Categories List */}
             <div className="flex-1 overflow-y-auto divide-y divide-gray-100">

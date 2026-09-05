@@ -125,7 +125,7 @@ export default function AdminBkashPage() {
                 <select
                   value={formData.environment}
                   onChange={(e) => setFormData({ ...formData, environment: e.target.value })}
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                 >
                   <option value="sandbox">Sandbox (bKash PGW Simulator)</option>
                   <option value="live">Live / Production Merchant</option>
@@ -139,7 +139,7 @@ export default function AdminBkashPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, tokenized: e.target.value === "tokenized" })
                   }
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                 >
                   <option value="tokenized">Tokenized Agreement & Checkout (Fastest)</option>
                   <option value="standard">Standard PGW Webview Redirect</option>
@@ -167,7 +167,7 @@ export default function AdminBkashPage() {
                   value={formData.app_key}
                   onChange={(e) => setFormData({ ...formData, app_key: e.target.value })}
                   placeholder="e.g. bkash_app_key_..."
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                 />
               </div>
 
@@ -187,7 +187,7 @@ export default function AdminBkashPage() {
                     type="text"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                   />
                 </div>
 

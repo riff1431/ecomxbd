@@ -47,7 +47,7 @@ export default async function AdminMediaSettingsPage() {
                 defaultValue={settings.max_upload_size_mb || 10}
                 min={1}
                 max={50}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 

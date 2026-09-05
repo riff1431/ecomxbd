@@ -79,7 +79,7 @@ export default function AccountTrackClient({ initialOrders }: { initialOrders: a
               placeholder="Search Order Number..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 rounded-xl border border-gray-200 bg-gray-50 text-xs text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+              className="pl-8 pr-3 py-1.5 rounded-xl border text-xs text-gray-900 focus:outline-none"
             />
           </div>
         )}
@@ -95,7 +95,7 @@ export default function AccountTrackClient({ initialOrders }: { initialOrders: a
             You don&apos;t have any recent deliveries in progress. When you place an order, live tracking will appear here.
           </p>
           <Link href="/products" className="inline-block">
-            <Button className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs">Start Shopping</Button>
+            <Button className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs">Start Shopping</Button>
           </Link>
         </div>
       ) : (
@@ -106,7 +106,7 @@ export default function AccountTrackClient({ initialOrders }: { initialOrders: a
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-gray-100 pb-4">
                 <div>
                   <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Tracking Order</span>
-                  <p className="text-base font-black text-gray-900 font-mono text-[#e91e63]">
+                  <p className="text-base font-black font-mono text-[#e91e63]">
                     {activeOrder.order_number}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -129,7 +129,7 @@ export default function AccountTrackClient({ initialOrders }: { initialOrders: a
               <div className="py-2">
                 <div className="relative">
                   {/* Progress Line */}
-                  <div className="absolute top-5 left-4 right-4 h-1 bg-gray-100 -z-0">
+                  <div className="absolute top-5 left-4 right-4 h-1 bg-gray-100 z-0">
                     <div
                       className="h-full bg-[#e91e63] transition-all duration-500"
                       style={{
@@ -160,7 +160,7 @@ export default function AccountTrackClient({ initialOrders }: { initialOrders: a
                             )}
                           </div>
                           <span
-                            className={`mt-2 text-[11px] font-bold max-w-[70px] sm:max-w-none ${
+                            className={`mt-2 text-[11px] font-bold max-w-17.5 sm:max-w-none ${
                               isCompleted ? "text-gray-900" : "text-gray-400"
                             }`}
                           >
@@ -202,7 +202,7 @@ export default function AccountTrackClient({ initialOrders }: { initialOrders: a
                   <div className="divide-y divide-gray-100">
                     {activeOrder.order_items.map((it: any) => (
                       <div key={it.id} className="py-2 flex items-center justify-between text-xs">
-                        <span className="text-gray-800 font-medium truncate max-w-[280px] sm:max-w-md">
+                        <span className="text-gray-800 font-medium truncate max-w-70 sm:max-w-md">
                           {it.product_name_snapshot}
                         </span>
                         <span className="text-gray-500 font-bold">

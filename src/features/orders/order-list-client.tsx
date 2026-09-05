@@ -27,12 +27,19 @@ import {
   Layers,
   Search,
   Filter,
+  Plus,
+  Download,
+  X,
+  Sliders,
+  Zap,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { updateOrderStatus } from "./actions";
+import { updateOrderStatus, createOrder } from "./actions";
 import { bookCourierDelivery } from "@/features/logistics/actions";
 import { addBlacklistEntry } from "@/features/fraud/actions";
 import { Button } from "@/components/shared/ui/button";
+import { trackCancelOrder, trackRefund } from "@/lib/analytics/datalayer";
+import { getAvailableNextStatuses, OrderStatus, generateWhatsAppOrderMessage } from "@/types/orders";
 
 interface OrderListClientProps {
   initialOrders: any[];
@@ -48,18 +55,72 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
   const [bannerMsg, setBannerMsg] = useState<{ text: string; isError: boolean } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  // Quick Dispatch Modal State (Optional inline adjustment)
-  const [dispatchModalOrder, setDispatchModalOrder] = useState<any | null>(null);
-  const [modalCourier, setModalCourier] = useState<"steadfast" | "pathao">("steadfast");
-  const [modalWeight, setModalWeight] = useState(0.5);
-  const [modalNote, setModalNote] = useState("Fragile skincare cosmetics. Please handle with care.");
+  // Quick View Order Modal State
+  const [quickViewOrder, setQuickViewOrder] = useState<any | null>(null);
+
+  // Admin Override Modal State
+  const [overrideModalOrder, setOverrideModalOrder] = useState<any | null>(null);
+  const [overrideTargetStatus, setOverrideTargetStatus] = useState<OrderStatus>("confirmed");
+  const [overrideReason, setOverrideReason] = useState<string>("");
+  const [overrideLoading, setOverrideLoading] = useState(false);
+
+  // Anti-Fraud Block Customer Modal State
+  const [blockModalOrder, setBlockModalOrder] = useState<any | null>(null);
+  const [blockReason, setBlockReason] = useState<string>("High RTO rate / Suspected fraudulent activity");
+  const [blockLoading, setBlockLoading] = useState(false);
+
+  // Single Order Custom Dispatch Modal State (Custom COD & Note)
+  const [customDispatchModal, setCustomDispatchModal] = useState<{
+    order: any;
+    courierCode: "steadfast" | "pathao";
+    codAmount: number;
+    weight: number;
+    note: string;
+  } | null>(null);
+  const [customDispatchLoading, setCustomDispatchLoading] = useState(false);
+
+  // Bulk Dispatch Review Modal State (Review all individual CODs & Global Note)
+  const [bulkReviewModal, setBulkReviewModal] = useState<{
+    courierCode: "steadfast" | "pathao";
+    eligibleOrders: any[];
+    globalNote: string;
+  } | null>(null);
+
+  // Create Manual Order Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creatingOrder, setCreatingOrder] = useState(false);
+
+
+
+  const [createForm, setCreateForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    district: "Dhaka City",
+    thana: "",
+    address: "",
+    productName: "COSRX Advanced Snail 96 Mucin Power Essence",
+    productPrice: 1365,
+    quantity: 1,
+    deliveryFee: 60,
+    notes: "Manual order placed via Phone/WhatsApp",
+  });
 
   // WhatsApp dropdown menu open state
   const [openWhatsAppId, setOpenWhatsAppId] = useState<string | null>(null);
 
-  // Filter Orders
+  // Filter Orders  // Search & Tab Filtering
   const filteredOrders = orders.filter((o) => {
-    const matchesTab = activeTab === "all" || o.status === activeTab;
+    let matchesTab = true;
+    if (activeTab === "all") matchesTab = true;
+    else if (activeTab === "pending") matchesTab = o.status === "pending";
+    else if (activeTab === "processing") matchesTab = o.status === "processing" || o.status === "confirmed";
+    else if (activeTab === "on-hold") matchesTab = o.status === "on-hold";
+    else if (activeTab === "completed") matchesTab = o.status === "completed" || o.status === "delivered" || o.status === "shipped";
+    else if (activeTab === "cancelled") matchesTab = o.status === "cancelled";
+    else if (activeTab === "failed") matchesTab = o.status === "failed" || o.status === "returned" || o.status === "refunded";
+    else matchesTab = o.status === activeTab;
+
     const phone = o.shipping_address_snapshot?.phone || o.guest_phone || "";
     const name = o.shipping_address_snapshot?.name || o.guest_name || "";
     const orderNum = o.order_number || "";
@@ -73,24 +134,100 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
     return matchesTab && matchesSearch;
   });
 
-  // 1. Status Update
+
+  // 1. Status Update Handler with State Guard & Override Interceptor
   const handleStatusChange = async (orderId: string, newStatus: string) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
+    if (!targetOrder) return;
+
+    // Check if admin clicked the Force Override option
+    if (newStatus === "__override__") {
+      setOverrideModalOrder(targetOrder);
+      setOverrideTargetStatus(targetOrder.status === "cancelled" ? "confirmed" : "processing");
+      setOverrideReason("");
+      return;
+    }
+
+    setActionLoadingId(orderId);
     const res = await updateOrderStatus(orderId, newStatus);
+    setActionLoadingId(null);
+
     if (res.success) {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
-      setBannerMsg({ text: `Order status updated to ${newStatus.toUpperCase()}!`, isError: false });
-      setTimeout(() => setBannerMsg(null), 3000);
+
+      if (newStatus === "cancelled" && targetOrder) {
+        trackCancelOrder(
+          targetOrder.order_number || targetOrder.id,
+          "Admin updated status to cancelled",
+          Number(targetOrder.total) || 0,
+          "BDT"
+        );
+      } else if (newStatus === "returned" && targetOrder) {
+        trackRefund({
+          transaction_id: targetOrder.order_number || targetOrder.id,
+          order_id: targetOrder.order_number || targetOrder.id,
+          value: Number(targetOrder.total) || 0,
+          currency: "BDT",
+        });
+      }
+
+      setBannerMsg({
+        text: `Order #${targetOrder.order_number || orderId} status successfully transitioned to ${newStatus.toUpperCase()}`,
+        isError: false,
+      });
+      setTimeout(() => setBannerMsg(null), 3500);
+    } else {
+      setBannerMsg({
+        text: `Transition Failed: ${res.error}`,
+        isError: true,
+      });
+      setTimeout(() => setBannerMsg(null), 5000);
     }
   };
+
+  // 1.1 Execute Admin Force Override
+  const handleExecuteOverride = async () => {
+    if (!overrideModalOrder) return;
+    setOverrideLoading(true);
+
+    const res = await updateOrderStatus(
+      overrideModalOrder.id,
+      overrideTargetStatus,
+      undefined,
+      true,
+      overrideReason || "Supervisor manual correction"
+    );
+
+    setOverrideLoading(false);
+
+    if (res.success) {
+      setOrders((prev) =>
+        prev.map((o) => (o.id === overrideModalOrder.id ? { ...o, status: overrideTargetStatus } : o))
+      );
+      setBannerMsg({
+        text: `Force Override applied: Order #${overrideModalOrder.order_number} status set to ${overrideTargetStatus.toUpperCase()}`,
+        isError: false,
+      });
+      setOverrideModalOrder(null);
+      setTimeout(() => setBannerMsg(null), 4500);
+    } else {
+      setBannerMsg({
+        text: `Override failed: ${res.error}`,
+        isError: true,
+      });
+    }
+  };
+
 
   // 2. 1-Click Courier Dispatch (SteadFast or Pathao)
   const handleOneClickDispatch = async (
     order: any,
     courierCode: "steadfast" | "pathao",
     customWeight?: number,
-    customNote?: string
+    customNote?: string,
+    customCod?: number
   ) => {
     setActionLoadingId(order.id);
     setBannerMsg(null);
@@ -102,6 +239,9 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
       "Skincare cosmetics parcel";
     const weight = customWeight ?? 0.5;
     const note = customNote ?? (order.public_note || "Fragile cosmetics. Call recipient before delivery.");
+    const codDue = customCod !== undefined
+      ? Number(customCod)
+      : (order.amount_to_collect !== undefined ? Number(order.amount_to_collect) : Number(order.total));
 
     const res = await bookCourierDelivery({
       orderId: order.id,
@@ -112,7 +252,7 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
       recipientAddress: address.address || "Dhaka, Bangladesh",
       district: address.district || "Dhaka City",
       thana: address.thana || "",
-      codAmount: order.total,
+      codAmount: codDue,
       weightKg: weight,
       itemDescription: itemsSummary,
       specialInstruction: note,
@@ -127,15 +267,16 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
                 status: "shipped",
                 courier_name: res.courierName,
                 consignment_id: res.consignmentId,
+                tracking_code: res.trackingId,
+                tracking_url: res.trackingUrl,
               }
             : o
         )
       );
       setBannerMsg({
-        text: `⚡ 1-Click Dispatched Order #${order.order_number} with ${res.courierName}! Tracking: ${res.consignmentId} (${weight}kg)`,
+        text: `Dispatched Order #${order.order_number} to ${res.courierName}! Consignment: ${res.consignmentId} (COD: ৳${codDue})`,
         isError: false,
       });
-      setDispatchModalOrder(null);
       setTimeout(() => setBannerMsg(null), 4500);
     } else {
       setBannerMsg({ text: res.error || "Courier booking failed.", isError: true });
@@ -143,80 +284,246 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
     setActionLoadingId(null);
   };
 
-  // 3. 1-Click Block Phone & IP Action
-  const handleBlockCustomer = async (order: any) => {
-    const phone = order.shipping_address_snapshot?.phone || order.guest_phone;
-    if (!phone) return;
+  // 2.1 Single Order Custom Dispatch Handlers (Custom COD & Custom Note)
+  const handleOpenCustomDispatch = (order: any, courierCode: "steadfast" | "pathao") => {
+    const cod = order.amount_to_collect !== undefined ? Number(order.amount_to_collect) : Number(order.total);
+    setCustomDispatchModal({
+      order,
+      courierCode,
+      codAmount: cod,
+      weight: 0.5,
+      note: order.public_note || "Fragile cosmetics. Call recipient before delivery.",
+    });
+  };
 
-    if (!confirm(`Are you sure you want to block ${phone}? They will be denied from placing any future orders.`)) {
+  const handleExecuteCustomDispatch = async () => {
+    if (!customDispatchModal) return;
+    setCustomDispatchLoading(true);
+    await handleOneClickDispatch(
+      customDispatchModal.order,
+      customDispatchModal.courierCode,
+      customDispatchModal.weight,
+      customDispatchModal.note,
+      customDispatchModal.codAmount
+    );
+    setCustomDispatchLoading(false);
+    setCustomDispatchModal(null);
+  };
+
+  // 3. Open Anti-Fraud Block Customer Modal
+  const handleOpenBlockModal = (order: any) => {
+    setBlockModalOrder(order);
+    setBlockReason("High RTO rate / Suspected fraudulent activity");
+  };
+
+  // 3.1 Execute Anti-Fraud Block & Order Cancellation
+  const handleExecuteBlock = async () => {
+    if (!blockModalOrder) return;
+    setBlockLoading(true);
+
+    const phone = blockModalOrder.shipping_address_snapshot?.phone || blockModalOrder.guest_phone || "";
+    const ip = blockModalOrder.ip_address || null;
+
+    if (phone) {
+      await addBlacklistEntry({
+        type: "phone",
+        value: phone,
+        reason: blockReason,
+      });
+    }
+
+    if (ip) {
+      await addBlacklistEntry({
+        type: "ip",
+        value: ip,
+        reason: blockReason,
+      });
+    }
+
+    // Cancel order and automatically restore stock via WooCommerce rules
+    await updateOrderStatus(
+      blockModalOrder.id,
+      "cancelled",
+      `Customer blacklisted and order cancelled. Reason: ${blockReason}`,
+      true,
+      blockReason
+    );
+
+    setOrders((prev) =>
+      prev.map((o) => (o.id === blockModalOrder.id ? { ...o, status: "cancelled", is_blocked: true } : o))
+    );
+
+    setBannerMsg({
+      text: `Customer (${phone || "Unknown"}) added to Blacklist and Order #${blockModalOrder.order_number} cancelled.`,
+      isError: false,
+    });
+
+    setBlockLoading(false);
+    setBlockModalOrder(null);
+    setTimeout(() => setBannerMsg(null), 4500);
+  };
+
+  // Batch Dispatch Progress & Report State
+  const [batchProgress, setBatchProgress] = useState<{
+    total: number;
+    current: number;
+    percentage: number;
+    currentOrderNumber?: string;
+  } | null>(null);
+
+  const [batchSummaryReport, setBatchSummaryReport] = useState<{
+    courierName: string;
+    successful: Array<{ id: string; order_number: string; consignment_id: string; tracking_url?: string; cod: number }>;
+    failed: Array<{ id: string; order_number: string; phone: string; reason: string }>;
+  } | null>(null);
+
+  // 4. Open Bulk Dispatch Review Modal with individual CODs & Global Note preview
+  const handleBulkCourierDispatch = (courierCode: "steadfast" | "pathao") => {
+    if (selectedIds.length === 0) return;
+
+    const selectedOrders = orders.filter((o) => selectedIds.includes(o.id));
+    const eligibleOrders = selectedOrders.filter(
+      (o) => !o.consignment_id && !o.tracking_code && (o.status === "processing" || o.status === "confirmed")
+    );
+    const skippedCount = selectedOrders.length - eligibleOrders.length;
+
+    if (eligibleOrders.length === 0) {
+      setBannerMsg({
+        text: `No eligible processing orders in selection (${skippedCount} already dispatched, cancelled, or pending orders skipped).`,
+        isError: true,
+      });
+      setTimeout(() => setBannerMsg(null), 4000);
       return;
     }
 
-    setActionLoadingId(order.id);
-    const res = await addBlacklistEntry({
-      type: "phone",
-      value: phone,
-      reason: `Blocked from Order #${order.order_number} due to suspicious activity`,
+    setBulkReviewModal({
+      courierCode,
+      eligibleOrders,
+      globalNote: "Fragile skincare cosmetics. Call recipient before delivery.",
     });
-
-    if (res.success) {
-      await updateOrderStatus(order.id, "cancelled");
-      setOrders((prev) =>
-        prev.map((o) => (o.id === order.id ? { ...o, status: "cancelled" } : o))
-      );
-      setBannerMsg({
-        text: `🚫 Number ${phone} added to Security Blacklist & Order #${order.order_number} Cancelled!`,
-        isError: false,
-      });
-      setTimeout(() => setBannerMsg(null), 4000);
-    }
-    setActionLoadingId(null);
   };
 
-  // 4. Bulk Dispatch to SteadFast / Pathao
-  const handleBulkCourierDispatch = async (courierCode: "steadfast" | "pathao") => {
-    if (selectedIds.length === 0) return;
+  // 4.1 Execute Concurrent Batch Dispatch (Worker Pool Concurrency = 5)
+  const executeBulkDispatchWorkerPool = async (
+    courierCode: "steadfast" | "pathao",
+    eligibleOrders: any[],
+    globalNote: string
+  ) => {
     setBulkLoading(true);
     setBannerMsg(null);
+    setBatchProgress({
+      total: eligibleOrders.length,
+      current: 0,
+      percentage: 0,
+      currentOrderNumber: eligibleOrders[0]?.order_number,
+    });
 
-    const targetOrders = orders.filter((o) => selectedIds.includes(o.id));
-    let count = 0;
+    const successful: Array<{ id: string; order_number: string; consignment_id: string; tracking_url?: string; cod: number }> = [];
+    const failed: Array<{ id: string; order_number: string; phone: string; reason: string }> = [];
 
-    for (const order of targetOrders) {
+    const CONCURRENCY = 5;
+    let completedCount = 0;
+
+    const processOrder = async (order: any) => {
       const address = order.shipping_address_snapshot || {};
       const items = order.order_items || [];
-      const itemsSummary = items.map((it: any) => `${it.product_name_snapshot} (x${it.quantity})`).join(", ");
+      const itemsSummary = items.map((it: any) => `${it.product_name_snapshot} (x${it.quantity})`).join(", ") || "Cosmetics parcel";
+      const codDue = order.amount_to_collect !== undefined ? Number(order.amount_to_collect) : Number(order.total);
+      const recipientPhone = address.phone || order.guest_phone || "";
+      const note = globalNote || order.public_note || "Fragile cosmetics parcel. Handle with care.";
 
-      const res = await bookCourierDelivery({
-        orderId: order.id,
-        orderNumber: order.order_number,
-        courierCode,
-        recipientName: address.name || order.guest_name || "Customer",
-        recipientPhone: address.phone || order.guest_phone || "01712345678",
-        recipientAddress: address.address || "Dhaka, Bangladesh",
-        district: address.district || "Dhaka City",
-        thana: address.thana || "",
-        codAmount: order.total,
-        weightKg: 0.5,
-        itemDescription: itemsSummary,
+      try {
+        const res = await bookCourierDelivery({
+          orderId: order.id,
+          orderNumber: order.order_number,
+          courierCode,
+          recipientName: address.name || order.guest_name || "Customer",
+          recipientPhone,
+          recipientAddress: address.address || "Dhaka, Bangladesh",
+          district: address.district || "Dhaka City",
+          thana: address.thana || "",
+          codAmount: codDue,
+          weightKg: 0.5,
+          itemDescription: itemsSummary,
+          specialInstruction: note,
+        });
+
+        if (res.success) {
+          successful.push({
+            id: order.id,
+            order_number: order.order_number,
+            consignment_id: res.consignmentId,
+            tracking_url: res.trackingUrl,
+            cod: codDue,
+          });
+
+          setOrders((prev) =>
+            prev.map((o) =>
+              o.id === order.id
+                ? {
+                    ...o,
+                    status: "shipped",
+                    courier_name: res.courierName,
+                    consignment_id: res.consignmentId,
+                    tracking_code: res.trackingId,
+                    tracking_url: res.trackingUrl,
+                  }
+                : o
+            )
+          );
+        } else {
+          failed.push({
+            id: order.id,
+            order_number: order.order_number,
+            phone: recipientPhone,
+            reason: res.error || "Courier API rejected booking",
+          });
+        }
+      } catch (err: any) {
+        failed.push({
+          id: order.id,
+          order_number: order.order_number,
+          phone: recipientPhone,
+          reason: err.message || "Network timeout during courier dispatch",
+        });
+      } finally {
+        completedCount++;
+        const nextOrder = eligibleOrders[completedCount];
+        setBatchProgress({
+          total: eligibleOrders.length,
+          current: completedCount,
+          percentage: Math.round((completedCount / eligibleOrders.length) * 100),
+          currentOrderNumber: nextOrder ? nextOrder.order_number : undefined,
+        });
+      }
+    };
+
+    // Run pool
+    const queue = [...eligibleOrders];
+    const workers = Array(Math.min(CONCURRENCY, queue.length))
+      .fill(null)
+      .map(async () => {
+        while (queue.length > 0) {
+          const order = queue.shift();
+          if (order) await processOrder(order);
+        }
       });
 
-      if (res.success) count++;
-    }
+    await Promise.all(workers);
 
-    setOrders((prev) =>
-      prev.map((o) => (selectedIds.includes(o.id) ? { ...o, status: "shipped" } : o))
-    );
-    setSelectedIds([]);
     setBulkLoading(false);
-    setBannerMsg({
-      text: `🚀 Bulk Dispatched ${count} orders to ${courierCode === "steadfast" ? "SteadFast" : "Pathao Express"}!`,
-      isError: false,
+    setBatchProgress(null);
+    setSelectedIds([]);
+
+    // Open Batch Summary Report Modal
+    setBatchSummaryReport({
+      courierName: courierCode === "steadfast" ? "SteadFast Courier" : "Pathao Express",
+      successful,
+      failed,
     });
-    setTimeout(() => setBannerMsg(null), 4000);
   };
 
-  // 5. Bulk Status Change
+  // 5. Bulk Status Change with State Validation
   const handleBulkStatusUpdate = async (newStatus: string) => {
     if (selectedIds.length === 0) return;
     setBulkLoading(true);
@@ -231,10 +538,100 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
     setSelectedIds([]);
     setBulkLoading(false);
     setBannerMsg({
-      text: `Updated ${selectedIds.length} orders to ${newStatus.toUpperCase()}`,
+      text: `Updated ${selectedIds.length} orders to status: ${newStatus.toUpperCase()}`,
       isError: false,
     });
     setTimeout(() => setBannerMsg(null), 3000);
+  };
+
+  // 6. Bulk Export to CSV
+  const handleExportCSV = () => {
+    const exportTargets = selectedIds.length > 0 ? orders.filter((o) => selectedIds.includes(o.id)) : filteredOrders;
+    if (exportTargets.length === 0) return;
+
+    const headers = ["Order Number", "Date", "Customer Name", "Phone", "District", "Address", "Total", "Payment Method", "Status", "Courier", "Consignment ID"];
+    const rows = exportTargets.map((o) => {
+      const addr = o.shipping_address_snapshot || {};
+      return [
+        o.order_number,
+        new Date(o.created_at).toLocaleDateString("en-GB"),
+        `"${addr.name || o.guest_name || ""}"`,
+        `"${addr.phone || o.guest_phone || ""}"`,
+        `"${addr.district || ""}"`,
+        `"${addr.address || ""}"`,
+        o.total,
+        o.payment_method,
+        o.status,
+        o.courier_name || "",
+        o.consignment_id || "",
+      ].join(",");
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `ecomx_orders_export_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 7. Manual Order Creation Handler
+  const handleCreateManualOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createForm.name || !createForm.phone || !createForm.address) {
+      alert("Please fill in customer name, phone number, and street address.");
+      return;
+    }
+
+    setCreatingOrder(true);
+    const res = await createOrder({
+      customer: {
+        name: createForm.name.trim(),
+        phone: createForm.phone.trim(),
+        email: createForm.email.trim() || undefined,
+        district: createForm.district,
+        thana: createForm.thana.trim() || createForm.district,
+        address: createForm.address.trim(),
+        notes: createForm.notes.trim() || undefined,
+      },
+      items: [
+        {
+          product_id: "cosrx-snail-96",
+          name: createForm.productName,
+          price: createForm.productPrice,
+          quantity: createForm.quantity,
+        },
+      ],
+      shipping: {
+        method: createForm.district.toLowerCase().includes("dhaka") ? "Inside Dhaka Express" : "Outside Dhaka Courier",
+        amount: createForm.deliveryFee,
+      },
+    });
+
+    if (res.error) {
+      alert(`Error creating order: ${res.error}`);
+    } else if (res.order) {
+      setOrders((prev) => [res.order, ...prev]);
+      setShowCreateModal(false);
+      setBannerMsg({ text: `Order #${res.order.order_number} created successfully!`, isError: false });
+      setTimeout(() => setBannerMsg(null), 4000);
+      setCreateForm({
+        name: "",
+        phone: "",
+        email: "",
+        district: "Dhaka City",
+        thana: "",
+        address: "",
+        productName: "COSRX Advanced Snail 96 Mucin Power Essence",
+        productPrice: 1365,
+        quantity: 1,
+        deliveryFee: 60,
+        notes: "Manual order placed via Phone/WhatsApp",
+      });
+    }
+    setCreatingOrder(false);
   };
 
   // Selection Toggles
@@ -259,24 +656,29 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
   };
 
   const statusColors: Record<string, string> = {
-    pending: "bg-amber-50 text-amber-700 border-amber-200",
-    confirmed: "bg-blue-50 text-blue-700 border-blue-200",
-    processing: "bg-indigo-50 text-indigo-700 border-indigo-200",
-    packed: "bg-purple-50 text-purple-700 border-purple-200",
-    shipped: "bg-teal-50 text-teal-700 border-teal-200",
-    delivered: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    cancelled: "bg-red-50 text-red-700 border-red-200",
-    returned: "bg-rose-50 text-rose-700 border-rose-200",
+    pending: "bg-amber-50 text-amber-800 border-amber-200",
+    processing: "bg-blue-50 text-blue-800 border-blue-200",
+    "on-hold": "bg-orange-50 text-orange-800 border-orange-200",
+    completed: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    cancelled: "bg-gray-100 text-gray-700 border-gray-200",
+    refunded: "bg-purple-50 text-purple-800 border-purple-200",
+    failed: "bg-red-50 text-red-800 border-red-200",
+    confirmed: "bg-blue-50 text-blue-800 border-blue-200",
+    shipped: "bg-teal-50 text-teal-800 border-teal-200",
+    delivered: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    returned: "bg-rose-50 text-rose-800 border-rose-200",
   };
 
   const tabs = [
     { label: "All Orders", value: "all", count: orders.length },
     { label: "Pending", value: "pending", count: orders.filter((o) => o.status === "pending").length },
-    { label: "Confirmed", value: "confirmed", count: orders.filter((o) => o.status === "confirmed").length },
-    { label: "Shipped", value: "shipped", count: orders.filter((o) => o.status === "shipped").length },
-    { label: "Delivered", value: "delivered", count: orders.filter((o) => o.status === "delivered").length },
-    { label: "Returns", value: "returned", count: orders.filter((o) => o.status === "returned").length },
+    { label: "Processing", value: "processing", count: orders.filter((o) => o.status === "processing" || o.status === "confirmed").length },
+    { label: "On Hold", value: "on-hold", count: orders.filter((o) => o.status === "on-hold").length },
+    { label: "Completed", value: "completed", count: orders.filter((o) => o.status === "completed" || o.status === "delivered" || o.status === "shipped").length },
+    { label: "Cancelled", value: "cancelled", count: orders.filter((o) => o.status === "cancelled").length },
+    { label: "Failed / Returns", value: "failed", count: orders.filter((o) => o.status === "failed" || o.status === "returned" || o.status === "refunded").length },
   ];
+
 
   return (
     <div className="space-y-6 pb-20">
@@ -295,6 +697,28 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* + Create New Manual Order Button */}
+          <Button
+            onClick={() => setShowCreateModal(true)}
+            size="sm"
+            className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-bold rounded-xl shadow-xs"
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Create Order
+          </Button>
+
+          {/* Export CSV */}
+          <Button
+            onClick={handleExportCSV}
+            variant="outline"
+            size="sm"
+            className="text-xs font-bold rounded-xl border-gray-300"
+            title="Export filtered orders to CSV"
+          >
+            <Download className="h-3.5 w-3.5 mr-1 text-gray-600" />
+            Export CSV
+          </Button>
+
           <Link href="/admin/orders/incomplete">
             <Button variant="outline" size="sm" className="text-xs font-bold rounded-xl border-gray-300">
               <Sparkles className="h-3.5 w-3.5 mr-1 text-[#e91e63]" />
@@ -325,59 +749,90 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
           }`}
         >
           <span>{bannerMsg.text}</span>
-          <button onClick={() => setBannerMsg(null)} className="opacity-60 hover:opacity-100 font-bold">
-            ✕
+          <button onClick={() => setBannerMsg(null)} className="opacity-60 hover:opacity-100 p-1">
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
 
-      {/* Floating Bulk Action Bar */}
+      {/* Floating Bulk Action Bar with Smart Counter & Progress Bar */}
       {selectedIds.length > 0 && (
-        <div className="rounded-3xl bg-gray-900 text-white p-4 shadow-xl flex flex-wrap items-center justify-between gap-3 animate-in slide-in-from-top-2">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#e91e63] animate-pulse" />
-            <span className="text-xs font-black">
-              {selectedIds.length} Order{selectedIds.length === 1 ? "" : "s"} Selected
-            </span>
+        <div className="rounded-3xl bg-gray-900 text-white p-4 shadow-2xl space-y-3 animate-in slide-in-from-top-2 border border-gray-800">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="h-3 w-3 rounded-full bg-[#e91e63] animate-pulse" />
+              <div>
+                <span className="text-xs font-black block">
+                  {selectedIds.length} Order{selectedIds.length === 1 ? "" : "s"} Selected
+                </span>
+                <span className="text-[10px] text-gray-400 font-medium">
+                  {orders.filter((o) => selectedIds.includes(o.id) && !o.consignment_id && o.status !== "cancelled").length} Ready for Dispatch •{" "}
+                  {orders.filter((o) => selectedIds.includes(o.id) && Boolean(o.consignment_id)).length} Already Shipped
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                onClick={() => handleBulkCourierDispatch("steadfast")}
+                disabled={bulkLoading}
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-sm"
+              >
+                {bulkLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Truck className="h-3.5 w-3.5 mr-1" />}
+                Bulk SteadFast (5x Fast)
+              </Button>
+
+              <Button
+                onClick={() => handleBulkCourierDispatch("pathao")}
+                disabled={bulkLoading}
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl shadow-sm"
+              >
+                Bulk Pathao
+              </Button>
+
+              <Button
+                onClick={() => handleBulkStatusUpdate("confirmed")}
+                disabled={bulkLoading}
+                size="sm"
+                variant="outline"
+                className="text-xs font-bold rounded-xl border-gray-700 text-gray-200 hover:bg-gray-800"
+              >
+                <Check className="h-3 w-3 mr-1" />
+                Mark Confirmed
+              </Button>
+
+              <button
+                onClick={() => setSelectedIds([])}
+                disabled={bulkLoading}
+                className="text-xs text-gray-400 hover:text-white font-bold ml-2 underline"
+              >
+                Clear
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              onClick={() => handleBulkCourierDispatch("steadfast")}
-              disabled={bulkLoading}
-              size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-sm"
-            >
-              {bulkLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Truck className="h-3.5 w-3.5 mr-1" />}
-              Bulk Dispatch SteadFast
-            </Button>
-
-            <Button
-              onClick={() => handleBulkCourierDispatch("pathao")}
-              disabled={bulkLoading}
-              size="sm"
-              className="bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl shadow-sm"
-            >
-              Bulk Dispatch Pathao
-            </Button>
-
-            <Button
-              onClick={() => handleBulkStatusUpdate("confirmed")}
-              disabled={bulkLoading}
-              size="sm"
-              variant="outline"
-              className="text-xs font-bold rounded-xl border-gray-700 text-gray-200 hover:bg-gray-800"
-            >
-              ✓ Mark Confirmed
-            </Button>
-
-            <button
-              onClick={() => setSelectedIds([])}
-              className="text-xs text-gray-400 hover:text-white font-bold ml-2 underline"
-            >
-              Clear
-            </button>
-          </div>
+          {/* Real-Time Concurrency Progress Bar */}
+          {batchProgress && (
+            <div className="pt-2 border-t border-gray-800 space-y-1.5 animate-in fade-in-0">
+              <div className="flex justify-between text-[11px] font-bold text-gray-300">
+                <span className="flex items-center gap-1.5">
+                  <Loader2 className="h-3 w-3 animate-spin text-[#e91e63]" />
+                  Dispatching #{batchProgress.currentOrderNumber}...
+                </span>
+                <span>
+                  {batchProgress.current} / {batchProgress.total} ({batchProgress.percentage}%)
+                </span>
+              </div>
+              <div className="h-2 w-full rounded-full bg-gray-800 overflow-hidden">
+                <div
+                  className="h-full bg-linear-to-r from-emerald-500 to-[#e91e63] transition-all duration-300 rounded-full"
+                  style={{ width: `${batchProgress.percentage}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -416,7 +871,7 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by order #, phone, customer, district..."
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3.5 py-2 text-xs font-medium text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-3.5 py-2 text-xs font-medium text-gray-900 focus:outline-none"
             />
           </div>
         </div>
@@ -441,7 +896,12 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
                 <th className="px-4 py-3.5">Destination & Items</th>
                 <th className="px-4 py-3.5">Amount Due</th>
                 <th className="px-4 py-3.5">Status</th>
-                <th className="px-4 py-3.5 text-center">⚡ 1-Click Courier Dispatch</th>
+                <th className="px-4 py-3.5 text-center">
+                  <span className="inline-flex items-center justify-center gap-1">
+                    <Zap className="h-3.5 w-3.5 text-[#e91e63]" />
+                    <span>1-Click Courier Dispatch</span>
+                  </span>
+                </th>
                 <th className="px-4 py-3.5 text-right">Actions</th>
               </tr>
             </thead>
@@ -500,12 +960,21 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
 
                       {/* Order Number & Consignment Code */}
                       <td className="px-4 py-3.5">
-                        <Link
-                          href={`/admin/orders/${ord.id}`}
-                          className="font-mono font-black text-[#e91e63] hover:underline block"
-                        >
-                          {ord.order_number}
-                        </Link>
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={`/admin/orders/${ord.id}`}
+                            className="font-mono font-black text-[#e91e63] hover:underline"
+                          >
+                            {ord.order_number}
+                          </Link>
+                          <button
+                            onClick={() => setQuickViewOrder(ord)}
+                            title="Quick View Order Details"
+                            className="text-gray-400 hover:text-gray-700"
+                          >
+                            <Eye className="h-3 w-3" />
+                          </button>
+                        </div>
                         <span className="text-[10px] text-gray-400 font-medium block">
                           {new Date(ord.created_at).toLocaleDateString("en-GB", {
                             day: "numeric",
@@ -533,7 +1002,44 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
 
                       {/* Customer Info & 1-Click WhatsApp / Call / Block */}
                       <td className="px-4 py-3.5">
-                        <span className="font-bold text-gray-900 block">{customerName}</span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-gray-900 block">{customerName}</span>
+                          {ord.risk_profile && (
+                            ord.risk_profile.risk_level === "blocked" ? (
+                              <span
+                                className="rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase bg-rose-100 text-rose-800 border border-rose-300 inline-flex items-center gap-1"
+                                title={ord.risk_profile.flags.join(" • ") || "Customer is on fraud blocklist"}
+                              >
+                                <Ban className="h-2.5 w-2.5 text-rose-700" />
+                                <span>Blocked</span>
+                              </span>
+                            ) : ord.risk_profile.risk_level === "high" ? (
+                              <span
+                                className="rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase bg-red-100 text-red-700 border border-red-200 inline-flex items-center gap-1"
+                                title={ord.risk_profile.flags.join(" • ") || "High Risk / High RTO probability"}
+                              >
+                                <ShieldAlert className="h-2.5 w-2.5 text-red-600" />
+                                <span>High Risk</span>
+                              </span>
+                            ) : ord.risk_profile.risk_level === "medium" ? (
+                              <span
+                                className="rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase bg-amber-100 text-amber-800 border border-amber-200 inline-flex items-center gap-1"
+                                title={ord.risk_profile.flags.join(" • ") || "Medium Risk"}
+                              >
+                                <AlertTriangle className="h-2.5 w-2.5 text-amber-600" />
+                                <span>Med Risk</span>
+                              </span>
+                            ) : (
+                              <span
+                                className="rounded-md px-1.5 py-0.5 text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1"
+                                title="Low Risk • Valid Bangladeshi mobile • Clear delivery record"
+                              >
+                                <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600" />
+                                <span>Safe</span>
+                              </span>
+                            )
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 mt-1">
                           <span className="text-gray-600 font-mono font-bold text-[11px]">{phone}</span>
 
@@ -564,49 +1070,49 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
                                   WhatsApp Templates:
                                 </span>
                                 <a
-                                  href={waConfirm}
+                                  href={generateWhatsAppOrderMessage(ord, "confirm")}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={() => setOpenWhatsAppId(null)}
                                   className="block px-2 py-1.5 rounded-lg hover:bg-emerald-50 text-gray-800 font-bold"
                                 >
-                                  📦 Order Confirmed
+                                  Order Confirmed
                                 </a>
                                 <a
-                                  href={waShipped}
+                                  href={generateWhatsAppOrderMessage(ord, "shipped")}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={() => setOpenWhatsAppId(null)}
                                   className="block px-2 py-1.5 rounded-lg hover:bg-emerald-50 text-gray-800 font-bold"
                                 >
-                                  🚚 Courier Live Tracking
+                                  Courier Live Tracking
                                 </a>
                                 <a
-                                  href={waAdvance}
+                                  href={generateWhatsAppOrderMessage(ord, "advance")}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={() => setOpenWhatsAppId(null)}
                                   className="block px-2 py-1.5 rounded-lg hover:bg-emerald-50 text-gray-800 font-bold"
                                 >
-                                  💳 Request Advance ৳120
+                                  Request Advance (BDT 120)
                                 </a>
                                 <a
-                                  href={waReview}
+                                  href={generateWhatsAppOrderMessage(ord, "review")}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   onClick={() => setOpenWhatsAppId(null)}
                                   className="block px-2 py-1.5 rounded-lg hover:bg-emerald-50 text-gray-800 font-bold"
                                 >
-                                  ⭐ Review Request
+                                  Review Request
                                 </a>
                               </div>
                             )}
                           </div>
 
-                          {/* 1-Click Block Number & IP */}
+                          {/* 1-Click Block Number & IP Modal Trigger */}
                           <button
-                            onClick={() => handleBlockCustomer(ord)}
-                            title="Block Number & IP"
+                            onClick={() => handleOpenBlockModal(ord)}
+                            title="Block Customer & Security Blacklist"
                             className="p-1 rounded-md text-gray-400 hover:bg-red-50 hover:text-red-600"
                           >
                             <Ban className="h-3.5 w-3.5" />
@@ -617,7 +1123,7 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
                       {/* Destination & Ordered Items */}
                       <td className="px-4 py-3.5">
                         <span className="font-bold text-gray-900 block">{addr.district || "Dhaka City"}</span>
-                        <span className="text-[11px] text-gray-500 truncate max-w-[150px] block">
+                        <span className="text-[11px] text-gray-500 truncate max-w-37.5 block">
                           {addr.address || addr.thana}
                         </span>
                         <span className="text-[10px] text-gray-400 font-bold block mt-0.5">
@@ -625,65 +1131,157 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
                         </span>
                       </td>
 
-                      {/* Amount Due */}
-                      <td className="px-4 py-3.5">
-                        <span className="font-black text-gray-900 text-sm block">{formatPrice(ord.total)}</span>
-                        <span className="text-[10px] uppercase font-bold text-gray-500">
-                          {ord.payment_method === "cod" ? "COD" : ord.payment_method} ({ord.payment_status})
-                        </span>
-                      </td>
-
-                      {/* Status Dropdown */}
-                      <td className="px-4 py-3.5">
-                        <select
-                          value={ord.status}
-                          onChange={(e) => handleStatusChange(ord.id, e.target.value)}
-                          className={`rounded-xl border px-2.5 py-1 text-xs font-bold capitalize focus:outline-none ${
-                            statusColors[ord.status] || "bg-gray-50 text-gray-700 border-gray-200"
-                          }`}
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="confirmed">Confirmed</option>
-                          <option value="processing">Processing</option>
-                          <option value="packed">Packed</option>
-                          <option value="shipped">Shipped</option>
-                          <option value="delivered">Delivered</option>
-                          <option value="cancelled">Cancelled</option>
-                          <option value="returned">Returned</option>
-                        </select>
-                      </td>
-
-                      {/* ⚡ 1-Click Courier Dispatch Buttons */}
-                      <td className="px-4 py-3.5 text-center">
-                        {isShipped ? (
-                          <div className="inline-flex items-center gap-1 text-emerald-700 font-bold text-xs bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                            <span>Dispatched ({courier.split(" ")[0]})</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center gap-1.5">
-                            <Button
-                              onClick={() => handleOneClickDispatch(ord, "steadfast")}
-                              disabled={isLoading}
-                              size="sm"
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] h-7 px-2.5 rounded-lg shadow-xs"
-                              title="1-Click Dispatch to SteadFast Courier (0.5kg)"
-                            >
-                              {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "⚡ SteadFast"}
-                            </Button>
-                            <Button
-                              onClick={() => handleOneClickDispatch(ord, "pathao")}
-                              disabled={isLoading}
-                              size="sm"
-                              variant="outline"
-                              className="border-red-200 text-red-700 hover:bg-red-50 font-black text-[11px] h-7 px-2 rounded-lg"
-                              title="1-Click Dispatch to Pathao Express"
-                            >
-                              Pathao
-                            </Button>
+                      {/* Amount Due & WooCommerce Status Subtext */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-black text-gray-900 text-sm tracking-tight block">
+                            {formatPrice(ord.amount_to_collect !== undefined ? ord.amount_to_collect : ord.total)}
+                          </span>
+                        </div>
+                        {Number(ord.advance_paid) > 0 && (
+                          <div className="inline-flex items-center gap-1 mt-1">
+                            <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded-md text-[9px] font-bold">
+                              ৳{ord.advance_paid} Advance Paid
+                            </span>
                           </div>
                         )}
+                        {(() => {
+                          if (ord.status === "completed" || ord.status === "delivered") {
+                            return (
+                              <span className="inline-block mt-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded-md text-[9px] font-black uppercase">
+                                {ord.payment_status === "paid" || Number(ord.amount_to_collect) === 0 ? "PAID" : "COD (COLLECTED)"}
+                              </span>
+                            );
+                          }
+                          if (ord.status === "on-hold") {
+                            return <span className="text-[10px] uppercase font-bold text-orange-600 block mt-1">AWAITING VERIFICATION</span>;
+                          }
+                          if (ord.status === "cancelled") {
+                            return <span className="text-[10px] uppercase font-bold text-gray-400 block mt-1">CANCELLED</span>;
+                          }
+                          if (ord.status === "refunded") {
+                            return <span className="text-[10px] uppercase font-bold text-purple-600 block mt-1">REFUNDED</span>;
+                          }
+                          if (ord.status === "failed" || ord.status === "returned") {
+                            return <span className="text-[10px] uppercase font-bold text-red-600 block mt-1">RTO (VOID)</span>;
+                          }
+                          if (ord.status === "processing" || ord.status === "confirmed") {
+                            return <span className="text-[10px] uppercase font-bold text-blue-600 block mt-1">COD (PENDING)</span>;
+                          }
+                          // pending
+                          return (
+                            <span className="text-[10px] uppercase font-bold text-amber-600 block mt-1">
+                              {ord.payment_method === "cod" ? "COD (PENDING)" : "UNPAID"}
+                            </span>
+                          );
+                        })()}
                       </td>
+
+                      {/* Status Dropdown with Dynamic WooCommerce FSM Filtering & Override Option */}
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        {(() => {
+                          const availableOptions = getAvailableNextStatuses(ord.status);
+                          return (
+                            <select
+                              value={ord.status}
+                              disabled={isLoading}
+                              onChange={(e) => handleStatusChange(ord.id, e.target.value)}
+                              className={`rounded-xl border px-3 py-1.5 text-xs font-bold capitalize focus:outline-none cursor-pointer transition-colors shadow-2xs ${
+                                statusColors[ord.status] || "bg-gray-50 text-gray-700 border-gray-200"
+                              }`}
+                            >
+                              {availableOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value} className="bg-white text-gray-900 font-medium">
+                                  {opt.label}
+                                </option>
+                              ))}
+                              <option disabled className="text-gray-300">──────────</option>
+                              <option value="__override__" className="bg-amber-50 text-amber-900 font-bold">
+                                Force Override Status...
+                              </option>
+                            </select>
+                          );
+                        })()}
+                      </td>
+
+                      {/* 1-Click Courier Dispatch Buttons with Exact Layout Alignment */}
+                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                        {(() => {
+                          const isDispatched = Boolean(consignment || ord.tracking_code || ord.status === "shipped" || ord.status === "completed");
+                          const isProcessing = ord.status === "processing" || ord.status === "confirmed";
+                          const statusLabel = ord.status === "on-hold" ? "On Hold" : ord.status === "failed" ? "Failed/RTO" : ord.status;
+
+                          if (isDispatched) {
+                            return (
+                              <a
+                                href={ord.tracking_url || `https://steadfast.com.bd/t/${consignment || ord.tracking_code}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center justify-center gap-1.5 text-emerald-700 font-bold text-xs bg-emerald-50 hover:bg-emerald-100 h-7 px-3 rounded-xl border border-emerald-200 transition-colors"
+                                title="View Courier Live Tracking"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                                <span>Dispatched ({courier.split(" ")[0]})</span>
+                                <ExternalLink className="h-2.5 w-2.5 text-emerald-600 opacity-60" />
+                              </a>
+                            );
+                          }
+
+                          if (isProcessing) {
+                            return (
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  onClick={() => handleOneClickDispatch(ord, "steadfast")}
+                                  disabled={isLoading}
+                                  size="sm"
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] h-7 px-2 rounded-lg shadow-xs"
+                                  title="1-Click Dispatch to SteadFast Courier"
+                                >
+                                  {isLoading ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1">
+                                      <Zap className="h-3 w-3" />
+                                      <span>SteadFast</span>
+                                    </span>
+                                  )}
+                                </Button>
+                                <Button
+                                  onClick={() => handleOneClickDispatch(ord, "pathao")}
+                                  disabled={isLoading}
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-red-200 text-red-700 hover:bg-red-50 font-black text-[11px] h-7 px-1.5 rounded-lg"
+                                  title="1-Click Dispatch to Pathao Express"
+                                >
+                                  Pathao
+                                </Button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCustomDispatch(ord, "steadfast")}
+                                  disabled={isLoading}
+                                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors"
+                                  title="Custom Dispatch (Edit COD Amount, Weight & Delivery Note before booking)"
+                                >
+                                  <Sliders className="h-3 w-3" />
+                                </button>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              className="inline-flex items-center justify-center gap-1 text-gray-400 font-bold text-[11px] bg-gray-50 h-7 px-3 rounded-xl border border-gray-200 cursor-not-allowed"
+                              title={`Courier dispatch is locked because order is ${ord.status.toUpperCase()}`}
+                            >
+                              <span>Locked ({statusLabel})</span>
+                            </div>
+                          );
+                        })()}
+                      </td>
+
+
+
 
                       {/* Action Links & Printing */}
                       <td className="px-4 py-3.5 text-right">
@@ -703,7 +1301,7 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
                           <Link href={`/admin/orders/${ord.id}`}>
                             <Button
                               size="sm"
-                              className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-[11px] font-bold rounded-lg h-7 px-2.5"
+                              className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-[11px] font-bold rounded-lg h-7 px-2.5"
                             >
                               Manage
                             </Button>
@@ -718,6 +1316,836 @@ export function OrderListClient({ initialOrders }: OrderListClientProps) {
           </table>
         </div>
       </div>
+
+      {/* Modal 1: Quick View Order Drawer */}
+      {quickViewOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in-0">
+          <div className="relative w-full max-w-2xl rounded-3xl border border-border bg-white p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div>
+                <span className="font-mono font-black text-lg text-[#e91e63]">
+                  {quickViewOrder.order_number}
+                </span>
+                <p className="text-xs text-text-secondary">
+                  Placed on {new Date(quickViewOrder.created_at).toLocaleString("en-GB")}
+                </p>
+              </div>
+              <button
+                onClick={() => setQuickViewOrder(null)}
+                className="rounded-full bg-surface-secondary p-1.5 text-text-muted hover:text-text"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div className="rounded-2xl border border-border p-4 space-y-2 bg-surface-secondary/50">
+                <span className="font-bold text-text uppercase text-[10px]">Customer Destination</span>
+                <p className="font-bold text-sm text-text">{quickViewOrder.shipping_address_snapshot?.name || quickViewOrder.guest_name}</p>
+                <p className="text-text-secondary">{quickViewOrder.shipping_address_snapshot?.phone || quickViewOrder.guest_phone}</p>
+                <p className="text-text-secondary">{quickViewOrder.shipping_address_snapshot?.address}</p>
+                <p className="text-text-secondary">{quickViewOrder.shipping_address_snapshot?.thana}, {quickViewOrder.shipping_address_snapshot?.district}</p>
+              </div>
+
+              <div className="rounded-2xl border border-border p-4 space-y-2 bg-surface-secondary/50">
+                <span className="font-bold text-text uppercase text-[10px]">Financials & Delivery</span>
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span className="font-bold text-text">{formatPrice(quickViewOrder.subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Delivery Fee:</span>
+                  <span className="font-bold text-text">{formatPrice(quickViewOrder.shipping_amount)}</span>
+                </div>
+                {quickViewOrder.discount_amount > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Discount:</span>
+                    <span className="font-bold">-{formatPrice(quickViewOrder.discount_amount)}</span>
+                  </div>
+                )}
+                <div className="border-t border-border pt-1 flex justify-between font-extrabold text-sm text-text">
+                  <span>Total Due:</span>
+                  <span className="text-[#e91e63]">{formatPrice(quickViewOrder.total)}</span>
+                </div>
+              </div>
+            </div>
+
+            {quickViewOrder.risk_profile && (
+              <div className="rounded-2xl border border-gray-200 p-4 space-y-1.5 bg-gray-50/70 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-gray-700 uppercase text-[10px] flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5 text-[#e91e63]" />
+                    Fraud Risk Assessment
+                  </span>
+                  <span
+                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase ${
+                      quickViewOrder.risk_profile.risk_level === "blocked" || quickViewOrder.risk_profile.risk_level === "high"
+                        ? "bg-red-100 text-red-700 border border-red-200"
+                        : quickViewOrder.risk_profile.risk_level === "medium"
+                        ? "bg-amber-100 text-amber-800 border border-amber-200"
+                        : "bg-emerald-100 text-emerald-800 border border-emerald-200"
+                    }`}
+                  >
+                    {quickViewOrder.risk_profile.risk_level === "blocked"
+                      ? "Blocked"
+                      : `${quickViewOrder.risk_profile.risk_level.toUpperCase()} RISK (${quickViewOrder.risk_profile.score}% Trust)`}
+                  </span>
+                </div>
+                {quickViewOrder.risk_profile.flags && quickViewOrder.risk_profile.flags.length > 0 ? (
+                  <ul className="text-[11px] text-gray-600 list-disc list-inside space-y-0.5 pt-1">
+                    {quickViewOrder.risk_profile.flags.map((flag: string, i: number) => (
+                      <li key={i}>{flag}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[11px] text-emerald-700 font-medium pt-0.5 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3 text-emerald-600 shrink-0" />
+                    <span>No risk signals detected. Valid Bangladeshi mobile and normal order pattern.</span>
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <span className="font-bold text-text uppercase text-[10px]">Ordered Line Items</span>
+              <div className="divide-y divide-border rounded-xl border overflow-hidden">
+                {(quickViewOrder.order_items || []).map((it: any) => (
+                  <div key={it.id} className="p-3 flex items-center justify-between text-xs">
+                    <div>
+                      <p className="font-bold text-text">{it.product_name_snapshot}</p>
+                      <p className="text-[11px] text-text-secondary">Quantity: {it.quantity} × {formatPrice(it.unit_price)}</p>
+                    </div>
+                    <span className="font-bold text-text">{formatPrice(it.total)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-border">
+              <Link href={`/admin/orders/${quickViewOrder.id}/invoice`} target="_blank">
+                <Button variant="outline" size="sm" className="text-xs font-bold">
+                  <Printer className="h-3.5 w-3.5 mr-1 text-[#e91e63]" />
+                  Print Invoice
+                </Button>
+              </Link>
+              <Link href={`/admin/orders/${quickViewOrder.id}`}>
+                <Button size="sm" className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-bold">
+                  Full Order Page →
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 2: Create Manual Order Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-in fade-in-0">
+          <div className="relative w-full max-w-xl rounded-3xl border border-border bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Plus className="h-5 w-5 text-[#e91e63]" />
+                <h2 className="text-base font-black text-gray-900">Create Manual / Phone Order</h2>
+              </div>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="rounded-full bg-surface-secondary p-1.5 text-text-muted hover:text-text"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateManualOrder} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">Customer Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Arifur Rahman"
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">Phone Number *</label>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="017XXXXXXXX"
+                    value={createForm.phone}
+                    onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">District / City</label>
+                  <select
+                    value={createForm.district}
+                    onChange={(e) =>
+                      setCreateForm({
+                        ...createForm,
+                        district: e.target.value,
+                        deliveryFee: e.target.value.toLowerCase().includes("dhaka") ? 60 : 120,
+                      })
+                    }
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
+                  >
+                    <option value="Dhaka City">Dhaka City (৳60 Delivery)</option>
+                    <option value="Chattogram">Chattogram (৳120 Delivery)</option>
+                    <option value="Sylhet">Sylhet (৳120 Delivery)</option>
+                    <option value="Rajshahi">Rajshahi (৳120 Delivery)</option>
+                    <option value="Khulna">Khulna (৳120 Delivery)</option>
+                    <option value="Barishal">Barishal (৳120 Delivery)</option>
+                    <option value="Rangpur">Rangpur (৳120 Delivery)</option>
+                    <option value="Mymensingh">Mymensingh (৳120 Delivery)</option>
+                    <option value="Cumilla">Cumilla (৳120 Delivery)</option>
+                    <option value="Gazipur">Gazipur (৳120 Delivery)</option>
+                    <option value="Narayanganj">Narayanganj (৳120 Delivery)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">Thana / Area</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Dhanmondi, Gulshan, Mirpur"
+                    value={createForm.thana}
+                    onChange={(e) => setCreateForm({ ...createForm, thana: e.target.value })}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-800 mb-1">Street Address *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="House #, Road #, Area details"
+                  value={createForm.address}
+                  onChange={(e) => setCreateForm({ ...createForm, address: e.target.value })}
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-900 focus:outline-none"
+                />
+              </div>
+
+              {/* Product Select */}
+              <div className="rounded-2xl border border-gray-200 p-3 bg-gray-50 space-y-2">
+                <span className="font-bold text-gray-800 uppercase text-[10px]">Product Selection</span>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <input
+                      type="text"
+                      value={createForm.productName}
+                      onChange={(e) => setCreateForm({ ...createForm, productName: e.target.value })}
+                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="number"
+                      value={createForm.productPrice}
+                      onChange={(e) => setCreateForm({ ...createForm, productPrice: Number(e.target.value) })}
+                      className="w-full rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs font-bold text-gray-900"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-2 border-t border-gray-200">
+                  <span>Quantity:</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCreateForm({ ...createForm, quantity: Math.max(1, createForm.quantity - 1) })}
+                      className="h-6 w-6 rounded bg-gray-200 text-gray-800 font-bold"
+                    >
+                      -
+                    </button>
+                    <span className="font-bold">{createForm.quantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setCreateForm({ ...createForm, quantity: createForm.quantity + 1 })}
+                      className="h-6 w-6 rounded bg-gray-200 text-gray-800 font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs pt-1">
+                  <span>Delivery Charge:</span>
+                  <span className="font-bold text-gray-900">৳{createForm.deliveryFee}</span>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-gray-200 font-extrabold text-sm text-[#e91e63]">
+                  <span>Total Amount Due:</span>
+                  <span>{formatPrice(createForm.productPrice * createForm.quantity + createForm.deliveryFee)}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                <Button type="button" variant="outline" onClick={() => setShowCreateModal(false)} className="text-xs">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={creatingOrder} className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-bold">
+                  {creatingOrder ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                  Confirm & Create Order
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 3: Batch Dispatch Summary Report & Thermal Label Print Trigger */}
+      {batchSummaryReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in-0">
+          <div className="relative w-full max-w-2xl rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <span className="font-black text-base text-gray-900 flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-emerald-600" />
+                  Batch Courier Dispatch Report ({batchSummaryReport.courierName})
+                </span>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">
+                  Execution completed for {batchSummaryReport.successful.length + batchSummaryReport.failed.length} parcels
+                </p>
+              </div>
+              <button
+                onClick={() => setBatchSummaryReport(null)}
+                className="rounded-full bg-gray-100 p-1.5 text-gray-500 hover:text-gray-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Metrics Breakdown Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-emerald-800 uppercase">Successfully Booked</span>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                </div>
+                <span className="text-2xl font-black text-emerald-900 block">
+                  {batchSummaryReport.successful.length}
+                </span>
+                <span className="text-[10px] text-emerald-700 font-medium block">
+                  Consignments ready for courier pickup & live tracking
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-red-200 bg-red-50/60 p-4 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-red-800 uppercase">Failed / Rejected</span>
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                </div>
+                <span className="text-2xl font-black text-red-900 block">
+                  {batchSummaryReport.failed.length}
+                </span>
+                <span className="text-[10px] text-red-700 font-medium block">
+                  {batchSummaryReport.failed.length === 0
+                    ? "Zero errors encountered"
+                    : "Kept selected for address/phone correction"}
+                </span>
+              </div>
+            </div>
+
+            {/* Error Details List if any failed */}
+            {batchSummaryReport.failed.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-xs font-bold text-red-800 flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0" />
+                  The following {batchSummaryReport.failed.length} order(s) require attention:
+                </span>
+                <div className="max-h-36 overflow-y-auto space-y-1.5 rounded-xl border border-red-200 bg-red-50/40 p-3 text-xs">
+                  {batchSummaryReport.failed.map((f) => (
+                    <div key={f.id} className="flex items-start justify-between gap-2 border-b border-red-100 pb-1.5">
+                      <div>
+                        <span className="font-mono font-bold text-gray-900 block">#{f.order_number} ({f.phone || "No phone"})</span>
+                        <span className="text-[11px] text-red-700">{f.reason}</span>
+                      </div>
+                      <Link href={`/admin/orders/${f.id}`} className="text-[#e91e63] font-bold text-[11px] hover:underline shrink-0">
+                        Fix & Edit
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-gray-100">
+              <span className="text-xs text-gray-500 font-medium">
+                {batchSummaryReport.successful.length} consignment IDs stored in database.
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => setBatchSummaryReport(null)}
+                  variant="outline"
+                  className="text-xs font-bold rounded-xl"
+                >
+                  Dismiss
+                </Button>
+                {batchSummaryReport.successful.length > 0 && (
+                  <Button
+                    onClick={() => {
+                      setBatchSummaryReport(null);
+                      window.print();
+                    }}
+                    className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-black rounded-xl shadow-xs"
+                  >
+                    <Printer className="h-3.5 w-3.5 mr-1" />
+                    Print All {batchSummaryReport.successful.length} Thermal Labels
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 4: Admin State Machine Override Confirmation Modal */}
+      {overrideModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in-0">
+          <div className="relative w-full max-w-lg rounded-3xl border border-amber-200 bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-amber-100 text-amber-800">
+                  <AlertTriangle className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="font-black text-base text-gray-900">Admin State Machine Override</h3>
+                  <p className="text-xs text-gray-500 font-medium">Order #{overrideModalOrder.order_number}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setOverrideModalOrder(null)}
+                className="rounded-full bg-gray-100 p-1.5 text-gray-500 hover:text-gray-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3.5 text-xs text-amber-900 space-y-1">
+              <span className="font-bold flex items-center gap-1.5">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                Lifecycle Guard Bypass Warning:
+              </span>
+              <p className="leading-relaxed">
+                You are forcing a transition from <strong className="uppercase font-black text-amber-950">'{overrideModalOrder.status}'</strong> to{" "}
+                <strong className="uppercase font-black text-amber-950">'{overrideTargetStatus}'</strong>. This will bypass standard warehouse, courier, and inventory validation checks.
+              </p>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-gray-800 mb-1">Target Status</label>
+                <select
+                  value={overrideTargetStatus}
+                  onChange={(e) => setOverrideTargetStatus(e.target.value as OrderStatus)}
+                  className="w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 text-xs font-bold capitalize text-gray-900 focus:outline-none"
+                >
+                  <option value="pending">Pending</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="processing">Processing</option>
+                  <option value="ready_for_pickup">Ready for Pickup</option>
+                  <option value="shipped">Shipped</option>
+                  <option value="in_transit">In Transit</option>
+                  <option value="out_for_delivery">Out for Delivery</option>
+                  <option value="delivered">Delivered</option>
+                  <option value="returned">Returned</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="refunded">Refunded</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-gray-800 mb-1">
+                  Reason for Override <span className="text-gray-400 font-normal">(Logged in audit history)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Customer requested to un-cancel after phone verification; Mistakenly cancelled earlier."
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOverrideModalOrder(null)}
+                className="text-xs font-bold rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleExecuteOverride}
+                disabled={overrideLoading}
+                className="bg-amber-600 hover:bg-amber-700 text-white text-xs font-black rounded-xl shadow-xs"
+              >
+                {overrideLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Confirm Force Override
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 5: Anti-Fraud Customer Blacklist Confirmation Modal */}
+      {blockModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in-0">
+          <div className="relative w-full max-w-lg rounded-3xl border border-red-200 bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-red-100 text-red-700">
+                  <Ban className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="font-black text-base text-gray-900">Security Blacklist Confirmation</h3>
+                  <p className="text-xs text-gray-500 font-medium">Order #{blockModalOrder.order_number}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setBlockModalOrder(null)}
+                className="rounded-full bg-gray-100 p-1.5 text-gray-500 hover:text-gray-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="rounded-2xl border border-red-200 bg-red-50/70 p-3.5 text-xs text-red-900 space-y-1">
+              <span className="font-bold block">Blacklist & Order Cancellation Notice:</span>
+              <p className="leading-relaxed">
+                Blocking this customer will permanently add their phone number (<strong>{blockModalOrder.shipping_address_snapshot?.phone || blockModalOrder.guest_phone || "N/A"}</strong>) to the security blocklist, reject all future checkout attempts, automatically <strong>cancel</strong> Order #{blockModalOrder.order_number}, and restore inventory stock.
+              </p>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-gray-800 mb-1">
+                  Reason for Blacklisting
+                </label>
+                <input
+                  type="text"
+                  value={blockReason}
+                  onChange={(e) => setBlockReason(e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-900 focus:outline-none"
+                  placeholder="e.g. Fake lead, unreachable multiple times, high RTO rate"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setBlockModalOrder(null)}
+                className="text-xs font-bold rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleExecuteBlock}
+                disabled={blockLoading}
+                className="bg-red-600 hover:bg-red-700 text-white text-xs font-black rounded-xl shadow-xs"
+              >
+                {blockLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <Ban className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Confirm Blacklist & Cancel Order
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 6: Single Order Custom Courier Dispatch Modal (Edit COD Amount & Note) */}
+      {customDispatchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in-0">
+          <div className="relative w-full max-w-lg rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
+                  <Truck className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="font-black text-base text-gray-900">Custom Courier Dispatch</h3>
+                  <p className="text-xs text-gray-500 font-medium">Order #{customDispatchModal.order.order_number}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setCustomDispatchModal(null)}
+                className="rounded-full bg-gray-100 p-1.5 text-gray-500 hover:text-gray-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              {/* Courier Selection */}
+              <div>
+                <label className="block font-bold text-gray-800 mb-1">Select Courier Gateway</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCustomDispatchModal({ ...customDispatchModal, courierCode: "steadfast" })}
+                    className={`p-2.5 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+                      customDispatchModal.courierCode === "steadfast"
+                        ? "border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-500/20"
+                        : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    <Zap className="h-3.5 w-3.5 text-emerald-700" />
+                    SteadFast Courier
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomDispatchModal({ ...customDispatchModal, courierCode: "pathao" })}
+                    className={`p-2.5 rounded-xl border text-xs font-black flex items-center justify-center gap-1.5 transition-all ${
+                      customDispatchModal.courierCode === "pathao"
+                        ? "border-red-600 bg-red-50 text-red-800 ring-2 ring-red-500/20"
+                        : "border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    }`}
+                  >
+                    Pathao Express
+                  </button>
+                </div>
+              </div>
+
+              {/* Recipient Snapshot */}
+              <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-3 space-y-1 text-gray-700">
+                <span className="font-bold block text-gray-900">Delivery Recipient:</span>
+                <p>
+                  {customDispatchModal.order.shipping_address_snapshot?.name || customDispatchModal.order.guest_name || "Customer"} •{" "}
+                  {customDispatchModal.order.shipping_address_snapshot?.phone || customDispatchModal.order.guest_phone}
+                </p>
+                <p className="text-gray-500 text-[11px] truncate">
+                  {customDispatchModal.order.shipping_address_snapshot?.address || "Dhaka, Bangladesh"}
+                </p>
+              </div>
+
+              {/* Editable COD Amount & Weight */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">
+                    COD Collection Amount (৳) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={customDispatchModal.codAmount}
+                    onChange={(e) =>
+                      setCustomDispatchModal({
+                        ...customDispatchModal,
+                        codAmount: Number(e.target.value),
+                      })
+                    }
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <span className="text-[10px] text-gray-500">Amount rider collects at doorstep</span>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-gray-800 mb-1">Parcel Weight (Kg)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0.1"
+                    value={customDispatchModal.weight}
+                    onChange={(e) =>
+                      setCustomDispatchModal({
+                        ...customDispatchModal,
+                        weight: Number(e.target.value),
+                      })
+                    }
+                    className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <span className="text-[10px] text-gray-500">Default cosmetics: 0.5kg</span>
+                </div>
+              </div>
+
+              {/* Editable Delivery Note / Special Instruction */}
+              <div>
+                <label className="block font-bold text-gray-800 mb-1">
+                  Delivery Instruction / Note for Rider
+                </label>
+                <textarea
+                  rows={2}
+                  value={customDispatchModal.note}
+                  onChange={(e) =>
+                    setCustomDispatchModal({
+                      ...customDispatchModal,
+                      note: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="e.g. Fragile skincare cosmetics. Allow recipient to inspect before payment."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCustomDispatchModal(null)}
+                className="text-xs font-bold rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleExecuteCustomDispatch}
+                disabled={customDispatchLoading}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black rounded-xl shadow-xs"
+              >
+                {customDispatchLoading ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <Truck className="h-3.5 w-3.5 mr-1.5" />
+                )}
+                Dispatch Consignment (৳{customDispatchModal.codAmount})
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal 7: Bulk Dispatch Review & Confirmation Modal */}
+      {bulkReviewModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs animate-in fade-in-0">
+          <div className="relative w-full max-w-2xl rounded-3xl border border-gray-200 bg-white p-6 shadow-2xl space-y-4 animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className={`p-2 rounded-xl ${bulkReviewModal.courierCode === "steadfast" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+                  <Truck className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="font-black text-base text-gray-900">
+                    Bulk Courier Dispatch ({bulkReviewModal.courierCode === "steadfast" ? "SteadFast" : "Pathao"})
+                  </h3>
+                  <p className="text-xs text-gray-500 font-medium">
+                    {bulkReviewModal.eligibleOrders.length} Eligible Orders Selected
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setBulkReviewModal(null)}
+                className="rounded-full bg-gray-100 p-1.5 text-gray-500 hover:text-gray-900"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Summary Statistics Card */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-3">
+                <span className="text-[11px] font-bold text-gray-500 uppercase tracking-wider block">Parcels to Book</span>
+                <span className="text-xl font-black text-gray-900">{bulkReviewModal.eligibleOrders.length} Parcels</span>
+              </div>
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3">
+                <span className="text-[11px] font-bold text-emerald-700 uppercase tracking-wider block">Total COD to Collect</span>
+                <span className="text-xl font-black text-emerald-900">
+                  {formatPrice(
+                    bulkReviewModal.eligibleOrders.reduce(
+                      (acc, o) => acc + (o.amount_to_collect !== undefined ? Number(o.amount_to_collect) : Number(o.total)),
+                      0
+                    )
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {/* Global Note for All Selected Parcels */}
+            <div className="space-y-1 text-xs">
+              <label className="block font-bold text-gray-800">
+                Global Delivery Note / Rider Instructions (Applied to All Parcels)
+              </label>
+              <input
+                type="text"
+                value={bulkReviewModal.globalNote}
+                onChange={(e) => setBulkReviewModal({ ...bulkReviewModal, globalNote: e.target.value })}
+                className="w-full rounded-xl border border-gray-300 bg-white px-3 py-2 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder="e.g. Fragile skincare cosmetics. Call recipient before delivery."
+              />
+            </div>
+
+            {/* Orders Preview List */}
+            <div className="flex-1 overflow-y-auto rounded-2xl border border-gray-200 max-h-56">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-gray-50 sticky top-0 border-b border-gray-200 text-gray-600 font-bold">
+                  <tr>
+                    <th className="p-2.5">Invoice #</th>
+                    <th className="p-2.5">Recipient</th>
+                    <th className="p-2.5">District</th>
+                    <th className="p-2.5 text-right">COD Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {bulkReviewModal.eligibleOrders.map((ord) => {
+                    const cod = ord.amount_to_collect !== undefined ? Number(ord.amount_to_collect) : Number(ord.total);
+                    return (
+                      <tr key={ord.id} className="hover:bg-gray-50/60">
+                        <td className="p-2.5 font-mono font-bold text-gray-900">{ord.order_number}</td>
+                        <td className="p-2.5 text-gray-700">
+                          {ord.shipping_address_snapshot?.name || ord.guest_name || "Customer"} (
+                          {ord.shipping_address_snapshot?.phone || ord.guest_phone || ""})
+                        </td>
+                        <td className="p-2.5 text-gray-500">{ord.shipping_address_snapshot?.district || "Dhaka City"}</td>
+                        <td className="p-2.5 text-right font-black text-emerald-700">৳{cod}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setBulkReviewModal(null)}
+                className="text-xs font-bold rounded-xl"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  const { courierCode, eligibleOrders, globalNote } = bulkReviewModal;
+                  setBulkReviewModal(null);
+                  executeBulkDispatchWorkerPool(courierCode, eligibleOrders, globalNote);
+                }}
+                className={`text-xs font-black rounded-xl shadow-xs text-white ${
+                  bulkReviewModal.courierCode === "steadfast"
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-red-600 hover:bg-red-700"
+                }`}
+              >
+                <Truck className="h-3.5 w-3.5 mr-1.5" />
+                Confirm & Dispatch {bulkReviewModal.eligibleOrders.length} Parcels (5x Concurrent)
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+

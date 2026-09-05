@@ -426,3 +426,6 @@ export interface HomepageSection {
   created_at: string;
   updated_at: string;
 }
+
+// --- High-Volume Logistics & Orders Domain ---
+export * from "./orders";

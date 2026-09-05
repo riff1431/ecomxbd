@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ProductCard, type ProductCardData } from "@/components/storefront/product-card";
 import { Sparkles, FolderTree, ChevronRight } from "lucide-react";
+import { ItemListTracker } from "@/components/analytics/item-list-tracker";
 
 export async function generateMetadata({
   params,
@@ -99,6 +100,19 @@ export default async function CategoryDetailPage({
 
   return (
     <div className="container-main py-4 sm:py-6 space-y-6">
+      <ItemListTracker
+        items={productCards.map((p, idx) => ({
+          item_id: p.id,
+          item_name: p.name,
+          item_brand: p.brand_name || undefined,
+          item_category: category.name,
+          price: p.sale_price ?? p.regular_price,
+          index: idx + 1,
+        }))}
+        listName={`Category: ${category.name}`}
+        listId={`category_${category.slug}`}
+      />
+
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted">
         <Link href="/" className="hover:text-text transition-colors">Home</Link>
@@ -109,7 +123,7 @@ export default async function CategoryDetailPage({
       </nav>
 
       {/* Category Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-primary-950 to-slate-950 p-6 sm:p-10 text-white shadow-lg">
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-slate-900 via-primary-950 to-slate-950 p-6 sm:p-10 text-white shadow-lg">
         <div className="max-w-xl space-y-2.5">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold backdrop-blur-md border border-white/15">
             <Sparkles className="h-3.5 w-3.5 text-amber-300" />

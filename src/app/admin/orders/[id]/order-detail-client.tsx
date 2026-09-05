@@ -26,11 +26,14 @@ import {
   XCircle,
   ShieldCheck,
   Send,
+  Ban,
+  X,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
 import { updateAdminOrderFull } from "@/features/orders/actions";
 import { bookCourierDelivery } from "@/features/logistics/actions";
+import { trackCancelOrder, trackRefund } from "@/lib/analytics/datalayer";
 
 interface OrderDetailClientProps {
   order: any;
@@ -116,6 +119,42 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
       if (markPaid) {
         setFinancialForm((prev) => ({ ...prev, payment_status: "paid" }));
       }
+
+      // GA4 & Meta Pixel Event Triggers
+      if (newStatus === "cancelled") {
+        trackCancelOrder(
+          order.order_number || order.id,
+          quickNote || "Admin cancelled order",
+          Number(order.total) || 0,
+          "BDT",
+          {
+            name: addressForm.name,
+            phone: addressForm.phone,
+            email: addressForm.email,
+            city: addressForm.district,
+          }
+        );
+      } else if (newStatus === "refunded") {
+        trackRefund({
+          transaction_id: order.order_number || order.id,
+          order_id: order.order_number || order.id,
+          value: Number(order.total) || 0,
+          currency: "BDT",
+          customer: {
+            name: addressForm.name,
+            phone: addressForm.phone,
+            email: addressForm.email,
+            city: addressForm.district,
+          },
+          items: items.map((it: any) => ({
+            item_id: it.product_id || it.id,
+            item_name: it.product_name_snapshot || "Product",
+            price: Number(it.unit_price) || 0,
+            quantity: Number(it.quantity) || 1,
+          })),
+        });
+      }
+
       setMsg({ text: `Order updated to ${newStatus.toUpperCase()}!`, isError: false });
       setTimeout(() => setMsg(null), 3500);
       router.refresh();
@@ -139,6 +178,42 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
       setMsg({ text: res.error, isError: true });
     } else {
       setOrder(res.order);
+
+      // GA4 & Meta Pixel Event Triggers
+      if (status === "cancelled") {
+        trackCancelOrder(
+          order.order_number || order.id,
+          statusNote || "Admin status cancelled",
+          Number(order.total) || 0,
+          "BDT",
+          {
+            name: addressForm.name,
+            phone: addressForm.phone,
+            email: addressForm.email,
+            city: addressForm.district,
+          }
+        );
+      } else if (status === "refunded") {
+        trackRefund({
+          transaction_id: order.order_number || order.id,
+          order_id: order.order_number || order.id,
+          value: Number(order.total) || 0,
+          currency: "BDT",
+          customer: {
+            name: addressForm.name,
+            phone: addressForm.phone,
+            email: addressForm.email,
+            city: addressForm.district,
+          },
+          items: items.map((it: any) => ({
+            item_id: it.product_id || it.id,
+            item_name: it.product_name_snapshot || "Product",
+            price: Number(it.unit_price) || 0,
+            quantity: Number(it.quantity) || 1,
+          })),
+        });
+      }
+
       setStatusNote("");
       setMsg({ text: "Fulfillment status updated successfully!", isError: false });
       setTimeout(() => setMsg(null), 3500);
@@ -265,7 +340,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-16">
       {/* Top Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 pb-4 bg-white p-5 sm:p-6 rounded-3xl border border-gray-200 shadow-xs">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 bg-white p-5 sm:p-6 rounded-3xl border border-gray-200 shadow-xs">
         <div className="flex items-center gap-3">
           <Link href="/admin/orders">
             <Button variant="ghost" size="icon" className="rounded-xl border border-gray-200">
@@ -326,8 +401,8 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
             {msg.isError ? <AlertCircle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
             <span>{msg.text}</span>
           </div>
-          <button onClick={() => setMsg(null)} className="text-xs opacity-60 hover:opacity-100 font-bold">
-            ✕
+          <button onClick={() => setMsg(null)} className="opacity-60 hover:opacity-100 p-1">
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -341,37 +416,37 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
           <button
             onClick={() => handleQuickStatus("confirmed", "Order verified and confirmed via phone")}
             disabled={saving}
-            className="rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 text-xs font-bold transition-all"
+            className="rounded-xl bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 text-xs font-bold transition-all inline-flex items-center gap-1.5"
           >
-            ✓ Confirm Order
+            <Check className="h-3.5 w-3.5" /> Confirm Order
           </button>
           <button
             onClick={() => handleQuickStatus("packed", "Parcel packed in holographic bubble mailer")}
             disabled={saving}
-            className="rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 text-xs font-bold transition-all"
+            className="rounded-xl bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 text-xs font-bold transition-all inline-flex items-center gap-1.5"
           >
-            📦 Mark Packed
+            <Package className="h-3.5 w-3.5" /> Mark Packed
           </button>
           <button
             onClick={() => handleQuickStatus("shipped", "Dispatched with courier partner")}
             disabled={saving}
-            className="rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 text-xs font-bold transition-all"
+            className="rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 px-3 py-1.5 text-xs font-bold transition-all inline-flex items-center gap-1.5"
           >
-            🚚 Mark In-Transit
+            <Truck className="h-3.5 w-3.5" /> Mark In-Transit
           </button>
           <button
             onClick={() => handleQuickStatus("delivered", "Parcel delivered and payment collected", true)}
             disabled={saving}
-            className="rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 text-xs font-bold transition-all"
+            className="rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 text-xs font-bold transition-all inline-flex items-center gap-1.5"
           >
-            ✅ Mark Delivered & Paid
+            <CheckCircle2 className="h-3.5 w-3.5" /> Mark Delivered & Paid
           </button>
           <button
             onClick={() => handleQuickStatus("cancelled", "Order cancelled by admin/customer")}
             disabled={saving}
-            className="rounded-xl bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 px-3 py-1.5 text-xs font-bold transition-all"
+            className="rounded-xl bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 px-3 py-1.5 text-xs font-bold transition-all inline-flex items-center gap-1.5"
           >
-            ⛔ Cancel Order
+            <Ban className="h-3.5 w-3.5" /> Cancel Order
           </button>
         </div>
       </div>
@@ -392,7 +467,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                   <select
                     value={status}
                     onChange={(e) => setStatus(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs text-gray-900 font-bold capitalize focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 font-bold capitalize focus:outline-none"
                   >
                     <option value="pending">Pending (Awaiting Verification)</option>
                     <option value="confirmed">Confirmed (Order Verified)</option>
@@ -416,7 +491,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     value={statusNote}
                     onChange={(e) => setStatusNote(e.target.value)}
                     placeholder="e.g. Handed over to SteadFast tracking #SF12345"
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border px-3.5 py-2.5 text-xs text-gray-900 focus:outline-none"
                   />
                 </div>
 
@@ -429,7 +504,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     value={internalNote}
                     onChange={(e) => setInternalNote(e.target.value)}
                     placeholder="e.g. Advance ৳120 delivery fee received via bKash TrxID 89A291. Deliver after 5 PM."
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border p-3 text-xs text-gray-900 focus:outline-none"
                   />
                 </div>
               </div>
@@ -439,7 +514,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                   type="submit"
                   size="sm"
                   disabled={saving}
-                  className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-black rounded-xl px-6 py-2 shadow-sm"
+                  className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-black rounded-xl px-6 py-2 shadow-sm"
                 >
                   {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
                   Save Status & Notes
@@ -460,7 +535,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                 <select
                   value={courierName}
                   onChange={(e) => setCourierName(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs font-bold text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border px-3.5 py-2.5 text-xs font-bold text-gray-900 focus:outline-none"
                 >
                   <option value="SteadFast Courier">SteadFast Courier (Standard)</option>
                   <option value="Pathao Express">Pathao Express</option>
@@ -479,13 +554,13 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     value={consignmentId}
                     onChange={(e) => setConsignmentId(e.target.value)}
                     placeholder="e.g. SF-9029148"
-                    className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-xs font-mono font-bold text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                    className="flex-1 rounded-xl border px-3.5 py-2.5 text-xs font-mono font-bold text-gray-900 focus:outline-none"
                   />
                   <Button
                     onClick={handleSaveTracking}
                     disabled={saving}
                     size="sm"
-                    className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-bold rounded-xl shrink-0"
+                    className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-bold rounded-xl shrink-0"
                   >
                     Save Tracking
                   </Button>
@@ -515,7 +590,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                   min="0.1"
                   value={parcelWeight}
                   onChange={(e) => setParcelWeight(Number(e.target.value))}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs font-bold font-mono text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border px-3.5 py-2 text-xs font-bold font-mono text-gray-900 focus:outline-none"
                 />
               </div>
 
@@ -528,7 +603,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                   value={itemDescription}
                   onChange={(e) => setItemDescription(e.target.value)}
                   placeholder="e.g. Simple Moisturiser (125ml) x 1"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border px-3.5 py-2 text-xs text-gray-900 focus:outline-none"
                 />
               </div>
 
@@ -541,7 +616,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                   value={specialInstruction}
                   onChange={(e) => setSpecialInstruction(e.target.value)}
                   placeholder="e.g. Fragile skincare item. Please call before delivery."
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2 text-xs text-gray-900 focus:border-[#e91e63] focus:bg-white focus:outline-none"
+                  className="w-full rounded-xl border px-3.5 py-2 text-xs text-gray-900 focus:outline-none"
                 />
               </div>
             </div>
@@ -656,7 +731,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     required
                     value={addressForm.name}
                     onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   />
                 </div>
 
@@ -667,7 +742,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     required
                     value={addressForm.phone}
                     onChange={(e) => setAddressForm({ ...addressForm, phone: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   />
                 </div>
 
@@ -677,7 +752,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     type="email"
                     value={addressForm.email}
                     onChange={(e) => setAddressForm({ ...addressForm, email: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs text-gray-900 focus:outline-none"
                   />
                 </div>
 
@@ -688,7 +763,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     required
                     value={addressForm.address}
                     onChange={(e) => setAddressForm({ ...addressForm, address: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 p-3 text-xs text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                    className="w-full rounded-xl border p-3 text-xs text-gray-900 focus:outline-none"
                   />
                 </div>
 
@@ -699,7 +774,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                       type="text"
                       value={addressForm.thana}
                       onChange={(e) => setAddressForm({ ...addressForm, thana: e.target.value })}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs text-gray-900 focus:outline-none"
                     />
                   </div>
                   <div>
@@ -708,12 +783,12 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                       type="text"
                       value={addressForm.district}
                       onChange={(e) => setAddressForm({ ...addressForm, district: e.target.value })}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                      className="w-full rounded-xl border px-3 py-2 text-xs text-gray-900 focus:outline-none"
                     />
                   </div>
                 </div>
 
-                <Button type="submit" disabled={saving} size="sm" className="w-full bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-bold rounded-xl">
+                <Button type="submit" disabled={saving} size="sm" className="w-full bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-bold rounded-xl">
                   {saving ? "Saving..." : "Save Address Changes"}
                 </Button>
               </form>
@@ -790,7 +865,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     type="number"
                     value={financialForm.subtotal}
                     onChange={(e) => setFinancialForm({ ...financialForm, subtotal: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   />
                 </div>
 
@@ -800,7 +875,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     type="number"
                     value={financialForm.shipping_amount}
                     onChange={(e) => setFinancialForm({ ...financialForm, shipping_amount: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   />
                 </div>
 
@@ -810,7 +885,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                     type="number"
                     value={financialForm.discount_amount}
                     onChange={(e) => setFinancialForm({ ...financialForm, discount_amount: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   />
                 </div>
 
@@ -819,7 +894,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                   <select
                     value={financialForm.payment_method}
                     onChange={(e) => setFinancialForm({ ...financialForm, payment_method: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   >
                     <option value="cod">Cash on Delivery (COD)</option>
                     <option value="bkash">bKash Online / Manual</option>
@@ -834,7 +909,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                   <select
                     value={financialForm.payment_status}
                     onChange={(e) => setFinancialForm({ ...financialForm, payment_status: e.target.value })}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-900 focus:bg-white focus:border-[#e91e63] focus:outline-none"
+                    className="w-full rounded-xl border px-3 py-2 text-xs font-bold text-gray-900 focus:outline-none"
                   >
                     <option value="pending">Pending (Unpaid COD)</option>
                     <option value="partial">Partially Paid (Advance Delivery Fee)</option>
@@ -848,7 +923,7 @@ export function OrderDetailClient({ order: initialOrder }: OrderDetailClientProp
                   <span className="text-[#e91e63] text-base">{formatPrice(calculatedTotal)}</span>
                 </div>
 
-                <Button type="submit" disabled={saving} size="sm" className="w-full bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-bold rounded-xl">
+                <Button type="submit" disabled={saving} size="sm" className="w-full bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-bold rounded-xl">
                   {saving ? "Saving..." : "Save Financial Adjustments"}
                 </Button>
               </form>

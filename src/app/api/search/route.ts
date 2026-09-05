@@ -1,17 +1,53 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+const BEAUTY_INGREDIENTS = [
+  { name: "Niacinamide (Vitamin B3)", slug: "niacinamide", match: ["niacinamide", "vitamin b3", "b3"] },
+  { name: "Salicylic Acid (BHA)", slug: "salicylic_acid", match: ["salicylic", "bha"] },
+  { name: "Hyaluronic Acid", slug: "hyaluronic_acid", match: ["hyaluronic", "ha", "sodium hyaluronate"] },
+  { name: "Centella Asiatica (Cica)", slug: "centella", match: ["centella", "cica", "madecassoside"] },
+  { name: "Vitamin C (Brightening)", slug: "vitamin_c", match: ["vitamin c", "ascorbic", "ascorbyl"] },
+  { name: "Retinol / Retinoids", slug: "retinol", match: ["retinol", "retinoid", "retinal"] },
+  { name: "Snail Mucin", slug: "snail_mucin", match: ["snail", "mucin"] },
+  { name: "AHA (Glycolic / Lactic Acid)", slug: "aha", match: ["aha", "glycolic", "lactic"] },
+  { name: "Ceramides", slug: "ceramides", match: ["ceramide", "ceramides"] },
+  { name: "Tea Tree", slug: "tea_tree", match: ["tea tree", "melaleuca"] },
+  { name: "Alpha Arbutin", slug: "alpha_arbutin", match: ["arbutin", "alpha arbutin"] },
+  { name: "Peptides", slug: "peptides", match: ["peptide", "peptides"] },
+  { name: "Panax Ginseng", slug: "ginseng", match: ["ginseng", "panax"] },
+  { name: "Heartleaf", slug: "heartleaf", match: ["heartleaf", "houttuynia"] },
+  { name: "Propolis & Honey", slug: "propolis", match: ["propolis", "honey"] },
+  { name: "Rice Extract", slug: "rice", match: ["rice"] },
+  { name: "Azelaic Acid", slug: "azelaic_acid", match: ["azelaic"] },
+];
+
+const BEAUTY_CONCERNS = [
+  { name: "Acne & Blemishes", slug: "acne", match: ["acne", "blemish", "pimple", "breakout"] },
+  { name: "Dark Spots & Pigmentation", slug: "dark_spots", match: ["brighten", "dark spot", "pigment", "melasma", "spots", "dull"] },
+  { name: "Anti-Aging & Wrinkles", slug: "anti_aging", match: ["aging", "wrinkle", "fine line", "firming", "mature"] },
+  { name: "Dryness & Dehydration", slug: "dry_skin", match: ["dry", "hydration", "dehydrat", "moisture"] },
+  { name: "Pores & Excess Oil", slug: "oil_control", match: ["pore", "oil", "sebum", "blackhead", "whitehead"] },
+  { name: "Barrier Repair & Calming", slug: "barrier_repair", match: ["barrier", "repair", "sensitive", "soothing", "calming", "redness"] },
+  { name: "Sun Protection (SPF)", slug: "sun_protection", match: ["sun", "sunscreen", "spf", "uv"] },
+];
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q")?.trim() || "";
+  const query = searchParams.get("q")?.trim().toLowerCase() || "";
 
   if (!query || query.length < 2) {
-    return NextResponse.json({ products: [], categories: [], brands: [] });
+    return NextResponse.json({
+      products: [],
+      categories: [],
+      brands: [],
+      ingredients: [],
+      concerns: [],
+    });
   }
 
   const supabase = await createClient();
 
-  // Search Products
+  // Search Products (matching name or brand)
   const { data: products } = await supabase
     .from("products")
     .select("id, name, slug, regular_price, sale_price, og_image_url, brands(name)")
@@ -36,9 +72,21 @@ export async function GET(request: Request) {
     .ilike("name", `%${query}%`)
     .limit(4);
 
+  // Match Beauty Actives/Ingredients
+  const matchedIngredients = BEAUTY_INGREDIENTS.filter((item) =>
+    item.match.some((m) => m.includes(query) || query.includes(m))
+  ).slice(0, 3);
+
+  // Match Beauty Concerns
+  const matchedConcerns = BEAUTY_CONCERNS.filter((item) =>
+    item.match.some((m) => m.includes(query) || query.includes(m))
+  ).slice(0, 3);
+
   return NextResponse.json({
     products: products || [],
     categories: categories || [],
     brands: brands || [],
+    ingredients: matchedIngredients,
+    concerns: matchedConcerns,
   });
 }

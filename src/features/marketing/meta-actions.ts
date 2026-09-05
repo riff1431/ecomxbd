@@ -1,0 +1,274 @@
+"use server";
+
+import { createHash } from "crypto";
+import { getSettingsByGroup, updateGroupSettings } from "@/lib/settings/config-service";
+import { revalidatePath } from "next/cache";
+import { getBaseUrl } from "@/lib/utils";
+
+export interface MarketingAnalyticsSettings {
+  meta_pixel_id: string;
+  meta_capi_token: string;
+  meta_test_event_code?: string;
+  meta_capi_enabled: boolean;
+  meta_advanced_matching_enabled: boolean;
+  gtm_container_id?: string;
+  ga4_measurement_id?: string;
+  catalog_feed_url?: string;
+}
+
+/**
+ * SHA-256 Hasher for Meta Conversions API Advanced Matching parameters.
+ */
+function hashMetaParameter(val?: string | null): string | undefined {
+  if (!val) return undefined;
+  const trimmed = val.trim().toLowerCase();
+  if (!trimmed) return undefined;
+  return createHash("sha256").update(trimmed).digest("hex");
+}
+
+/**
+ * Normalizes phone number into E.164 digits without '+' (e.g. 88017XXXXXXXX).
+ */
+function normalizeMetaPhone(rawPhone?: string | null): string | undefined {
+  if (!rawPhone) return undefined;
+  let digits = rawPhone.replace(/\D/g, "");
+  if (digits.startsWith("01") && digits.length === 11) {
+    digits = "88" + digits;
+  }
+  return hashMetaParameter(digits);
+}
+
+/**
+ * 1. Fetch Marketing & Analytics Settings
+ */
+export async function getMarketingAnalyticsSettings(): Promise<MarketingAnalyticsSettings> {
+  const settings = await getSettingsByGroup("marketing");
+  return {
+    meta_pixel_id: settings.meta_pixel_id || process.env.NEXT_PUBLIC_META_PIXEL_ID || "",
+    meta_capi_token: settings.meta_capi_token || process.env.META_CAPI_ACCESS_TOKEN || "",
+    meta_test_event_code: settings.meta_test_event_code || process.env.META_CAPI_TEST_EVENT_CODE || "",
+    meta_capi_enabled: settings.meta_capi_enabled !== false,
+    meta_advanced_matching_enabled: settings.meta_advanced_matching_enabled !== false,
+    gtm_container_id: settings.gtm_container_id || process.env.NEXT_PUBLIC_GTM_ID || "",
+    ga4_measurement_id: settings.ga4_measurement_id || process.env.NEXT_PUBLIC_GA4_ID || "",
+    catalog_feed_url: settings.catalog_feed_url || "/api/feed/meta",
+  };
+}
+
+/**
+ * 2. Save Marketing & Analytics Settings
+ */
+export async function saveMarketingAnalyticsSettings(settings: Partial<MarketingAnalyticsSettings>) {
+  await updateGroupSettings("marketing", {
+    meta_pixel_id: settings.meta_pixel_id || "",
+    meta_capi_token: settings.meta_capi_token || "",
+    meta_test_event_code: settings.meta_test_event_code || "",
+    meta_capi_enabled: settings.meta_capi_enabled ?? true,
+    meta_advanced_matching_enabled: settings.meta_advanced_matching_enabled ?? true,
+    gtm_container_id: settings.gtm_container_id || "",
+    ga4_measurement_id: settings.ga4_measurement_id || "",
+    catalog_feed_url: settings.catalog_feed_url || "/api/feed/meta",
+  });
+
+  revalidatePath("/admin/marketing/meta");
+  revalidatePath("/");
+  return { success: true };
+}
+
+/**
+ * 3. Send Server-Side Event to Meta Conversions API (Graph API v21.0)
+ */
+export async function sendMetaCapiEvent(input: {
+  eventName: string;
+  eventId: string;
+  eventSourceUrl?: string;
+  userData?: {
+    email?: string;
+    phone?: string;
+    firstName?: string;
+    lastName?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    zip?: string;
+    externalId?: string;
+    clientIpAddress?: string;
+    clientUserAgent?: string;
+    fbp?: string;
+    fbc?: string;
+  };
+  customData?: Record<string, any>;
+  testEventCode?: string;
+}) {
+  const config = await getMarketingAnalyticsSettings();
+
+  const pixelId = config.meta_pixel_id || process.env.NEXT_PUBLIC_META_PIXEL_ID;
+  const accessToken = config.meta_capi_token || process.env.META_CAPI_ACCESS_TOKEN;
+
+  if (!pixelId || !accessToken) {
+    return {
+      success: false,
+      skipped: true,
+      error: "Meta Pixel ID or CAPI Access Token is not configured.",
+    };
+  }
+
+  // Construct Advanced Matching User Data Payload (Hashed with SHA-256)
+  const userDataPayload: Record<string, any> = {};
+
+  if (input.userData) {
+    const { email, phone, firstName, lastName, city, state, country, zip, externalId, clientIpAddress, clientUserAgent, fbp, fbc } = input.userData;
+
+    if (email) {
+      const hashedEmail = hashMetaParameter(email);
+      if (hashedEmail) userDataPayload.em = [hashedEmail];
+    }
+
+    if (phone) {
+      const hashedPhone = normalizeMetaPhone(phone);
+      if (hashedPhone) userDataPayload.ph = [hashedPhone];
+    }
+
+    if (firstName) {
+      const hashedFn = hashMetaParameter(firstName);
+      if (hashedFn) userDataPayload.fn = [hashedFn];
+    }
+
+    if (lastName) {
+      const hashedLn = hashMetaParameter(lastName);
+      if (hashedLn) userDataPayload.ln = [hashedLn];
+    }
+
+    if (city) {
+      const hashedCity = hashMetaParameter(city.replace(/\s+/g, ""));
+      if (hashedCity) userDataPayload.ct = [hashedCity];
+    }
+
+    if (state) {
+      const hashedState = hashMetaParameter(state);
+      if (hashedState) userDataPayload.st = [hashedState];
+    }
+
+    if (zip) {
+      const hashedZip = hashMetaParameter(zip);
+      if (hashedZip) userDataPayload.zp = [hashedZip];
+    }
+
+    if (country) {
+      const hashedCountry = hashMetaParameter(country);
+      if (hashedCountry) userDataPayload.country = [hashedCountry];
+    } else {
+      userDataPayload.country = [hashMetaParameter("bd")];
+    }
+
+    if (externalId) {
+      const hashedExt = hashMetaParameter(externalId);
+      if (hashedExt) userDataPayload.external_id = [hashedExt];
+    }
+
+    // Unhashed Client Network & Cookie Identifiers
+    if (clientIpAddress) userDataPayload.client_ip_address = clientIpAddress;
+    if (clientUserAgent) userDataPayload.client_user_agent = clientUserAgent;
+    if (fbp) userDataPayload.fbp = fbp;
+    if (fbc) userDataPayload.fbc = fbc;
+  }
+
+  const serverEvent: Record<string, any> = {
+    event_name: input.eventName,
+    event_time: Math.floor(Date.now() / 1000),
+    event_id: input.eventId,
+    event_source_url: input.eventSourceUrl || getBaseUrl() || undefined,
+    action_source: "website",
+    user_data: userDataPayload,
+  };
+
+  if (input.customData && Object.keys(input.customData).length > 0) {
+    serverEvent.custom_data = {
+      currency: input.customData.currency || "BDT",
+      value: input.customData.value !== undefined ? Number(input.customData.value) : undefined,
+      content_type: input.customData.content_type || "product",
+      contents: input.customData.contents || undefined,
+      content_ids: input.customData.content_ids || (input.customData.content_id ? [input.customData.content_id] : undefined),
+      content_name: input.customData.content_name || undefined,
+      content_category: input.customData.content_category || undefined,
+      num_items: input.customData.num_items || (input.customData.contents ? input.customData.contents.length : undefined),
+      order_id: input.customData.order_id || input.customData.transaction_id || undefined,
+      search_string: input.customData.search_string || input.customData.search_term || undefined,
+      status: input.customData.status || undefined,
+    };
+  }
+
+  const testCode = input.testEventCode || config.meta_test_event_code;
+
+  const capiPayload: Record<string, any> = {
+    data: [serverEvent],
+  };
+
+  if (testCode && testCode.trim().length > 0) {
+    capiPayload.test_event_code = testCode.trim();
+  }
+
+  try {
+    const metaApiUrl = `https://graph.facebook.com/v21.0/${pixelId}/events?access_token=${accessToken}`;
+    const response = await fetch(metaApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(capiPayload),
+    });
+
+    const resJson = await response.json();
+
+    if (!response.ok) {
+      console.error("[Meta CAPI Error]", resJson);
+      return {
+        success: false,
+        error: resJson.error?.message || "Meta CAPI request failed",
+        metaTraceId: resJson.error?.fbtrace_id,
+      };
+    }
+
+    return {
+      success: true,
+      eventsReceived: resJson.events_received,
+      fbTraceId: resJson.fbtrace_id,
+    };
+  } catch (err: any) {
+    console.error("[Meta CAPI Network Error]", err);
+    return {
+      success: false,
+      error: err.message || "Network error dispatching Meta CAPI event",
+    };
+  }
+}
+
+/**
+ * 4. Test Live Diagnostic Meta CAPI Connection
+ */
+export async function testMetaCapiDiagnostic(testCodeOverride?: string, originUrl?: string) {
+  const testEventId = `test_evt_${Date.now()}_diag`;
+  const base = originUrl || getBaseUrl() || "";
+  const result = await sendMetaCapiEvent({
+    eventName: "PageView",
+    eventId: testEventId,
+    eventSourceUrl: base ? `${base}/admin/marketing/meta` : undefined,
+    userData: {
+      email: "test_customer@example.com",
+      phone: "01700000000",
+      firstName: "Diagnostic",
+      lastName: "Tester",
+      city: "Dhaka",
+      country: "BD",
+      clientUserAgent: "Meta-CAPI-Diagnostic-Engine/1.0",
+    },
+    customData: {
+      currency: "BDT",
+      value: 1250,
+      content_name: "Meta CAPI Live Diagnostic Verification",
+    },
+    testEventCode: testCodeOverride,
+  });
+
+  return result;
+}

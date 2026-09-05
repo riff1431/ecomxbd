@@ -61,7 +61,7 @@ export default async function AdminProductSettingsPage() {
                 name="low_stock_threshold"
                 defaultValue={settings.low_stock_threshold || 5}
                 min={1}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 

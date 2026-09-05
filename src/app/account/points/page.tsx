@@ -39,7 +39,7 @@ export default function AccountPointsPage() {
       </div>
 
       {/* Points Balance Card */}
-      <div className="rounded-3xl border border-purple-200 bg-gradient-to-r from-purple-900 via-indigo-900 to-pink-900 p-6 sm:p-8 text-white shadow-lg space-y-4">
+      <div className="rounded-3xl border border-purple-200 bg-linear-to-r from-purple-900 via-indigo-900 to-pink-900 p-6 sm:p-8 text-white shadow-lg space-y-4">
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-pink-300 backdrop-blur-xs">
             <Sparkles className="h-3.5 w-3.5" />
@@ -74,7 +74,7 @@ export default function AccountPointsPage() {
             <Button
               onClick={() => handleRedeem(200, "GLAM100")}
               disabled={points < 200}
-              className="w-full text-xs font-bold bg-[#e91e63] hover:bg-[#d81b60] text-white"
+              className="w-full text-xs font-bold bg-[#e91e63] hover:bg-sg-pink-hover text-white"
             >
               Redeem (200 pts)
             </Button>
@@ -89,7 +89,7 @@ export default function AccountPointsPage() {
             <Button
               onClick={() => handleRedeem(500, "GLAM250")}
               disabled={points < 500}
-              className="w-full text-xs font-bold bg-[#e91e63] hover:bg-[#d81b60] text-white"
+              className="w-full text-xs font-bold bg-[#e91e63] hover:bg-sg-pink-hover text-white"
             >
               Redeem (500 pts)
             </Button>
@@ -104,7 +104,7 @@ export default function AccountPointsPage() {
             <Button
               onClick={() => handleRedeem(150, "FREESHIPPASS")}
               disabled={points < 150}
-              className="w-full text-xs font-bold bg-[#e91e63] hover:bg-[#d81b60] text-white"
+              className="w-full text-xs font-bold bg-[#e91e63] hover:bg-sg-pink-hover text-white"
             >
               Redeem (150 pts)
             </Button>

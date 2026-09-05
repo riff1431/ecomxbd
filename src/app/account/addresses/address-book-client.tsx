@@ -203,7 +203,7 @@ export function AddressBookClient({ initialAddresses }: AddressBookClientProps) 
                     required
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
                 <div>
@@ -213,7 +213,7 @@ export function AddressBookClient({ initialAddresses }: AddressBookClientProps) 
                     required
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -224,7 +224,7 @@ export function AddressBookClient({ initialAddresses }: AddressBookClientProps) 
                   <select
                     value={form.division}
                     onChange={(e) => setForm({ ...form, division: e.target.value })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
                   >
                     {BD_DIVISIONS.map((div) => (
                       <option key={div} value={div}>
@@ -240,7 +240,7 @@ export function AddressBookClient({ initialAddresses }: AddressBookClientProps) 
                     required
                     value={form.district}
                     onChange={(e) => setForm({ ...form, district: e.target.value })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -254,7 +254,7 @@ export function AddressBookClient({ initialAddresses }: AddressBookClientProps) 
                     placeholder="e.g. Gulshan-1 / Dhanmondi"
                     value={form.area}
                     onChange={(e) => setForm({ ...form, area: e.target.value })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
                 <div>
@@ -263,7 +263,7 @@ export function AddressBookClient({ initialAddresses }: AddressBookClientProps) 
                     type="text"
                     value={form.postal_code}
                     onChange={(e) => setForm({ ...form, postal_code: e.target.value })}
-                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
                   />
                 </div>
               </div>
@@ -276,7 +276,7 @@ export function AddressBookClient({ initialAddresses }: AddressBookClientProps) 
                   placeholder="House, Road, Flat, Landmark..."
                   value={form.address_line}
                   onChange={(e) => setForm({ ...form, address_line: e.target.value })}
-                  className="w-full rounded-xl border border-border p-3 text-xs focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border p-3 text-xs focus:outline-none"
                 />
               </div>
 

@@ -131,7 +131,7 @@ export default function AccountProfilePage() {
               id="prof-gender"
               value={formData.gender}
               onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-              className="w-full rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-gray-800 focus:border-[#e91e63] focus:outline-none"
+              className="w-full rounded-xl border px-3.5 py-2.5 text-xs font-semibold text-gray-800 focus:outline-none"
             >
               <option value="female">Female</option>
               <option value="male">Male</option>
@@ -161,7 +161,7 @@ export default function AccountProfilePage() {
                 id="prof-skin"
                 value={formData.skinType}
                 onChange={(e) => setFormData({ ...formData, skinType: e.target.value })}
-                className="w-full pl-10 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-xs font-semibold text-gray-800 focus:border-[#e91e63] focus:outline-none"
+                className="w-full pl-10 rounded-xl border px-3.5 py-2.5 text-xs font-semibold text-gray-800 focus:outline-none"
               >
                 <option value="combination">Combination Skin</option>
                 <option value="oily">Oily & Acne-Prone</option>
@@ -177,7 +177,7 @@ export default function AccountProfilePage() {
           <Button
             type="submit"
             disabled={loading}
-            className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold px-6 py-2.5 text-xs rounded-xl shadow-md transition-all active:scale-95"
+            className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-extrabold px-6 py-2.5 text-xs rounded-xl shadow-md transition-all active:scale-95"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Save className="h-4 w-4 mr-1.5" />}
             {loading ? "Saving Changes..." : "Save Profile Details"}

@@ -166,7 +166,7 @@ export function SmsManagerClient({ initialTemplates, initialLogs }: SmsManagerCl
                 required
                 value={testPhone}
                 onChange={(e) => setTestPhone(e.target.value)}
-                className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border px-3 py-2 text-xs focus:outline-none"
               />
             </div>
 

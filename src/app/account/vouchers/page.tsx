@@ -84,7 +84,7 @@ export default function AccountVouchersPage() {
               <span className="font-mono font-black text-xs text-[#e91e63] px-2">{v.code}</span>
               <button
                 onClick={() => handleCopy(v.code)}
-                className="inline-flex items-center gap-1 rounded-xl bg-[#e91e63] px-3 py-1.5 text-xs font-bold text-white hover:bg-[#d81b60] transition-colors"
+                className="inline-flex items-center gap-1 rounded-xl bg-[#e91e63] px-3 py-1.5 text-xs font-bold text-white hover:bg-sg-pink-hover transition-colors"
               >
                 {copiedCode === v.code ? (
                   <>
@@ -107,7 +107,7 @@ export default function AccountVouchersPage() {
           <p className="text-gray-500">Copy any coupon code above and paste it in the Coupon box at checkout.</p>
         </div>
         <Link href="/products">
-          <Button size="sm" className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-bold rounded-xl">
+          <Button size="sm" className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-bold rounded-xl">
             Go Shopping <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Button>
         </Link>

@@ -29,7 +29,7 @@ export default async function AccountOverviewPage() {
           Sign in or create an account to view your dashboard, order history, and saved addresses.
         </p>
         <Link href="/login" className="inline-block">
-          <Button className="bg-[#e91e63] hover:bg-[#d81b60] text-white">Sign In to Account</Button>
+          <Button className="bg-[#e91e63] hover:bg-sg-pink-hover text-white">Sign In to Account</Button>
         </Link>
       </div>
     );
@@ -63,7 +63,7 @@ export default async function AccountOverviewPage() {
             </p>
           </div>
           <Link href="/admin">
-            <Button className="bg-[#e91e63] hover:bg-[#d81b60] text-white font-black text-xs px-6 py-2.5 rounded-2xl shadow-md shrink-0">
+            <Button className="bg-[#e91e63] hover:bg-sg-pink-hover text-white font-black text-xs px-6 py-2.5 rounded-2xl shadow-md shrink-0">
               Open Admin Dashboard
               <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
@@ -135,7 +135,7 @@ export default async function AccountOverviewPage() {
                 Status: {latestOrder.status}
               </span>
               <Link href="/account/track">
-                <Button size="sm" className="bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-black rounded-xl">
+                <Button size="sm" className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-black rounded-xl">
                   Track Consignment
                   <ArrowRight className="h-3.5 w-3.5 ml-1" />
                 </Button>

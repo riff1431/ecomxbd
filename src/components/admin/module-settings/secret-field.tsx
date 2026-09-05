@@ -73,7 +73,7 @@ export function SecretField({
               value={value}
               onChange={(e) => onChange(e.target.value)}
               placeholder={placeholder}
-              className="w-full rounded-xl border border-border bg-white px-3.5 py-2 pr-10 text-xs font-mono text-text placeholder:text-text-muted focus:border-primary-600 focus:outline-none"
+              className="w-full rounded-xl border border-border bg-white px-3.5 py-2 pr-10 text-xs font-mono text-text placeholder:text-text-muted focus:outline-none"
             />
             <button
               type="button"

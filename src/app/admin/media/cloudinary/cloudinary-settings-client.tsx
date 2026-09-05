@@ -126,7 +126,7 @@ export function CloudinarySettingsClient({ initialSettings }: CloudinarySettings
                     value={formData.cloud_name}
                     onChange={(e) => setFormData({ ...formData, cloud_name: e.target.value })}
                     placeholder="e.g. dyvma4kfc"
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                   />
                 </div>
               </div>
@@ -145,7 +145,7 @@ export function CloudinarySettingsClient({ initialSettings }: CloudinarySettings
                     type="text"
                     value={formData.product_folder}
                     onChange={(e) => setFormData({ ...formData, product_folder: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                   />
                 </div>
 
@@ -155,7 +155,7 @@ export function CloudinarySettingsClient({ initialSettings }: CloudinarySettings
                     type="text"
                     value={formData.category_folder}
                     onChange={(e) => setFormData({ ...formData, category_folder: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                   />
                 </div>
 
@@ -165,7 +165,7 @@ export function CloudinarySettingsClient({ initialSettings }: CloudinarySettings
                     type="text"
                     value={formData.brand_folder}
                     onChange={(e) => setFormData({ ...formData, brand_folder: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                   />
                 </div>
 
@@ -175,7 +175,7 @@ export function CloudinarySettingsClient({ initialSettings }: CloudinarySettings
                     type="text"
                     value={formData.banner_folder}
                     onChange={(e) => setFormData({ ...formData, banner_folder: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                   />
                 </div>
               </div>
@@ -202,7 +202,7 @@ export function CloudinarySettingsClient({ initialSettings }: CloudinarySettings
                   value={formData.api_key}
                   onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
                   placeholder="e.g. 682948826151423"
-                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:border-primary-600 focus:outline-none"
+                  className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs font-mono text-text focus:outline-none"
                 />
               </div>
 
@@ -251,7 +251,7 @@ export function CloudinarySettingsClient({ initialSettings }: CloudinarySettings
                   <select
                     value={formData.default_format}
                     onChange={(e) => setFormData({ ...formData, default_format: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                   >
                     <option value="auto">Auto (Best for client device)</option>
                     <option value="webp">WebP</option>
@@ -266,7 +266,7 @@ export function CloudinarySettingsClient({ initialSettings }: CloudinarySettings
                   <select
                     value={formData.default_quality}
                     onChange={(e) => setFormData({ ...formData, default_quality: e.target.value })}
-                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                    className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
                   >
                     <option value="auto">Auto (Smart compression)</option>
                     <option value="auto:best">Auto: Best Visual Quality</option>

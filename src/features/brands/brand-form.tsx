@@ -8,6 +8,7 @@ import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
 import { generateSlug } from "@/lib/utils";
 import { createBrand, updateBrand } from "@/features/brands/actions";
+import { ImageUploadDropzone } from "@/components/shared/image-upload-dropzone";
 
 interface BrandFormProps {
   initialData?: {
@@ -119,62 +120,26 @@ export default function BrandForm({ initialData }: BrandFormProps) {
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
                 rows={4}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
+                className="w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
               />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="logo_url">Brand Logo</Label>
-                <div className="flex gap-2">
-                  <Input id="logo_url" value={form.logo_url} onChange={(e) => updateField("logo_url", e.target.value)} placeholder="https://..." className="flex-1" />
-                  <label className="cursor-pointer">
-                    <span className="inline-flex items-center rounded-lg border border-border bg-surface-secondary px-3 py-2 text-xs font-semibold hover:bg-surface-tertiary">Upload</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const signRes = await fetch("/api/media/sign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ folder: "brands" }) });
-                        const signData = await signRes.json();
-                        const formData = new FormData();
-                        formData.append("file", file);
-                        formData.append("api_key", signData.apiKey);
-                        formData.append("timestamp", signData.timestamp.toString());
-                        formData.append("signature", signData.signature);
-                        formData.append("folder", signData.folder);
-                        const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`, { method: "POST", body: formData });
-                        const asset = await cloudRes.json();
-                        updateField("logo_url", asset.secure_url);
-                      } catch { alert("Upload failed"); }
-                    }} />
-                  </label>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="banner_url">Brand Banner</Label>
-                <div className="flex gap-2">
-                  <Input id="banner_url" value={form.banner_url} onChange={(e) => updateField("banner_url", e.target.value)} placeholder="https://..." className="flex-1" />
-                  <label className="cursor-pointer">
-                    <span className="inline-flex items-center rounded-lg border border-border bg-surface-secondary px-3 py-2 text-xs font-semibold hover:bg-surface-tertiary">Upload</span>
-                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const signRes = await fetch("/api/media/sign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ folder: "brands" }) });
-                        const signData = await signRes.json();
-                        const formData = new FormData();
-                        formData.append("file", file);
-                        formData.append("api_key", signData.apiKey);
-                        formData.append("timestamp", signData.timestamp.toString());
-                        formData.append("signature", signData.signature);
-                        formData.append("folder", signData.folder);
-                        const cloudRes = await fetch(`https://api.cloudinary.com/v1_1/${signData.cloudName}/auto/upload`, { method: "POST", body: formData });
-                        const asset = await cloudRes.json();
-                        updateField("banner_url", asset.secure_url);
-                      } catch { alert("Upload failed"); }
-                    }} />
-                  </label>
-                </div>
-              </div>
+            <div className="grid gap-6 sm:grid-cols-2">
+              <ImageUploadDropzone
+                label="Brand Logo"
+                description="Square brand emblem or logo icon"
+                value={form.logo_url || ""}
+                onChange={(url) => updateField("logo_url", url)}
+                folder="brands"
+                previewShape="circle"
+              />
+              <ImageUploadDropzone
+                label="Brand Banner"
+                description="Wide brand hero cover image"
+                value={form.banner_url || ""}
+                onChange={(url) => updateField("banner_url", url)}
+                folder="brands"
+                previewShape="banner"
+              />
             </div>
           </div>
 
@@ -193,7 +158,7 @@ export default function BrandForm({ initialData }: BrandFormProps) {
                 onChange={(e) => updateField("seo_description", e.target.value)}
                 rows={3}
                 maxLength={160}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
+                className="w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 resize-none"
               />
               <p className="text-xs text-text-muted">{form.seo_description.length}/160</p>
             </div>
@@ -209,7 +174,7 @@ export default function BrandForm({ initialData }: BrandFormProps) {
                 id="status"
                 value={form.status}
                 onChange={(e) => updateField("status", e.target.value as "active" | "inactive")}
-                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+                className="w-full rounded-lg border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20"
               >
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>

@@ -70,7 +70,7 @@ export function StoreSettingsClient({ initialSettings }: StoreSettingsClientProp
                 required
                 value={formData.store_name}
                 onChange={(e) => setFormData({ ...formData, store_name: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 
@@ -79,7 +79,7 @@ export function StoreSettingsClient({ initialSettings }: StoreSettingsClientProp
               <select
                 value={formData.timezone}
                 onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               >
                 <option value="Asia/Dhaka">Asia/Dhaka (GMT+6)</option>
                 <option value="UTC">UTC (GMT+0)</option>
@@ -103,7 +103,7 @@ export function StoreSettingsClient({ initialSettings }: StoreSettingsClientProp
                 required
                 value={formData.store_email}
                 onChange={(e) => setFormData({ ...formData, store_email: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 
@@ -114,7 +114,7 @@ export function StoreSettingsClient({ initialSettings }: StoreSettingsClientProp
                 required
                 value={formData.store_phone}
                 onChange={(e) => setFormData({ ...formData, store_phone: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 
@@ -124,7 +124,7 @@ export function StoreSettingsClient({ initialSettings }: StoreSettingsClientProp
                 rows={2}
                 value={formData.store_address}
                 onChange={(e) => setFormData({ ...formData, store_address: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white p-3 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white p-3 text-xs text-text focus:outline-none"
               />
             </div>
           </div>
@@ -145,7 +145,7 @@ export function StoreSettingsClient({ initialSettings }: StoreSettingsClientProp
                 required
                 value={formData.currency}
                 onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
 
@@ -156,7 +156,7 @@ export function StoreSettingsClient({ initialSettings }: StoreSettingsClientProp
                 required
                 value={formData.currency_symbol}
                 onChange={(e) => setFormData({ ...formData, currency_symbol: e.target.value })}
-                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:border-primary-600 focus:outline-none"
+                className="w-full rounded-xl border border-border bg-white px-3.5 py-2 text-xs text-text focus:outline-none"
               />
             </div>
           </div>

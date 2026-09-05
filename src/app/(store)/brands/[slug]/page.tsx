@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ProductCard, type ProductCardData } from "@/components/storefront/product-card";
 import { ShieldCheck, ChevronRight } from "lucide-react";
+import { ItemListTracker } from "@/components/analytics/item-list-tracker";
 
 export async function generateMetadata({
   params,
@@ -81,6 +82,18 @@ export default async function BrandDetailPage({
 
   return (
     <div className="container-main py-4 sm:py-6 space-y-6">
+      <ItemListTracker
+        items={productCards.map((p, idx) => ({
+          item_id: p.id,
+          item_name: p.name,
+          item_brand: brand.name,
+          price: p.sale_price ?? p.regular_price,
+          index: idx + 1,
+        }))}
+        listName={`Brand: ${brand.name}`}
+        listId={`brand_${brand.slug}`}
+      />
+
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted">
         <Link href="/" className="hover:text-text transition-colors">Home</Link>

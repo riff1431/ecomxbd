@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ShoppingBag,
@@ -16,9 +16,14 @@ import {
   RotateCcw,
   Sparkles,
 } from "lucide-react";
-import { useCart } from "@/context/cart-context";
+import { useCart, CartItem } from "@/context/cart-context";
 import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
+import {
+  trackViewCart,
+  trackRemoveFromCart as trackGA4RemoveFromCart,
+  trackBeginCheckout,
+} from "@/lib/analytics/datalayer";
 
 const FREE_SHIPPING_THRESHOLD = 2500;
 
@@ -43,6 +48,55 @@ export default function CartPage() {
   const freeShippingProgress = Math.min(100, Math.round((subtotal / FREE_SHIPPING_THRESHOLD) * 100));
   const amountNeeded = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
   const total = Math.max(0, subtotal - discount);
+
+  // Track view_cart event on mount or when items update
+  useEffect(() => {
+    if (items.length > 0) {
+      trackViewCart(
+        items.map((it) => ({
+          item_id: it.product_id || it.id,
+          item_name: it.name,
+          item_brand: it.brand_name || undefined,
+          item_variant: it.variant_label || undefined,
+          price: it.price,
+          quantity: it.quantity,
+        })),
+        total
+      );
+    }
+  }, []);
+
+  const handleRemoveItem = (item: CartItem) => {
+    trackGA4RemoveFromCart(
+      [
+        {
+          item_id: item.product_id || item.id,
+          item_name: item.name,
+          item_brand: item.brand_name || undefined,
+          item_variant: item.variant_label || undefined,
+          price: item.price,
+          quantity: item.quantity,
+        },
+      ],
+      item.price * item.quantity
+    );
+    removeItem(item.id);
+  };
+
+  const handleProceedToCheckout = () => {
+    trackBeginCheckout(
+      items.map((it) => ({
+        item_id: it.product_id || it.id,
+        item_name: it.name,
+        item_brand: it.brand_name || undefined,
+        item_variant: it.variant_label || undefined,
+        price: it.price,
+        quantity: it.quantity,
+      })),
+      total,
+      coupon?.code
+    );
+  };
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +188,7 @@ export default function CartPage() {
 
               <div className="h-2 w-full overflow-hidden rounded-full bg-primary-100">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary-600 to-emerald-500 transition-all duration-500"
+                  className="h-full rounded-full bg-linear-to-r from-primary-600 to-emerald-500 transition-all duration-500"
                   style={{ width: `${freeShippingProgress}%` }}
                 />
               </div>
@@ -156,7 +210,7 @@ export default function CartPage() {
                           className="h-full w-full object-contain"
                         />
                       ) : (
-                        <ShoppingBag className="h-8 w-8 text-text-muted stroke-[1]" />
+                        <ShoppingBag className="h-8 w-8 text-text-muted stroke-1" />
                       )}
                     </div>
 
@@ -201,14 +255,14 @@ export default function CartPage() {
                       </button>
                     </div>
 
-                    <div className="text-right min-w-[75px]">
+                    <div className="text-right min-w-18.75">
                       <span className="text-xs sm:text-sm font-black text-text">
                         {formatPrice(item.price * item.quantity)}
                       </span>
                     </div>
 
                     <button
-                      onClick={() => removeItem(item.id)}
+                      onClick={() => handleRemoveItem(item)}
                       className="text-text-muted hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
                       title="Remove product"
                     >
@@ -235,7 +289,7 @@ export default function CartPage() {
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                     placeholder="Coupon or Promo code"
-                    className="flex-1 rounded-xl border border-border bg-surface-secondary/60 px-3.5 py-2 text-xs font-mono uppercase focus:border-primary-600 focus:bg-white focus:outline-none"
+                    className="flex-1 rounded-xl border px-3.5 py-2 text-xs font-mono uppercase focus:outline-none"
                   />
                   <Button type="submit" size="sm" disabled={isApplying} className="rounded-xl text-xs font-bold h-9">
                     Apply
@@ -275,7 +329,7 @@ export default function CartPage() {
               </div>
 
               {/* Proceed to Checkout CTA */}
-              <Link href="/checkout" className="block">
+              <Link href="/checkout" onClick={handleProceedToCheckout} className="block">
                 <Button className="w-full h-12 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-extrabold text-sm shadow-md transition-all active:scale-95">
                   <span>Proceed to Checkout</span>
                   <ArrowRight className="h-4 w-4 ml-2" />
