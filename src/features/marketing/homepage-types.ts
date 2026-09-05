@@ -561,7 +561,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
     Why Genuine Cosmetics Matter for Your Skin Health
   </h3>
   <p>
-    Counterfeit cosmetics are unfortunately widespread in local markets. Applying unverified replicas can cause persistent breakouts, chemical irritation, allergic flare-ups, and long-term skin barrier damage. That is why at Blush &amp; Budget, we strictly avoid secondary resellers or unofficial intermediaries. We source our inventory directly from verified brand hubs and authorized global distributors in Seoul, Tokyo, London, and New York. Every serum, moisturizer, sunscreen, and lipstick comes with its manufacturer batch code, verifiable tamper-evident seals, and guaranteed shelf freshness.
+    Counterfeit cosmetics are unfortunately widespread in local markets. Applying unverified replicas can lead to persistent breakouts, unwanted irritation, and compromised skin wellness. That is why at Blush &amp; Budget, we strictly avoid secondary resellers or unofficial intermediaries. We source our inventory directly from verified brand hubs and authorized global distributors in Seoul, Tokyo, London, and New York. Every serum, moisturizer, sunscreen, and lipstick comes with its manufacturer batch code, verifiable tamper-evident seals, and guaranteed shelf freshness.
   </p>
 
   <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
@@ -585,7 +585,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
     The Korean &amp; Japanese Beauty Revolution
   </h3>
   <p>
-    K-Beauty and J-Beauty have transformed how we think about self-care. Rather than masking skin problems with thick layers, gentle botanical ingredients like snail mucin, heartleaf, propolis, rice water, and fermented galactomyces heal your moisture barrier from within. Discover cult-favorite products from top global names on our <a href="/brands" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">Official Brand Directory</a>, where you can browse authentic formulations loved by millions worldwide.
+    K-Beauty and J-Beauty have transformed how we think about self-care. Rather than masking skin problems with thick layers, gentle botanical ingredients like snail mucin, heartleaf, propolis, rice water, and fermented galactomyces nourish and protect your skin barrier. Discover cult-favorite products from top global names on our <a href="/brands" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">Official Brand Directory</a>, where you can browse authentic formulations loved by millions worldwide.
   </p>
 
   <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
@@ -614,7 +614,7 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
     আসল ও সার্টিফাইড কসমেটিকস কেন ত্বকের জন্য অত্যন্ত জরুরি?
   </h3>
   <p>
-    লোকাল মার্কেটে নকল ও ভেজাল বিউটি প্রোডাক্টের ছড়াছড়ি ত্বক ও স্বাস্থ্যের জন্য চরম ঝুঁকিপূর্ণ। অরিজিনাল নয় এমন রেপ্লিকা ব্যবহারের ফলে ত্বকের স্বাভাবিক ব্যারিয়ার নষ্ট হয়ে ব্রণের উপদ্রব, ক্ষতিকর পার্শ্বপ্রতিক্রিয়া ও স্থায়ী দাগের সৃষ্টি হতে পারে। তাই Blush &amp; Budget-এ আমরা কোনো থার্ড পার্টি বা অনির্ভরযোগ্য সোর্স থেকে পণ্য নিই না। আমাদের প্রতিটি প্রোডাক্ট সরাসরি সিউল (দক্ষিণ কোরিয়া), টোকিও, লন্ডন ও ইউএসএ-এর অফিশিয়াল ব্র্যান্ড ও অনুমোদিত ডিস্ট্রিবিউটর থেকে আমদানি করা। প্রতিটি পণ্যে রয়েছে আসল ম্যানুফ্যাকচারার ব্যাচ কোড ও ইনট্যাক্ট হাইজিন সিল।
+    লোকাল মার্কেটে নকল ও ভেজাল বিউটি প্রোডাক্টের ছড়াছড়ি ত্বকের স্বাভাবিক সুস্থতার জন্য ঝুঁকিপূর্ণ। অরিজিনাল নয় এমন রেপ্লিকা ব্যবহারের ফলে ত্বকে ব্রণের উপদ্রব বা অস্বস্তির সৃষ্টি হতে পারে। তাই Blush &amp; Budget-এ আমরা কোনো থার্ড পার্টি বা অনির্ভরযোগ্য সোর্স থেকে পণ্য নিই না। আমাদের প্রতিটি প্রোডাক্ট সরাসরি সিউল (দক্ষিণ কোরিয়া), টোকিও, লন্ডন ও ইউএসএ-এর অফিশিয়াল ব্র্যান্ড ও অনুমোদিত ডিস্ট্রিবিউটর থেকে আমদানি করা। প্রতিটি পণ্যে রয়েছে আসল ম্যানুফ্যাকচারার ব্যাচ কোড ও ইনট্যাক্ট হাইজিন সিল।
   </p>
 
   <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
@@ -664,9 +664,9 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
         question: "How can I be 100% sure that the products on Blush & Budget are genuine and authentic?",
         questionBn: "আপনাদের প্রোডাক্টগুলো যে ১০০% আসল ও অরিজিনাল, তা কীভাবে নিশ্চিত হব?",
         answer:
-          "We understand that buying beauty products online can feel stressful due to counterfeit copies in the market. Every item on Blush & Budget is imported directly from official brand partners or authorized distribution hubs in South Korea, the UK, the US, and Japan. Every product includes its original manufacturer batch code (verifiable on global batch checkers like CheckFresh), security seal, and barcode. If any item is ever shown to be counterfeit, we provide an unconditional 300% money-back guarantee.",
+          "We understand that buying beauty products online can feel stressful due to counterfeit copies in the market. Every item on Blush & Budget is imported directly from official brand partners or authorized distribution hubs in South Korea, the UK, the US, and Japan. Every product includes its original manufacturer batch code (verifiable on global batch checkers like CheckFresh), security seal, and barcode. If any item is ever shown to be counterfeit, we provide an unconditional 100% money-back guarantee.",
         answerBn:
-          "অনলাইনে কসমেটিকস কেনার সময় নকলের ভয় থাকা অত্যন্ত স্বাভাবিক। Blush & Budget-এর প্রতিটি প্রোডাক্ট সরাসরি সিউল, লন্ডন, টোকিও ও ইউএসএ-এর অনুমোদিত ডিস্ট্রিবিউশন হাব থেকে সরাসরি আনা হয়। প্রতিটি বক্সে আসল ম্যানুফ্যাকচারার ব্যাচ কোড ও সিল থাকে যা CheckFresh বা সংশ্লিষ্ট ব্র্যান্ড পোর্টালে সহজেই ভেরিফাই করা যায়। কোনো পণ্য নকল প্রমাণিত হলে আমরা নিঃশর্ত ৩০০% মানিব্যাক গ্যারান্টি প্রদান করি।",
+          "অনলাইনে কসমেটিকস কেনার সময় নকলের ভয় থাকা অত্যন্ত স্বাভাবিক। Blush & Budget-এর প্রতিটি প্রোডাক্ট সরাসরি সিউল, লন্ডন, টোকিও ও ইউএসএ-এর অনুমোদিত ডিস্ট্রিবিউশন হাব থেকে সরাসরি আনা হয়। প্রতিটি বক্সে আসল ম্যানুফ্যাকচারার ব্যাচ কোড ও সিল থাকে যা CheckFresh বা সংশ্লিষ্ট ব্র্যান্ড পোর্টালে সহজেই ভেরিফাই করা যায়। কোনো পণ্য নকল প্রমাণিত হলে আমরা নিঃশর্ত ১০০% মানিব্যাক গ্যারান্টি প্রদান করি।",
       },
       {
         id: "faq-2",
@@ -714,9 +714,9 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
         question: "Can I get personalized skincare consultation for my skin concerns before buying?",
         questionBn: "অর্ডার করার আগে কি আমার ত্বকের ধরন অনুযায়ী ফ্রি পরামর্শ পেতে পারি?",
         answer:
-          "Yes, completely free! If you are unsure which serum, moisturizer, or routine matches your skin goals (acne, dark spots, sensitivity, dullness, or anti-aging), our certified beauty advisors are available on WhatsApp and live chat daily from 10 AM to 10 PM. We listen to your concerns and recommend only what your skin genuinely needs.",
+          "Yes, completely free! If you are unsure which serum, moisturizer, or routine matches your skin goals (blemishes, dark spots, sun tan, uneven tone, or dullness), our certified beauty advisors are available on WhatsApp and live chat daily from 10 AM to 10 PM. We listen to your concerns and recommend only what your skin genuinely needs.",
         answerBn:
-          "অবশ্যই এবং সম্পূর্ণ বিনামূল্যে! আপনার ত্বকের সমস্যা (যেমন: ব্রণের দাগ, রোদে পোড়া ভাব, মেছতা বা সংবেদনশীলতা) অনুযায়ী কোন পণ্যটি উপযুক্ত হবে তা জানতে আমাদের বিউটি এক্সপার্টরা প্রতিদিন সকাল ১০টা থেকে রাত ১০টা পর্যন্ত হোয়াটসঅ্যাপ ও লাইভ সাপোর্টে পরামর্শ দিতে প্রস্তুত থাকেন।",
+          "অবশ্যই এবং সম্পূর্ণ বিনামূল্যে! আপনার ত্বকের চাহিদা (যেমন: ব্রণের দাগ, রোদে পোড়া ভাব, আনইভেন স্কিন টোন বা শুষ্কতা) অনুযায়ী কোন পণ্যটি উপযুক্ত হবে তা জানতে আমাদের বিউটি এক্সপার্টরা প্রতিদিন সকাল ১০টা থেকে রাত ১০টা পর্যন্ত হোয়াটসঅ্যাপ ও লাইভ সাপোর্টে পরামর্শ দিতে প্রস্তুত থাকেন।",
       },
       {
         id: "faq-7",
@@ -731,12 +731,12 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
       {
         id: "faq-8",
         category: "Product Safety",
-        question: "Are your skincare and makeup products free from harmful chemicals and bleaching agents?",
-        questionBn: "আপনাদের পণ্যগুলো কি ক্ষতিকর কেমিক্যাল ও স্টেরয়েড মুক্ত?",
+        question: "Are your skincare and makeup products certified safe and free from toxic additives?",
+        questionBn: "আপনাদের পণ্যগুলো কি ত্বকের জন্য নিরাপদ ও ক্ষতিকর উপাদানমুক্ত?",
         answer:
-          "100% safe. We strictly refuse to stock dangerous fast-whitening creams that contain mercury, hydroquinone, or heavy steroids. Every brand we carry complies with strict international cosmetic safety standards (such as Korean MFDS, EU Cosmetic Safety Regulations, and US FDA compliance) focused on gentle barrier restoration, natural radiance, and long-term dermatological safety.",
+          "100% safe and tested. We strictly reject harsh bleaching agents, toxic additives, or unverified chemical compounds. Every brand we carry complies with strict international cosmetic safety standards (such as Korean MFDS, EU Cosmetic Safety Regulations, and US FDA compliance) focused on gentle barrier restoration, natural radiance, and long-term dermatological safety.",
         answerBn:
-          "শতভাগ নিরাপদ। আমরা ক্ষতিকর মার্কারি, হাইড্রোকুইনোন বা বিপজ্জনক স্টেরয়েডযুক্ত কোনো কৃত্রিম ফর্সাকারী ক্রিম বিক্রি করি না। আমাদের প্রতিটি ব্র্যান্ড আন্তর্জাতিক কসমেটিক নিরাপত্তা মানদণ্ড (যেমন কোরিয়ান MFDS, ইউরোপীয় ইউনিয়ন ও ইউএস এফডিএ) মেনে প্রস্তুত, যা ত্বকের ক্ষতি না করে ভেতর থেকে প্রাকৃতিক সুস্থতা ও গ্লো প্রদান করে।",
+          "শতভাগ নিরাপদ ও সার্টিফাইড। আমরা ক্ষতিকর ব্লিচিং এজেন্ট, বিষাক্ত কেমিক্যাল বা অনুমোদনহীন উপাদানযুক্ত কোনো পণ্য বিক্রি করি না। আমাদের প্রতিটি ব্র্যান্ড আন্তর্জাতিক কসমেটিক নিরাপত্তা মানদণ্ড (যেমন কোরিয়ান MFDS, ইউরোপীয় ইউনিয়ন ও ইউএস এফডিএ) মেনে প্রস্তুত, যা ত্বকের ক্ষতি না করে ভেতর থেকে প্রাকৃতিক সুস্থতা ও গ্লো বজায় রাখে।",
       },
     ],
   },

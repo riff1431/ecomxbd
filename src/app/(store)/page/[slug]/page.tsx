@@ -47,7 +47,7 @@ const CMS_PAGES: Record<
           <div>
             <h3 className="font-bold text-emerald-800 text-base">Our Zero-Counterfeit Commitment</h3>
             <p className="text-xs text-emerald-700 mt-1 leading-relaxed">
-              We understand the damage counterfeit skincare can cause. We source directly from official brand partners like COSRX Korea, CeraVe UK, and The Ordinary. If any product is proven non-authentic, we provide a 300% refund immediately.
+              We understand the damage counterfeit skincare can cause. We source directly from official brand partners like COSRX Korea, CeraVe UK, and The Ordinary. If any product is proven non-authentic, we provide a 100% full refund immediately plus cover all courier return pickup costs.
             </p>
           </div>
         </div>
