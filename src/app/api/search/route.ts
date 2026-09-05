@@ -33,9 +33,10 @@ const BEAUTY_CONCERNS = [
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const query = searchParams.get("q")?.trim().toLowerCase() || "";
+  const rawQuery = searchParams.get("q")?.trim() || "";
+  const query = rawQuery.replace(/^#/, "").trim().toLowerCase();
 
-  if (!query || query.length < 2) {
+  if (!query) {
     return NextResponse.json({
       products: [],
       categories: [],
@@ -47,13 +48,13 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
 
-  // Search Products (matching name or brand)
+  // Search Products (matching name or sku)
   const { data: products } = await supabase
     .from("products")
-    .select("id, name, slug, regular_price, sale_price, og_image_url, brands(name)")
+    .select("id, name, slug, sku, regular_price, sale_price, og_image_url, brands(name)")
     .eq("status", "active")
     .is("deleted_at", null)
-    .ilike("name", `%${query}%`)
+    .or(`name.ilike.%${query}%,sku.ilike.%${query}%`)
     .limit(6);
 
   // Search Categories

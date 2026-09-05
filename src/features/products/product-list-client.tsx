@@ -55,18 +55,28 @@ export default function ProductListClient() {
 
   const columns: Column<ProductRow>[] = [
     {
+      key: "sku",
+      header: "ID / SKU",
+      sortable: true,
+      width: "110px",
+      cell: (row) => (
+        <span className="font-mono font-bold text-xs bg-surface-secondary border border-border px-2.5 py-1 rounded-md text-text inline-block">
+          #{row.sku || "—"}
+        </span>
+      ),
+    },
+    {
       key: "name",
       header: "Product",
       sortable: true,
       cell: (row) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-secondary text-text-muted">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-secondary text-text-muted">
             <Package className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <p className="font-medium text-text truncate max-w-[200px]">{row.name}</p>
-            <div className="flex items-center gap-2 text-xs text-text-muted">
-              {row.sku && <span>SKU: {row.sku}</span>}
+            <p className="font-medium text-text truncate max-w-[220px]">{row.name}</p>
+            <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5">
               <span className="capitalize">{row.product_type}</span>
               {row.is_featured && (
                 <span className="rounded bg-yellow-50 px-1.5 py-0.5 text-yellow-700 font-medium">Featured</span>
@@ -147,7 +157,7 @@ export default function ProductListClient() {
         columns={columns}
         data={products}
         loading={loading}
-        searchPlaceholder="Search products by name or SKU..."
+        searchPlaceholder="Search products by name or ID / SKU..."
         searchKey="name"
         getRowId={(row) => row.id}
         emptyMessage="No products found. Create your first product."

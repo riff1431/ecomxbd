@@ -58,6 +58,7 @@ export default async function ProductsListingPage({
       id,
       name,
       slug,
+      sku,
       regular_price,
       sale_price,
       og_image_url,
@@ -94,7 +95,8 @@ export default async function ProductsListingPage({
   }
 
   if (search) {
-    query = query.ilike("name", `%${search}%`);
+    const cleanSearch = search.trim().replace(/^#/, "");
+    query = query.or(`name.ilike.%${cleanSearch}%,sku.ilike.%${cleanSearch}%`);
   }
 
   if (min_price) {
@@ -142,6 +144,7 @@ export default async function ProductsListingPage({
         id: p.id,
         name: p.name,
         slug: p.slug,
+        sku: p.sku || null,
         regular_price: p.regular_price,
         sale_price: p.sale_price,
         image_url: p.og_image_url || null,

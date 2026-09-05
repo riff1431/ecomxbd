@@ -62,10 +62,17 @@ export function DataTable<T>({
   // Search filter
   const filtered = useMemo(() => {
     if (!search || !searchKey) return data;
-    const q = search.toLowerCase();
+    const q = search.toLowerCase().trim();
+    const cleanQ = q.replace(/^#/, "");
     return data.filter((row) => {
       const val = row[searchKey];
-      return typeof val === "string" && val.toLowerCase().includes(q);
+      if (typeof val === "string" && val.toLowerCase().includes(q)) return true;
+      const anyRow = row as Record<string, unknown>;
+      if (typeof anyRow.sku === "string") {
+        const skuStr = anyRow.sku.toLowerCase();
+        if (skuStr === cleanQ || skuStr.includes(cleanQ)) return true;
+      }
+      return false;
     });
   }, [data, search, searchKey]);
 

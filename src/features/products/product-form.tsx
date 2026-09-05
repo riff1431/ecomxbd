@@ -11,7 +11,7 @@ import { Button } from "@/components/shared/ui/button";
 import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
 import { generateSlug, cn } from "@/lib/utils";
-import { createProduct, updateProduct, getProducts } from "@/features/products/actions";
+import { createProduct, updateProduct, getProducts, getNextProductSerial } from "@/features/products/actions";
 import { getCategories } from "@/features/categories/actions";
 import { getBrands } from "@/features/brands/actions";
 import { getAttributes } from "@/features/attributes/actions";
@@ -48,6 +48,7 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
   const [activeTab, setActiveTab] = useState<string>("basic");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [suggestedSku, setSuggestedSku] = useState<number | null>(null);
 
   const [categories, setCategories] = useState<Array<{ id: string; name: string; parent_id: string | null }>>([]);
   const [brands, setBrands] = useState<Array<{ id: string; name: string }>>([]);
@@ -147,6 +148,12 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
       }
     });
 
+    if (!isEditing) {
+      getNextProductSerial()
+        .then((serial) => setSuggestedSku(serial))
+        .catch(() => {});
+    }
+
     if (initialData?.id) {
       getProductComboConfig(initialData.id as string).then((cfg) => {
         if (cfg) {
@@ -161,7 +168,7 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
         }
       });
     }
-  }, [initialData?.id]);
+  }, [initialData?.id, isEditing]);
 
   const toggleBundleProduct = (id: string) => {
     setComboConfig((prev) => ({
@@ -326,9 +333,9 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
       const valueIds = items.map((i: any) => i.id);
       const labels = items.map((i: any) => i.value);
       const skuSuffix = labels.map((l: string) => l.toUpperCase().replace(/\s+/g, "")).join("-");
-
+      const baseSku = form.sku || (suggestedSku ? String(suggestedSku) : `VAR-${idx + 1}`);
       return {
-        sku: form.sku ? `${form.sku}-${skuSuffix}` : `VAR-${idx + 1}-${skuSuffix}`,
+        sku: `${baseSku}-${skuSuffix}`,
         regular_price: form.regular_price || 0,
         sale_price: form.sale_price || 0,
         cost_price: form.cost_price || 0,
@@ -552,8 +559,22 @@ export default function ProductForm({ initialData }: { initialData?: Record<stri
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>SKU</Label>
-                  <Input value={form.sku} onChange={(e) => updateField("sku", e.target.value)} />
+                  <div className="flex items-center justify-between">
+                    <Label className="font-semibold text-text">Product ID / SKU</Label>
+                    {!isEditing && suggestedSku && (
+                      <span className="text-xs font-semibold text-[#e91e63] bg-pink-50 border border-pink-200 px-2 py-0.5 rounded-md">
+                        Auto Serial: #{suggestedSku}
+                      </span>
+                    )}
+                  </div>
+                  <Input
+                    value={form.sku}
+                    onChange={(e) => updateField("sku", e.target.value)}
+                    placeholder={suggestedSku ? `e.g. ${suggestedSku} (Auto serial #${suggestedSku} if empty)` : "e.g. 1, 2, 3... (Auto-assigned if empty)"}
+                  />
+                  <p className="text-[11px] text-text-muted">
+                    Product ID & SKU are identical numbers. Leave empty to automatically publish with dynamic serial {suggestedSku ? `#${suggestedSku}` : "(1, 2, 3...)"}.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Barcode</Label>

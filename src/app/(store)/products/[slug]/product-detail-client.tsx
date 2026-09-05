@@ -439,15 +439,22 @@ export function ProductDetailClient({
         <div className="lg:col-span-7 flex flex-col space-y-5">
           {/* Brand & Title */}
           <div>
-            {product.brands && (
-              <Link
-                href={`/products?brand=${product.brands.slug}`}
-                className="inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-[#e91e63] hover:text-sg-pink-hover transition-colors"
-              >
-                <span>{product.brands.name}</span>
-                <ChevronRight className="h-3 w-3" />
-              </Link>
-            )}
+            <div className="flex items-center gap-2.5 flex-wrap">
+              {product.brands && (
+                <Link
+                  href={`/products?brand=${product.brands.slug}`}
+                  className="inline-flex items-center gap-1 text-xs font-extrabold uppercase tracking-wider text-[#e91e63] hover:text-sg-pink-hover transition-colors"
+                >
+                  <span>{product.brands.name}</span>
+                  <ChevronRight className="h-3 w-3" />
+                </Link>
+              )}
+              {product.sku && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 border border-zinc-200 px-2 py-0.5 font-mono text-[11px] font-bold text-zinc-600">
+                  ID / SKU: #{product.sku}
+                </span>
+              )}
+            </div>
             <h1 className="mt-1 text-xl sm:text-2xl lg:text-3xl font-black text-text leading-tight">
               {product.name}
             </h1>

@@ -4,6 +4,31 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { logActivity } from "@/services/activity-log";
 
+export async function getNextProductSerial(): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .select("sku")
+    .is("deleted_at", null);
+
+  if (error || !data || data.length === 0) return 1;
+
+  let maxSerial = 0;
+  for (const item of data) {
+    if (item.sku) {
+      const trimmed = String(item.sku).trim().replace(/^#/, "");
+      if (/^\d+$/.test(trimmed)) {
+        const parsed = parseInt(trimmed, 10);
+        if (!isNaN(parsed) && parsed > maxSerial) {
+          maxSerial = parsed;
+        }
+      }
+    }
+  }
+
+  return maxSerial > 0 ? maxSerial + 1 : data.length + 1;
+}
+
 export async function getProducts(filters?: {
   status?: string;
   brand_id?: string;
@@ -20,7 +45,8 @@ export async function getProducts(filters?: {
   if (filters?.status) query = query.eq("status", filters.status);
   if (filters?.brand_id) query = query.eq("brand_id", filters.brand_id);
   if (filters?.search) {
-    query = query.or(`name.ilike.%${filters.search}%,sku.ilike.%${filters.search}%`);
+    const cleanSearch = filters.search.trim().replace(/^#/, "");
+    query = query.or(`name.ilike.%${cleanSearch}%,sku.ilike.%${cleanSearch}%`);
   }
 
   const { data, error } = await query;
@@ -68,11 +94,19 @@ export async function createProduct(input: {
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
 
+  // Determine SKU / Product ID: use admin-provided value or auto-generate sequential number (1, 2, 3...)
+  let sku = input.product.sku ? String(input.product.sku).trim() : "";
+  if (!sku) {
+    const nextSerial = await getNextProductSerial();
+    sku = String(nextSerial);
+  }
+
   // Insert product with beauty taxonomy
   const { data: product, error: prodError } = await supabase
     .from("products")
     .insert({
       ...input.product,
+      sku: sku,
       skin_type: input.product.skin_type || null,
       skin_concern: input.product.skin_concern || null,
       key_actives: input.product.key_actives || null,
@@ -127,11 +161,16 @@ export async function createProduct(input: {
 
   // Create variants (for variable products)
   if (input.variants?.length) {
-    for (const variant of input.variants) {
+    for (let idx = 0; idx < input.variants.length; idx++) {
+      const variant = input.variants[idx];
       const { attribute_value_ids, ...variantData } = variant;
+      const variantSku = variant.sku && variant.sku.trim()
+        ? variant.sku.trim()
+        : `${sku}-${idx + 1}`;
+
       const { data: v, error: vErr } = await supabase
         .from("product_variants")
-        .insert({ ...variantData, product_id: product.id })
+        .insert({ ...variantData, sku: variantSku, product_id: product.id })
         .select()
         .single();
 
@@ -192,9 +231,20 @@ export async function updateProduct(
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  const productData = { ...input.product };
+  if (productData.sku !== undefined) {
+    const trimmedSku = String(productData.sku || "").trim();
+    if (!trimmedSku) {
+      const nextSerial = await getNextProductSerial();
+      productData.sku = String(nextSerial);
+    } else {
+      productData.sku = trimmedSku;
+    }
+  }
+
   const { data: product, error } = await supabase
     .from("products")
-    .update({ ...input.product, updated_by: user?.id })
+    .update({ ...productData, updated_by: user?.id })
     .eq("id", id)
     .select()
     .single();

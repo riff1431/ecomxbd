@@ -21,6 +21,7 @@ export interface ProductCardData {
   id: string;
   name: string;
   slug: string;
+  sku?: string | null;
   regular_price: number;
   sale_price: number | null;
   image_url?: string | null;
