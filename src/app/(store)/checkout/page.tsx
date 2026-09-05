@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -86,6 +86,17 @@ export default function CheckoutPage() {
     thana: "Gulshan",
     address: "",
     notes: "",
+  });
+
+  // Track user's outside-dhaka location preference so toggling between zones never loses user choices
+  const lastOutsideLocationRef = useRef<{
+    division: string;
+    district: string;
+    thana: string;
+  }>({
+    division: "Chattogram",
+    district: "Chattogram",
+    thana: "Kotwali",
   });
 
   // Real-Time Live Bangladeshi Phone Number Validation & Fake Detection
@@ -201,21 +212,89 @@ export default function CheckoutPage() {
   const handleDivisionChange = (newDiv: string) => {
     const divObj = BD_GEO_HIERARCHY.find((d) => d.name === newDiv) || BD_GEO_HIERARCHY[0];
     const firstDist = divObj.districts[0];
-    setFormData({
-      ...formData,
+    const firstThana = firstDist.thanas[0] || "";
+    setFormData((prev) => ({
+      ...prev,
       division: newDiv,
       district: firstDist.name,
-      thana: firstDist.thanas[0] || "",
-    });
+      thana: firstThana,
+    }));
+    if (firstDist.zone !== "inside_dhaka") {
+      lastOutsideLocationRef.current = {
+        division: newDiv,
+        district: firstDist.name,
+        thana: firstThana,
+      };
+    }
   };
 
   // Handle District Change -> Auto update Thana
   const handleDistrictChange = (newDist: string) => {
-    const distObj = availableDistricts.find((d) => d.name === newDist) || availableDistricts[0];
-    setFormData({
-      ...formData,
-      district: newDist,
-      thana: distObj?.thanas[0] || "",
+    setFormData((prev) => {
+      const divObj = BD_GEO_HIERARCHY.find((d) => d.name === prev.division) || BD_GEO_HIERARCHY[0];
+      const distObj = divObj.districts.find((d) => d.name === newDist) || divObj.districts[0];
+      const firstThana = distObj?.thanas[0] || "";
+      if (distObj?.zone !== "inside_dhaka") {
+        lastOutsideLocationRef.current = {
+          division: prev.division,
+          district: newDist,
+          thana: firstThana,
+        };
+      }
+      return {
+        ...prev,
+        district: newDist,
+        thana: firstThana,
+      };
+    });
+  };
+
+  // Switch to Inside Dhaka
+  const handleSelectInsideDhaka = () => {
+    const dhakaDiv = BD_GEO_HIERARCHY.find((d) => d.name === "Dhaka") || BD_GEO_HIERARCHY[0];
+    const dhakaCityDist = dhakaDiv.districts.find((d) => d.name === "Dhaka City") || dhakaDiv.districts[0];
+    const firstThana = dhakaCityDist.thanas[0] || "Gulshan";
+
+    setFormData((prev) => {
+      if (getShippingZoneByDistrict(prev.district) !== "inside_dhaka") {
+        lastOutsideLocationRef.current = {
+          division: prev.division,
+          district: prev.district,
+          thana: prev.thana,
+        };
+      }
+      return {
+        ...prev,
+        division: "Dhaka",
+        district: dhakaCityDist.name,
+        thana: firstThana,
+      };
+    });
+  };
+
+  // Switch to Outside Dhaka
+  const handleSelectOutsideDhaka = () => {
+    setFormData((prev) => {
+      if (getShippingZoneByDistrict(prev.district) !== "inside_dhaka") {
+        return prev;
+      }
+
+      const fallback = lastOutsideLocationRef.current || {
+        division: "Chattogram",
+        district: "Chattogram",
+        thana: "Kotwali",
+      };
+
+      const divObj = BD_GEO_HIERARCHY.find((d) => d.name === fallback.division) || BD_GEO_HIERARCHY[1];
+      const distObj = divObj.districts.find((d) => d.name === fallback.district) || divObj.districts[0];
+      const thana = distObj.thanas.includes(fallback.thana) ? fallback.thana : (distObj.thanas[0] || "");
+
+      return {
+        ...prev,
+        division: divObj.name,
+        district: distObj.name,
+        thana,
+      };
     });
   };
 
@@ -618,10 +697,7 @@ export default function CheckoutPage() {
                   {/* Inside Dhaka */}
                   <button
                     type="button"
-                    onClick={() => {
-                      handleDivisionChange("Dhaka");
-                      handleDistrictChange("Dhaka City");
-                    }}
+                    onClick={handleSelectInsideDhaka}
                     className={cn(
                       "flex items-center justify-between p-3 rounded-2xl border-2 text-left transition-all cursor-pointer shadow-2xs",
                       currentZone === "inside_dhaka"
@@ -663,11 +739,7 @@ export default function CheckoutPage() {
                   {/* Outside Dhaka */}
                   <button
                     type="button"
-                    onClick={() => {
-                      if (formData.division === "Dhaka" && formData.district === "Dhaka City") {
-                        handleDivisionChange("Chattogram");
-                      }
-                    }}
+                    onClick={handleSelectOutsideDhaka}
                     className={cn(
                       "flex items-center justify-between p-3 rounded-2xl border-2 text-left transition-all cursor-pointer shadow-2xs",
                       currentZone !== "inside_dhaka"
@@ -745,7 +817,17 @@ export default function CheckoutPage() {
                   {availableThanas.length > 0 ? (
                     <select
                       value={formData.thana}
-                      onChange={(e) => setFormData({ ...formData, thana: e.target.value })}
+                      onChange={(e) => {
+                        const newThana = e.target.value;
+                        setFormData((prev) => ({ ...prev, thana: newThana }));
+                        if (currentZone !== "inside_dhaka") {
+                          lastOutsideLocationRef.current = {
+                            division: formData.division,
+                            district: formData.district,
+                            thana: newThana,
+                          };
+                        }
+                      }}
                       className="w-full rounded-xl border border-border bg-white px-3 py-2 text-xs font-semibold text-text focus:outline-none"
                     >
                       {availableThanas.map((th) => (
