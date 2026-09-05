@@ -177,3 +177,43 @@ export async function saveLocalizationSettings(settings: Partial<LocalizationSet
   revalidatePath("/admin/settings/store");
   return { success: true };
 }
+
+// Storefront Theme & Branding Settings
+export interface ThemeSettings {
+  themeColor: string;
+  announcement: string;
+  insideDhakaFree: number;
+  outsideDhakaFree: number;
+  supportPhone: string;
+}
+
+const DEFAULT_THEME_SETTINGS: ThemeSettings = {
+  themeColor: "rose",
+  announcement: "100% Authentic Korean & UK Skincare | Free Delivery over ৳2,500!",
+  insideDhakaFree: 2500,
+  outsideDhakaFree: 3500,
+  supportPhone: "+880 1700-000000",
+};
+
+export async function getThemeSettings(): Promise<ThemeSettings> {
+  try {
+    const settings = await getSettingsByGroup("theme");
+    return {
+      themeColor: settings.themeColor || DEFAULT_THEME_SETTINGS.themeColor,
+      announcement: settings.announcement || DEFAULT_THEME_SETTINGS.announcement,
+      insideDhakaFree: Number(settings.insideDhakaFree || DEFAULT_THEME_SETTINGS.insideDhakaFree),
+      outsideDhakaFree: Number(settings.outsideDhakaFree || DEFAULT_THEME_SETTINGS.outsideDhakaFree),
+      supportPhone: settings.supportPhone || DEFAULT_THEME_SETTINGS.supportPhone,
+    };
+  } catch {
+    return DEFAULT_THEME_SETTINGS;
+  }
+}
+
+export async function saveThemeSettings(settings: Partial<ThemeSettings>) {
+  await updateGroupSettings("theme", settings);
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/settings/theme");
+  return { success: true };
+}
+

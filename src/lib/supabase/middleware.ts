@@ -11,7 +11,13 @@ export async function updateSession(request: NextRequest) {
 
   // 1. Rate Limiting Protection for Auth & Search endpoints
   if (pathname.startsWith("/api/auth") || pathname === "/login" || pathname === "/register") {
-    const rateCheck = checkRateLimit(`auth:${clientIp}`, { intervalMs: 60000, maxRequests: 20 });
+    // Only strictly throttle POST submissions (login/signup attempts); allow normal browsing GETs
+    const isSubmission = request.method === "POST";
+    const maxReqs = isSubmission ? 30 : 200;
+    const rateCheck = checkRateLimit(`auth:${clientIp}:${isSubmission ? "post" : "get"}`, {
+      intervalMs: 60000,
+      maxRequests: maxReqs,
+    });
     if (!rateCheck.allowed) {
       return new NextResponse(
         JSON.stringify({ error: "Too many authentication requests. Please try again in 1 minute." }),

@@ -172,3 +172,119 @@ export async function bookCourierDelivery(input: {
   };
 }
 
+/* =========================================================================
+   SHIPPING ZONES & REGIONAL DELIVERY RATES
+   ========================================================================= */
+
+export interface ShippingZoneItem {
+  id: string;
+  name: string;
+  regions: string;
+  charge: number;
+  freeThreshold: number;
+  deliveryTime: string;
+  enabled: boolean;
+  courierRates: { steadfast: number; pathao: number; redx: number };
+}
+
+const DEFAULT_SHIPPING_ZONES: ShippingZoneItem[] = [
+  {
+    id: "zone-1",
+    name: "Inside Dhaka City (Express)",
+    regions: "Dhaka North, Dhaka South, Gulshan, Banani, Dhanmondi, Mirpur, Uttara",
+    charge: 60,
+    freeThreshold: 2500,
+    deliveryTime: "24-48 Hours",
+    enabled: true,
+    courierRates: { steadfast: 60, pathao: 70, redx: 60 },
+  },
+  {
+    id: "zone-2",
+    name: "Dhaka Suburbs & Greater Dhaka",
+    regions: "Savar, Gazipur, Narayanganj, Keraniganj",
+    charge: 100,
+    freeThreshold: 3000,
+    deliveryTime: "2-3 Days",
+    enabled: true,
+    courierRates: { steadfast: 90, pathao: 100, redx: 95 },
+  },
+  {
+    id: "zone-3",
+    name: "Outside Dhaka / Nationwide (All Divisions)",
+    regions: "Chattogram, Sylhet, Rajshahi, Khulna, Barishal, Rangpur, Mymensingh",
+    charge: 120,
+    freeThreshold: 3500,
+    deliveryTime: "3-5 Days",
+    enabled: true,
+    courierRates: { steadfast: 120, pathao: 130, redx: 120 },
+  },
+];
+
+export async function getShippingZones(): Promise<ShippingZoneItem[]> {
+  const { getSetting } = await import("@/lib/settings/config-service");
+  const zones = await getSetting<ShippingZoneItem[]>("shipping", "zones", DEFAULT_SHIPPING_ZONES);
+  return zones || DEFAULT_SHIPPING_ZONES;
+}
+
+export async function saveShippingZone(data: {
+  id?: string;
+  name: string;
+  regions: string;
+  charge: number;
+  freeThreshold: number;
+  deliveryTime: string;
+  enabled?: boolean;
+  courierRates?: { steadfast: number; pathao: number; redx: number };
+}): Promise<ShippingZoneItem[]> {
+  const { updateGroupSettings } = await import("@/lib/settings/config-service");
+  const current = await getShippingZones();
+  let updated: ShippingZoneItem[];
+
+  if (data.id) {
+    updated = current.map((z) =>
+      z.id === data.id
+        ? {
+            ...z,
+            name: data.name.trim(),
+            regions: data.regions.trim(),
+            charge: Number(data.charge),
+            freeThreshold: Number(data.freeThreshold),
+            deliveryTime: data.deliveryTime.trim(),
+            enabled: data.enabled !== undefined ? data.enabled : z.enabled,
+            courierRates: data.courierRates || z.courierRates,
+          }
+        : z
+    );
+  } else {
+    const newZone: ShippingZoneItem = {
+      id: `zone-${Date.now()}`,
+      name: data.name.trim(),
+      regions: data.regions.trim(),
+      charge: Number(data.charge),
+      freeThreshold: Number(data.freeThreshold),
+      deliveryTime: data.deliveryTime.trim(),
+      enabled: data.enabled !== undefined ? data.enabled : true,
+      courierRates: data.courierRates || {
+        steadfast: Number(data.charge),
+        pathao: Number(data.charge) + 10,
+        redx: Number(data.charge),
+      },
+    };
+    updated = [...current, newZone];
+  }
+
+  await updateGroupSettings("shipping", { zones: updated });
+  revalidatePath("/admin/shipping/zones");
+  return updated;
+}
+
+export async function deleteShippingZone(id: string): Promise<ShippingZoneItem[]> {
+  const { updateGroupSettings } = await import("@/lib/settings/config-service");
+  const current = await getShippingZones();
+  const updated = current.filter((z) => z.id !== id);
+  await updateGroupSettings("shipping", { zones: updated });
+  revalidatePath("/admin/shipping/zones");
+  return updated;
+}
+
+

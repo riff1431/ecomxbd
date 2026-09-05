@@ -171,3 +171,114 @@ export async function getPaymentLogs() {
 
   return logs;
 }
+
+/* =========================================================================
+   CUSTOM & MANUAL PAYMENT METHODS
+   ========================================================================= */
+
+export interface CustomPaymentMethodItem {
+  id: string;
+  name: string;
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  routingNumber?: string;
+  instructions: string;
+  requiresProof: boolean;
+  enabled: boolean;
+}
+
+const DEFAULT_CUSTOM_METHODS: CustomPaymentMethodItem[] = [
+  {
+    id: "pm-1",
+    name: "Direct Bank Wire Transfer (EFTN / BEFTN)",
+    accountName: "ecomXbangladesh Ltd.",
+    accountNumber: "2050 1829 0192 0001",
+    bankName: "City Bank PLC (Gulshan Branch)",
+    routingNumber: "225272341",
+    instructions: "Transfer total order amount and input Order ID as transaction memo.",
+    requiresProof: true,
+    enabled: true,
+  },
+  {
+    id: "pm-2",
+    name: "Manual bKash Send Money / Merchant QR",
+    accountName: "ecomXbangladesh Official",
+    accountNumber: "01700-000000",
+    bankName: "bKash Personal / Agent",
+    instructions: "Send money to our official number and input the TrxID during confirmation.",
+    requiresProof: true,
+    enabled: false,
+  },
+];
+
+export async function getCustomPaymentMethods(): Promise<CustomPaymentMethodItem[]> {
+  const { getSetting } = await import("@/lib/settings/config-service");
+  const methods = await getSetting<CustomPaymentMethodItem[]>(
+    "payments",
+    "custom_methods",
+    DEFAULT_CUSTOM_METHODS
+  );
+  return methods || DEFAULT_CUSTOM_METHODS;
+}
+
+export async function saveCustomPaymentMethod(data: {
+  id?: string;
+  name: string;
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  routingNumber?: string;
+  instructions: string;
+  requiresProof?: boolean;
+  enabled?: boolean;
+}): Promise<CustomPaymentMethodItem[]> {
+  const { updateGroupSettings } = await import("@/lib/settings/config-service");
+  const current = await getCustomPaymentMethods();
+  let updated: CustomPaymentMethodItem[];
+
+  if (data.id) {
+    updated = current.map((m) =>
+      m.id === data.id
+        ? {
+            ...m,
+            name: data.name.trim(),
+            accountName: data.accountName.trim(),
+            accountNumber: data.accountNumber.trim(),
+            bankName: data.bankName.trim(),
+            routingNumber: data.routingNumber?.trim(),
+            instructions: data.instructions.trim(),
+            requiresProof: data.requiresProof !== undefined ? data.requiresProof : m.requiresProof,
+            enabled: data.enabled !== undefined ? data.enabled : m.enabled,
+          }
+        : m
+    );
+  } else {
+    const newMethod: CustomPaymentMethodItem = {
+      id: `pm-${Date.now()}`,
+      name: data.name.trim(),
+      accountName: data.accountName.trim(),
+      accountNumber: data.accountNumber.trim(),
+      bankName: data.bankName.trim(),
+      routingNumber: data.routingNumber?.trim(),
+      instructions: data.instructions.trim(),
+      requiresProof: data.requiresProof !== undefined ? data.requiresProof : true,
+      enabled: data.enabled !== undefined ? data.enabled : true,
+    };
+    updated = [...current, newMethod];
+  }
+
+  await updateGroupSettings("payments", { custom_methods: updated });
+  revalidatePath("/admin/payments/custom");
+  return updated;
+}
+
+export async function deleteCustomPaymentMethod(id: string): Promise<CustomPaymentMethodItem[]> {
+  const { updateGroupSettings } = await import("@/lib/settings/config-service");
+  const current = await getCustomPaymentMethods();
+  const updated = current.filter((m) => m.id !== id);
+  await updateGroupSettings("payments", { custom_methods: updated });
+  revalidatePath("/admin/payments/custom");
+  return updated;
+}
+
