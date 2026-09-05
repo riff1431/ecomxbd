@@ -244,36 +244,54 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
           </article>
         )}
 
-        {/* Category Filter Tabs for FAQs (if multiple categories exist) */}
+        {/* Category Filter Tabs for FAQs (Mobile Swipeable Pill Carousel & Desktop Wrapped Grid) */}
         {categories.length > 1 && (
-          <div className="mb-6 flex flex-wrap items-center gap-1.5 sm:gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("all")}
-              className={cn(
-                "rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-                selectedCategory === "all"
-                  ? "bg-[#e91e63] text-white shadow-xs"
-                  : "bg-white text-zinc-600 border border-zinc-200 hover:border-pink-200 hover:text-zinc-900"
-              )}
-            >
-              {language === "bn" ? "সব প্রশ্ন" : "All Questions"} ({faqs.length})
-            </button>
-            {categories.map((cat) => (
+          <div className="relative mb-6">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 px-0.5 -mx-1 sm:mx-0 sm:flex-wrap">
               <button
-                key={cat}
                 type="button"
-                onClick={() => setSelectedCategory(cat)}
+                onClick={() => setSelectedCategory("all")}
                 className={cn(
-                  "rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer",
-                  selectedCategory === cat
-                    ? "bg-[#e91e63] text-white shadow-xs"
-                    : "bg-white text-zinc-600 border border-zinc-200 hover:border-pink-200 hover:text-zinc-900"
+                  "shrink-0 whitespace-nowrap rounded-full sm:rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer select-none",
+                  selectedCategory === "all"
+                    ? "bg-[#e91e63] text-white shadow-xs ring-2 ring-pink-500/20 scale-[1.02]"
+                    : "bg-white text-zinc-700 border border-zinc-200 hover:border-pink-300 hover:text-[#e91e63]"
                 )}
               >
-                {cat}
+                {language === "bn" ? "সব প্রশ্ন" : "All Questions"} ({faqs.length})
               </button>
-            ))}
+              {categories.map((cat) => {
+                const getCategoryLabel = (name: string) => {
+                  if (language !== "bn") return name;
+                  const lower = name.toLowerCase();
+                  if (lower.includes("sourcing") || lower.includes("authenticity")) return "আসল পণ্য ও সোর্সিং";
+                  if (lower.includes("doorstep") || lower.includes("inspection")) return "পার্সেল যাচাই";
+                  if (lower.includes("delivery") || lower.includes("courier") || lower.includes("shipping")) return "ডেলিভারি ও কুরিয়ার";
+                  if (lower.includes("return") || lower.includes("exchange") || lower.includes("refund")) return "রিটার্ন ও রিপ্লেসমেন্ট";
+                  if (lower.includes("safety") || lower.includes("toxic")) return "প্রোডাক্ট নিরাপত্তা";
+                  if (lower.includes("payment") || lower.includes("pricing")) return "পেমেন্ট ও মূল্য";
+                  if (lower.includes("routine")) return "স্কিনকেয়ার রুটিন";
+                  if (lower.includes("advisory") || lower.includes("consult")) return "বিউটি পরামর্শ";
+                  return name;
+                };
+
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat)}
+                    className={cn(
+                      "shrink-0 whitespace-nowrap rounded-full sm:rounded-xl px-3.5 py-2 text-xs font-bold transition-all cursor-pointer select-none",
+                      selectedCategory === cat
+                        ? "bg-[#e91e63] text-white shadow-xs ring-2 ring-pink-500/20 scale-[1.02]"
+                        : "bg-white text-zinc-700 border border-zinc-200 hover:border-pink-300 hover:text-[#e91e63]"
+                    )}
+                  >
+                    {getCategoryLabel(cat)}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -301,7 +319,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
                   aria-expanded={isOpen}
                   aria-controls={`faq-answer-${faq.id}`}
                 >
-                  <div className="flex items-start sm:items-center gap-3">
+                  <div className="flex items-start sm:items-center gap-3 min-w-0 flex-1">
                     <span
                       className={cn(
                         "flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-colors mt-0.5 sm:mt-0",
@@ -313,13 +331,13 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
                       {idx + 1}
                     </span>
 
-                    <div>
+                    <div className="min-w-0 flex-1 pr-1">
                       {faq.category && (
                         <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-pink-600 block mb-0.5">
                           {faq.category}
                         </span>
                       )}
-                      <span className="text-xs sm:text-sm md:text-base font-bold text-zinc-900 leading-snug">
+                      <span className="text-xs sm:text-sm md:text-base font-bold text-zinc-900 leading-snug break-words block">
                         {q}
                       </span>
                     </div>
@@ -327,7 +345,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
 
                   <div
                     className={cn(
-                      "flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-200",
+                      "flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-200 ml-1",
                       isOpen ? "rotate-180 bg-pink-100 text-pink-700" : "bg-zinc-100 text-zinc-500"
                     )}
                   >
@@ -338,9 +356,9 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
                 {isOpen && (
                   <div
                     id={`faq-answer-${faq.id}`}
-                    className="px-5 pb-5 pt-1 sm:px-6 sm:pb-6 text-xs sm:text-sm text-zinc-600 leading-relaxed border-t border-pink-50 animate-in fade-in-50 duration-150"
+                    className="px-4 pb-4 pt-1 sm:px-6 sm:pb-6 text-xs sm:text-sm text-zinc-600 leading-relaxed border-t border-pink-50 animate-in fade-in-50 duration-150"
                   >
-                    <p className="whitespace-pre-line leading-relaxed">{a}</p>
+                    <p className="whitespace-pre-line leading-relaxed break-words">{a}</p>
                   </div>
                 )}
               </div>
@@ -348,20 +366,20 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
           })}
         </div>
 
-        {/* Need More Assistance Banner (100% Admin Controllable) */}
+        {/* Need More Assistance Banner (100% Admin Controllable & Mobile Responsive) */}
         {config?.showWhatsappCard !== false && (
-          <div className="mt-8 sm:mt-12 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white p-5 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-xl">
-            <div className="flex items-center gap-3.5 sm:gap-4 text-center sm:text-left">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-600 text-white shadow-xs">
-                <PhoneCall className="h-6 w-6" />
+          <div className="mt-8 sm:mt-12 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white p-5 sm:p-7 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 shadow-xl">
+            <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 text-left">
+              <div className="flex h-11 w-11 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-600 text-white shadow-xs mt-0.5 sm:mt-0">
+                <PhoneCall className="h-5 w-5 sm:h-6 sm:w-6" />
               </div>
-              <div>
-                <p className="text-sm sm:text-base font-black">
+              <div className="min-w-0">
+                <p className="text-sm sm:text-base font-black leading-snug">
                   {language === "bn"
                     ? config?.whatsappTitleBn || config?.whatsappTitle || "সঠিক প্রোডাক্ট নির্বাচনে সাহায্য প্রয়োজন?"
                     : config?.whatsappTitle || "Need help choosing the right beauty products?"}
                 </p>
-                <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
+                <p className="text-xs sm:text-sm text-zinc-400 mt-1 leading-relaxed">
                   {language === "bn"
                     ? config?.whatsappSubtitleBn ||
                       config?.whatsappSubtitle ||
