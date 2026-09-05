@@ -15,10 +15,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { trackOrder } from "@/features/orders/actions";
-import { formatPrice } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
+import { useLanguage } from "@/context/language-context";
 
 export default function TrackOrderPage() {
+  const { language, t, toBn, formatPriceBn } = useLanguage();
   const [orderNumber, setOrderNumber] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -43,11 +44,11 @@ export default function TrackOrderPage() {
   };
 
   const statusSteps = [
-    { key: "pending", label: "Order Placed" },
-    { key: "confirmed", label: "Confirmed" },
-    { key: "processing", label: "Processing" },
-    { key: "shipped", label: "In Transit" },
-    { key: "delivered", label: "Delivered" },
+    { key: "pending", label: t("orders", "statusPending") },
+    { key: "confirmed", label: t("orders", "statusConfirmed") },
+    { key: "processing", label: t("orders", "statusProcessing") },
+    { key: "shipped", label: t("orders", "statusShipped") },
+    { key: "delivered", label: t("orders", "statusDelivered") },
   ];
 
   const getStepIndex = (status: string) => {
@@ -82,13 +83,15 @@ export default function TrackOrderPage() {
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700 border border-primary-200">
           <Truck className="h-3.5 w-3.5" />
-          Real-Time Consignment Tracking
+          {language === "bn" ? "রিয়েল-টাইম পার্সেল ট্র্যাকিং" : "Real-Time Consignment Tracking"}
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-text">
-          Track Your Order
+          {t("orders", "trackOrderTitle")}
         </h1>
         <p className="text-xs sm:text-sm text-text-secondary max-w-md mx-auto">
-          Enter your Order Number and Bangladesh mobile number to check real-time courier updates.
+          {language === "bn"
+            ? "আপনার অর্ডার নম্বর এবং মোবাইল নম্বর দিয়ে রিয়েল-টাইম কুরিয়ার ডেলিভারি আপডেট জানুন।"
+            : "Enter your Order Number and Bangladesh mobile number to check real-time courier updates."}
         </p>
       </div>
 
@@ -97,12 +100,12 @@ export default function TrackOrderPage() {
         <form onSubmit={handleTrack} className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div>
             <label className="block font-semibold text-text mb-1">
-              Order Number <span className="text-red-500">*</span>
+              {t("orders", "orderNumber")} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
               required
-              placeholder="e.g. ORD-2026-895823"
+              placeholder={t("orders", "enterOrderNumber")}
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value)}
               className="w-full rounded-xl border border-border bg-surface-secondary/50 px-3.5 py-2.5 text-xs text-text font-mono font-bold uppercase placeholder:text-text-muted focus:outline-none"
@@ -111,12 +114,12 @@ export default function TrackOrderPage() {
 
           <div>
             <label className="block font-semibold text-text mb-1">
-              Phone Number <span className="text-red-500">*</span>
+              {t("checkout", "phone")} <span className="text-red-500">*</span>
             </label>
             <input
               type="tel"
               required
-              placeholder="e.g. 01712345678"
+              placeholder={t("orders", "enterPhone")}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               className="w-full rounded-xl border border-border bg-surface-secondary/50 px-3.5 py-2.5 text-xs text-text placeholder:text-text-muted focus:outline-none"
@@ -128,12 +131,12 @@ export default function TrackOrderPage() {
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Locating Order...
+                  {language === "bn" ? "অর্ডার অনুসন্ধান করা হচ্ছে..." : "Locating Order..."}
                 </>
               ) : (
                 <>
                   <Search className="h-4 w-4 mr-1.5" />
-                  Track Order Status
+                  {t("orders", "trackButton")}
                 </>
               )}
             </Button>
@@ -155,9 +158,9 @@ export default function TrackOrderPage() {
           <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border pb-4">
               <div>
-                <span className="text-xs text-text-muted">Tracking Result for:</span>
+                <span className="text-xs text-text-muted">{t("orders", "trackingResults")}:</span>
                 <p className="text-lg font-extrabold text-primary-600 font-mono">
-                  {order.order_number}
+                  {toBn(order.order_number)}
                 </p>
               </div>
 
@@ -207,7 +210,7 @@ export default function TrackOrderPage() {
             {history.length > 0 && (
               <div className="pt-4 border-t border-border space-y-3">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-text-muted">
-                  Status Log
+                  {language === "bn" ? "স্ট্যাটাস লগ" : "Status Log"}
                 </h3>
                 <div className="space-y-3">
                   {history.map((h: any) => (
@@ -218,7 +221,7 @@ export default function TrackOrderPage() {
                           {h.status}: {h.note || "Status updated"}
                         </p>
                         <span className="text-[10px] text-text-muted">
-                          {new Date(h.created_at).toLocaleString("en-GB", {
+                          {new Date(h.created_at).toLocaleString(language === "bn" ? "bn-BD" : "en-GB", {
                             day: "numeric",
                             month: "short",
                             hour: "2-digit",
@@ -239,14 +242,14 @@ export default function TrackOrderPage() {
             <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-2 text-xs">
               <h3 className="font-bold text-text flex items-center gap-1.5 border-b border-border pb-2">
                 <MapPin className="h-4 w-4 text-primary-600" />
-                Delivery Information
+                {t("orders", "shippingAddress")}
               </h3>
               <p className="font-bold text-text">{address.name}</p>
-              <p className="text-text-secondary">{address.phone}</p>
+              <p className="text-text-secondary">{toBn(address.phone)}</p>
               <p className="text-text-secondary">{address.address}</p>
               <p className="text-text-secondary">{address.thana}, {address.district}</p>
               <div className="pt-2 border-t border-dashed border-border flex justify-between font-semibold">
-                <span>Shipping Method:</span>
+                <span>{t("checkout", "shippingMethod")}:</span>
                 <span className="text-primary-700">{order.shipping_method}</span>
               </div>
             </div>
@@ -255,19 +258,19 @@ export default function TrackOrderPage() {
             <div className="rounded-2xl border border-border bg-white p-6 shadow-card space-y-2 text-xs">
               <h3 className="font-bold text-text flex items-center gap-1.5 border-b border-border pb-2">
                 <Package className="h-4 w-4 text-primary-600" />
-                Package Items ({items.length})
+                {t("orders", "itemDetails")} ({toBn(items.length)})
               </h3>
               <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
                 {items.map((it: any) => (
                   <div key={it.id} className="flex justify-between text-text-secondary">
-                    <span className="truncate pr-2">{it.quantity}x {it.product_name_snapshot}</span>
-                    <span className="font-semibold text-text">{formatPrice(it.total)}</span>
+                    <span className="truncate pr-2">{toBn(it.quantity)}x {it.product_name_snapshot}</span>
+                    <span className="font-semibold text-text">{formatPriceBn(it.total)}</span>
                   </div>
                 ))}
               </div>
               <div className="pt-2 border-t border-dashed border-border flex justify-between text-sm font-extrabold text-text">
-                <span>Total Due on Delivery:</span>
-                <span className="text-primary-700">{formatPrice(order.total)}</span>
+                <span>{t("checkout", "totalPayable")}:</span>
+                <span className="text-primary-700">{formatPriceBn(order.total)}</span>
               </div>
             </div>
           </div>
@@ -276,3 +279,4 @@ export default function TrackOrderPage() {
     </div>
   );
 }
+

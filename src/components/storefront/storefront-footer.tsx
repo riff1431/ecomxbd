@@ -6,8 +6,10 @@ import { ShieldCheck, Truck, RotateCcw, Clock, Mail, Phone, MapPin, Banknote } f
 import { type HomepageFullConfig, DEFAULT_HOMEPAGE_CONFIG } from "@/features/marketing/homepage-types";
 import { getHomepageConfig } from "@/features/marketing/homepage-actions";
 import { trackSubscribe, trackContact } from "@/lib/analytics/datalayer";
+import { useLanguage } from "@/context/language-context";
 
 export function StorefrontFooter({ config: initialConfig }: { config?: HomepageFullConfig }) {
+  const { language, t } = useLanguage();
   const [config, setConfig] = useState<HomepageFullConfig>(initialConfig || DEFAULT_HOMEPAGE_CONFIG);
   const [newsletterEmail, setNewsletterEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
@@ -41,8 +43,8 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
               <ShieldCheck className="h-6 w-6 sm:h-7 sm:w-7 stroke-2" />
             </div>
             <div>
-              <p className="text-sm sm:text-base font-black text-white">100% Authentic</p>
-              <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">Direct from Authorized Brands</p>
+              <p className="text-sm sm:text-base font-black text-white">{t("footer", "authenticTitle")}</p>
+              <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">{t("footer", "authenticDesc")}</p>
             </div>
           </div>
 
@@ -51,8 +53,8 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
               <Truck className="h-6 w-6 sm:h-7 sm:w-7 stroke-2" />
             </div>
             <div>
-              <p className="text-sm sm:text-base font-black text-white">Fast Delivery</p>
-              <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">24–48h Dhaka, 3–5d Outside</p>
+              <p className="text-sm sm:text-base font-black text-white">{t("footer", "deliveryTitle")}</p>
+              <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">{t("footer", "deliveryDesc")}</p>
             </div>
           </div>
 
@@ -61,8 +63,8 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
               <RotateCcw className="h-6 w-6 sm:h-7 sm:w-7 stroke-2" />
             </div>
             <div>
-              <p className="text-sm sm:text-base font-black text-white">7 Days Return</p>
-              <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">Easy Return & Replacement</p>
+              <p className="text-sm sm:text-base font-black text-white">{t("footer", "returnTitle")}</p>
+              <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">{t("footer", "returnDesc")}</p>
             </div>
           </div>
 
@@ -71,8 +73,8 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
               <Clock className="h-6 w-6 sm:h-7 sm:w-7 stroke-2" />
             </div>
             <div>
-              <p className="text-sm sm:text-base font-black text-white">Cash on Delivery</p>
-              <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">bKash, Nagad & Cash on Arrival</p>
+              <p className="text-sm sm:text-base font-black text-white">{t("footer", "codTitle")}</p>
+              <p className="text-xs sm:text-[13px] text-zinc-400 mt-0.5">{t("footer", "codDesc")}</p>
             </div>
           </div>
         </div>
@@ -98,12 +100,16 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
             </Link>
 
             <p className="text-sm text-zinc-400 leading-relaxed max-w-sm">
-              {aboutText}
+              {language === "bn" && !config.footerAboutText
+                ? "বাংলাদেশের সবচেয়ে নির্ভরযোগ্য বিউটি ও স্কিনকেয়ার গন্তব্য। ১০০% অরিজিনাল কসমেটিকস সারা দেশে ক্যাশ অন ডেলিভারিতে দ্রুত পৌঁছানো হয়।"
+                : aboutText}
             </p>
 
             {/* Newsletter */}
             <div className="space-y-2.5 pt-2">
-              <span className="text-xs sm:text-sm font-bold text-white block">Get Exclusive Deals & Beauty Tips</span>
+              <span className="text-xs sm:text-sm font-bold text-white block">
+                {language === "bn" ? "এক্সক্লুসিভ অফার ও বিউটি টিপস পান" : "Get Exclusive Deals & Beauty Tips"}
+              </span>
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
@@ -120,14 +126,14 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
                   required
                   value={newsletterEmail}
                   onChange={(e) => setNewsletterEmail(e.target.value)}
-                  placeholder="Enter your email address"
+                  placeholder={t("footer", "emailPlaceholder")}
                   className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900/90 px-4 py-2.5 text-sm text-white focus:outline-none"
                 />
                 <button
                   type="submit"
                   className="rounded-xl bg-[#e91e63] px-5 py-2.5 text-sm font-black text-white hover:bg-sg-pink-hover transition-colors shadow-md"
                 >
-                  {subscribed ? "Subscribed!" : "Subscribe"}
+                  {subscribed ? t("footer", "subscribed") : t("footer", "subscribe")}
                 </button>
               </form>
             </div>
@@ -135,40 +141,46 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
 
           {/* Shop Categories Column */}
           <div className="lg:col-span-2">
-            <h3 className="mb-4 text-sm sm:text-base font-black uppercase tracking-wider text-white">Categories</h3>
+            <h3 className="mb-4 text-sm sm:text-base font-black uppercase tracking-wider text-white">
+              {t("header", "categories")}
+            </h3>
             <ul className="space-y-3 text-sm text-zinc-300 font-medium">
-              <li><Link href="/products?category=skin-care" className="hover:text-[#e91e63] transition-colors block py-0.5">Skin Care</Link></li>
-              <li><Link href="/products?category=hair-care" className="hover:text-[#e91e63] transition-colors block py-0.5">Hair Care</Link></li>
-              <li><Link href="/products?category=makeup" className="hover:text-[#e91e63] transition-colors block py-0.5">Makeup</Link></li>
-              <li><Link href="/products?category=body-care" className="hover:text-[#e91e63] transition-colors block py-0.5">Body Care</Link></li>
-              <li><Link href="/brands" className="hover:text-[#e91e63] transition-colors block py-0.5">Top Brands</Link></li>
-              <li><Link href="/blog" className="hover:text-[#e91e63] font-bold text-pink-400 transition-colors block py-0.5">Beauty Journal &amp; Guides</Link></li>
-              <li><Link href="/products?discount=true" className="hover:text-[#e91e63] text-pink-400 font-bold transition-colors block py-0.5">Special Offers</Link></li>
+              <li><Link href="/products?category=skin-care" className="hover:text-[#e91e63] transition-colors block py-0.5">{language === "bn" ? "স্কিন কেয়ার" : "Skin Care"}</Link></li>
+              <li><Link href="/products?category=hair-care" className="hover:text-[#e91e63] transition-colors block py-0.5">{language === "bn" ? "হেয়ার কেয়ার" : "Hair Care"}</Link></li>
+              <li><Link href="/products?category=makeup" className="hover:text-[#e91e63] transition-colors block py-0.5">{language === "bn" ? "মেকআপ" : "Makeup"}</Link></li>
+              <li><Link href="/products?category=body-care" className="hover:text-[#e91e63] transition-colors block py-0.5">{language === "bn" ? "বডি কেয়ার" : "Body Care"}</Link></li>
+              <li><Link href="/brands" className="hover:text-[#e91e63] transition-colors block py-0.5">{t("header", "topBrands")}</Link></li>
+              <li><Link href="/blog" className="hover:text-[#e91e63] font-bold text-pink-400 transition-colors block py-0.5">{language === "bn" ? "বিউটি জার্নাল ও গাইড" : "Beauty Journal & Guides"}</Link></li>
+              <li><Link href="/products?discount=true" className="hover:text-[#e91e63] text-pink-400 font-bold transition-colors block py-0.5">{language === "bn" ? "স্পেশাল অফার" : "Special Offers"}</Link></li>
             </ul>
           </div>
 
           {/* Customer Service & Legal Column */}
           <div className="lg:col-span-3">
-            <h3 className="mb-4 text-sm sm:text-base font-black uppercase tracking-wider text-white">Customer Care</h3>
+            <h3 className="mb-4 text-sm sm:text-base font-black uppercase tracking-wider text-white">
+              {t("footer", "customerCare")}
+            </h3>
             <ul className="space-y-3 text-sm text-zinc-300 font-medium">
-              <li><Link href="/account" className="hover:text-[#e91e63] transition-colors block py-0.5">My Account</Link></li>
-              <li><Link href="/track-order" className="hover:text-[#e91e63] transition-colors block py-0.5">Track Order</Link></li>
-              <li><Link href="/account/wishlist" className="hover:text-[#e91e63] transition-colors block py-0.5">My Wishlist</Link></li>
-              <li><Link href="/page/return-policy" className="hover:text-[#e91e63] transition-colors block py-0.5">Return Policy</Link></li>
-              <li><Link href="/page/terms" className="hover:text-[#e91e63] transition-colors block py-0.5">Terms & Conditions</Link></li>
-              <li><Link href="/page/privacy-policy" className="hover:text-[#e91e63] transition-colors block py-0.5">Privacy Policy</Link></li>
-              <li><Link href="/page/faq" className="hover:text-[#e91e63] transition-colors block py-0.5">FAQ & Help Center</Link></li>
+              <li><Link href="/account" className="hover:text-[#e91e63] transition-colors block py-0.5">{t("account", "myAccount")}</Link></li>
+              <li><Link href="/track-order" className="hover:text-[#e91e63] transition-colors block py-0.5">{t("header", "trackOrder")}</Link></li>
+              <li><Link href="/account/wishlist" className="hover:text-[#e91e63] transition-colors block py-0.5">{t("header", "wishlist")}</Link></li>
+              <li><Link href="/page/return-policy" className="hover:text-[#e91e63] transition-colors block py-0.5">{language === "bn" ? "রিটার্ন পলিসি" : "Return Policy"}</Link></li>
+              <li><Link href="/page/terms" className="hover:text-[#e91e63] transition-colors block py-0.5">{language === "bn" ? "শর্তাবলী ও নিয়মাবলী" : "Terms & Conditions"}</Link></li>
+              <li><Link href="/page/privacy-policy" className="hover:text-[#e91e63] transition-colors block py-0.5">{language === "bn" ? "গোপনীয়তা নীতি" : "Privacy Policy"}</Link></li>
+              <li><Link href="/page/faq" className="hover:text-[#e91e63] transition-colors block py-0.5">{language === "bn" ? "প্রশ্নোত্তর ও হেল্প সেন্টার" : "FAQ & Help Center"}</Link></li>
             </ul>
           </div>
 
           {/* Contact Details & Payment Badges Column */}
           <div className="lg:col-span-3 space-y-6">
             <div>
-              <h3 className="mb-4 text-sm sm:text-base font-black uppercase tracking-wider text-white">Contact Us</h3>
+              <h3 className="mb-4 text-sm sm:text-base font-black uppercase tracking-wider text-white">
+                {language === "bn" ? "যোগাযোগ করুন" : "Contact Us"}
+              </h3>
               <div className="space-y-3 text-sm text-zinc-300 font-medium">
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-[#e91e63] shrink-0 mt-0.5" />
-                  <span>Gulshan, Dhaka, Bangladesh</span>
+                  <span>{language === "bn" ? "গুলশান, ঢাকা, বাংলাদেশ" : "Gulshan, Dhaka, Bangladesh"}</span>
                 </div>
                 <a
                   href={`tel:${supportPhone}`}
@@ -192,7 +204,7 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
             {/* Payment Method Badges (Authentic Brand SVG Logos) */}
             <div className="pt-4 border-t border-zinc-800">
               <span className="text-xs uppercase font-extrabold tracking-wider text-zinc-400 block mb-3">
-                We Accept
+                {language === "bn" ? "আমরা গ্রহণ করি" : "We Accept"}
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 {/* 1. bKash SVG Logo Card */}
@@ -228,9 +240,9 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
                 </div>
 
                 {/* 5. Cash on Delivery Card */}
-                <div className="flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-1.5 shadow-sm border border-emerald-500/40 hover:scale-105 transition-transform" title="Cash on Delivery">
+                <div className="flex items-center gap-1.5 rounded-xl bg-emerald-700 px-3 py-1.5 shadow-sm border border-emerald-500/40 hover:scale-105 transition-transform" title={t("footer", "codTitle")}>
                   <Banknote className="h-4 w-4 text-white shrink-0" />
-                  <span className="text-xs font-black tracking-tight text-white">Cash on Delivery</span>
+                  <span className="text-xs font-black tracking-tight text-white">{t("footer", "codTitle")}</span>
                 </div>
               </div>
             </div>
@@ -239,7 +251,9 @@ export function StorefrontFooter({ config: initialConfig }: { config?: HomepageF
 
         {/* Copyright Footer */}
         <div className="mt-12 border-t border-zinc-900 pt-6 text-center text-xs sm:text-sm text-zinc-500 font-medium">
-          {copyrightText}
+          {language === "bn" && !config.footerCopyright
+            ? `© ${new Date().getFullYear()} ${brandName}। ${t("footer", "rightsReserved")}`
+            : copyrightText}
         </div>
       </div>
     </footer>

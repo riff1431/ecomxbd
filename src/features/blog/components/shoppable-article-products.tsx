@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ShoppingBag, Check, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/shared/ui/button";
 import { useCart } from "@/context/cart-context";
-import { formatPrice } from "@/lib/utils";
+import { useLanguage } from "@/context/language-context";
 import { trackAddToCart } from "@/lib/analytics/datalayer";
 
 export interface ShoppableProduct {
@@ -28,6 +28,7 @@ export function ShoppableArticleProducts({
   products,
   articleTitle,
 }: ShoppableArticleProductsProps) {
+  const { language, t, toBn, formatPriceBn } = useLanguage();
   const { addItem, openCart } = useCart();
   const [addedIds, setAddedIds] = useState<string[]>([]);
   const [addingAll, setAddingAll] = useState(false);
@@ -105,15 +106,17 @@ export function ShoppableArticleProducts({
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#e91e63] animate-pulse" />
             <span className="text-[11px] font-black uppercase tracking-wider text-[#e91e63]">
-              Shoppable Routine
+              {language === "bn" ? "কেনাকাটার রুটিন" : "Shoppable Routine"}
             </span>
           </div>
           <h3 className="text-lg sm:text-xl font-black text-gray-900 mt-0.5 flex items-center gap-2">
             <ShoppingBag className="h-5 w-5 text-[#e91e63]" />
-            Products Featured in this Guide
+            {t("blog", "shoppableProducts")}
           </h3>
           <p className="text-xs text-gray-500 mt-0.5">
-            100% authentic dermatologically verified cosmetics mentioned in this editorial.
+            {language === "bn"
+              ? "এই আর্টিকেলে আলোচিত ১০০% খাঁটি ডার্মাটোলজিক্যালি পরীক্ষিত কসমেটিক্স।"
+              : "100% authentic dermatologically verified cosmetics mentioned in this editorial."}
           </p>
         </div>
 
@@ -122,10 +125,12 @@ export function ShoppableArticleProducts({
             type="button"
             onClick={handleAddAllToCart}
             disabled={addingAll}
-            className="bg-[#e91e63] hover:bg-sg-pink-hover text-white text-xs font-black rounded-xl shadow-md shrink-0 h-9"
+            className="bg-[#e91e63] hover:bg-pink-600 text-white text-xs font-black rounded-xl shadow-md shrink-0 h-9"
           >
             <Sparkles className="h-3.5 w-3.5 mr-1.5" />
-            {addingAll ? "Adding All..." : `Add Complete Routine (${products.length})`}
+            {addingAll
+              ? (language === "bn" ? "যুক্ত করা হচ্ছে..." : "Adding All...")
+              : (language === "bn" ? `সম্পূর্ণ রুটিন যোগ করুন (${toBn(products.length)})` : `Add Complete Routine (${products.length})`)}
           </Button>
         )}
       </div>
@@ -162,7 +167,7 @@ export function ShoppableArticleProducts({
                   />
                   {hasDiscount && (
                     <span className="absolute top-1 left-1 rounded bg-[#e91e63] px-1.5 py-0.5 text-[9px] font-black text-white">
-                      -{discountPercent}%
+                      -{toBn(discountPercent)}%
                     </span>
                   )}
                 </Link>
@@ -189,11 +194,11 @@ export function ShoppableArticleProducts({
                   {/* Price */}
                   <div className="flex items-baseline gap-2 pt-0.5">
                     <span className="text-sm font-black text-[#e91e63]">
-                      {formatPrice(currentPrice)}
+                      {formatPriceBn(currentPrice)}
                     </span>
                     {hasDiscount && (
                       <span className="text-[11px] text-gray-400 line-through font-medium">
-                        {formatPrice(product.regular_price)}
+                        {formatPriceBn(product.regular_price)}
                       </span>
                     )}
                   </div>
@@ -209,7 +214,7 @@ export function ShoppableArticleProducts({
                     size="sm"
                     className="w-full text-xs font-bold rounded-xl h-8 border-gray-200 text-gray-700 hover:text-gray-900"
                   >
-                    View Details
+                    {t("product", "quickView")}
                   </Button>
                 </Link>
 
@@ -220,16 +225,16 @@ export function ShoppableArticleProducts({
                   className={`flex-1 text-xs font-black rounded-xl h-8 shadow-2xs transition-all ${
                     isAdded
                       ? "bg-emerald-600 text-white"
-                      : "bg-[#e91e63] hover:bg-sg-pink-hover text-white"
+                      : "bg-[#e91e63] hover:bg-pink-600 text-white"
                   }`}
                 >
                   {isAdded ? (
                     <>
-                      <Check className="h-3.5 w-3.5 mr-1" /> In Bag
+                      <Check className="h-3.5 w-3.5 mr-1" /> {t("product", "addedToCart")}
                     </>
                   ) : (
                     <>
-                      <ShoppingBag className="h-3.5 w-3.5 mr-1" /> Add to Bag
+                      <ShoppingBag className="h-3.5 w-3.5 mr-1" /> {t("product", "addToCart")}
                     </>
                   )}
                 </Button>
@@ -241,3 +246,4 @@ export function ShoppableArticleProducts({
     </div>
   );
 }
+

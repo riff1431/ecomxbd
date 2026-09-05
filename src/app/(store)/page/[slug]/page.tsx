@@ -1,20 +1,19 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ShieldCheck, ArrowLeft, Clock, CheckCircle2, Sparkles } from "lucide-react";
-import { Button } from "@/components/shared/ui/button";
+import { ShieldCheck } from "lucide-react";
+import { CmsPageClient } from "./cms-page-client";
 
 const CMS_PAGES: Record<
   string,
   { title: string; subtitle: string; lastUpdated: string; content: React.ReactNode }
 > = {
   about: {
-    title: "About ecomXbangladesh",
+    title: "About Blush & Budget",
     subtitle: "Your Trusted Gateway to 100% Authentic Global Skincare & Cosmetics",
     lastUpdated: "August 2026",
     content: (
       <div className="space-y-6 text-sm text-text-secondary leading-relaxed">
         <p>
-          Founded in Dhaka, <strong>ecomXbangladesh</strong> was born out of a simple mission: to make premium, original, and certified skincare from South Korea, the United Kingdom, and the United States readily accessible to beauty enthusiasts across all 64 districts of Bangladesh.
+          Founded in Dhaka, <strong>Blush &amp; Budget</strong> was born out of a simple mission: to make premium, original, and certified skincare from South Korea, the United Kingdom, and the United States readily accessible to beauty enthusiasts across all 64 districts of Bangladesh.
         </p>
         <h3 className="text-lg font-bold text-text pt-2">Direct Authorized Procurement</h3>
         <p>
@@ -27,7 +26,7 @@ const CMS_PAGES: Record<
           </div>
           <div className="rounded-2xl border border-border bg-white p-5 shadow-card">
             <h4 className="font-bold text-text text-base">Fast 24-48h Delivery</h4>
-            <p className="text-xs text-text-muted mt-1">Doorstep delivery across Dhaka & nationwide express.</p>
+            <p className="text-xs text-text-muted mt-1">Doorstep delivery across Dhaka &amp; nationwide express.</p>
           </div>
           <div className="rounded-2xl border border-border bg-white p-5 shadow-card">
             <h4 className="font-bold text-text text-base">Cash on Delivery</h4>
@@ -69,7 +68,7 @@ const CMS_PAGES: Record<
     content: (
       <div className="space-y-6 text-sm text-text-secondary leading-relaxed">
         <p>
-          At ecomXbangladesh, your skin health and satisfaction come first. If you received a damaged item, incorrect shade/variant, or defective pump, we offer a <strong>7-day replacement guarantee</strong>.
+          At Blush &amp; Budget, your skin health and satisfaction come first. If you received a damaged item, incorrect shade/variant, or defective pump, we offer a <strong>7-day replacement guarantee</strong>.
         </p>
         <h3 className="text-lg font-bold text-text pt-2">Eligibility for Return</h3>
         <ul className="list-disc pl-5 space-y-2 text-xs text-text-secondary">
@@ -102,7 +101,7 @@ const CMS_PAGES: Record<
     content: (
       <div className="space-y-4 text-sm text-text-secondary leading-relaxed">
         <p>
-          By placing an order on ecomXbangladesh, you agree to inspect your parcel upon doorstep delivery and remit the agreed Cash on Delivery amount to the delivery rider.
+          By placing an order on Blush &amp; Budget, you agree to inspect your parcel upon doorstep delivery and remit the agreed Cash on Delivery amount to the delivery rider.
         </p>
         <p>
           All pricing is listed in Bangladeshi Taka (BDT ৳) inclusive of applicable taxes.
@@ -117,7 +116,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const page = CMS_PAGES[slug];
   if (!page) return { title: "Page Not Found" };
   return {
-    title: `${page.title} — ecomXbangladesh`,
+    title: `${page.title} — Blush & Budget`,
     description: page.subtitle,
   };
 }
@@ -131,33 +130,14 @@ export default async function CmsPublicPage({ params }: { params: Promise<{ slug
   }
 
   return (
-    <div className="min-h-[70vh] bg-surface-secondary/40 py-10 px-4">
-      <div className="max-w-3xl mx-auto space-y-8">
-        <Link href="/">
-          <Button variant="ghost" size="sm" className="text-xs text-text-muted hover:text-text mb-4">
-            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-            Back to Home
-          </Button>
-        </Link>
-
-        {/* Page Header */}
-        <div className="rounded-3xl border border-border bg-white p-8 sm:p-10 shadow-card space-y-3">
-          <span className="rounded-full bg-primary-50 text-primary-700 px-3 py-0.5 text-xs font-bold uppercase border border-primary-200">
-            ecomXbangladesh Official Policy
-          </span>
-          <h1 className="text-3xl font-extrabold text-text tracking-tight">{page.title}</h1>
-          <p className="text-sm text-text-secondary">{page.subtitle}</p>
-          <div className="flex items-center gap-1.5 text-xs text-text-muted pt-2">
-            <Clock className="h-3.5 w-3.5" />
-            <span>Last reviewed: {page.lastUpdated}</span>
-          </div>
-        </div>
-
-        {/* Content Body */}
-        <div className="rounded-3xl border border-border bg-white p-8 sm:p-10 shadow-card">
-          {page.content}
-        </div>
-      </div>
-    </div>
+    <CmsPageClient
+      slug={slug}
+      title={page.title}
+      subtitle={page.subtitle}
+      lastUpdated={page.lastUpdated}
+    >
+      {page.content}
+    </CmsPageClient>
   );
 }
+

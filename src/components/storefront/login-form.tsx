@@ -3,15 +3,17 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, EyeOff, Loader2, Mail, Lock, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock, ShieldCheck, ArrowRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/shared/ui/button";
 import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
 import { getHomepageConfig } from "@/features/marketing/homepage-actions";
 import { type HomepageFullConfig, DEFAULT_HOMEPAGE_CONFIG } from "@/features/marketing/homepage-types";
+import { useLanguage } from "@/context/language-context";
 
 export default function LoginForm() {
+  const { language, t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/account";
@@ -49,7 +51,7 @@ export default function LoginForm() {
       if (authError) {
         setError(
           authError.message === "Invalid login credentials"
-            ? "Invalid email address or password. Please check your credentials and try again."
+            ? (language === "bn" ? "ভুল ইমেইল বা পাসওয়ার্ড। অনুগ্রহ করে পুনরায় চেষ্টা করুন।" : "Invalid email address or password. Please check your credentials and try again.")
             : authError.message
         );
         setLoading(false);
@@ -72,14 +74,14 @@ export default function LoginForm() {
 
       setSuccessMsg(
         destination === "/admin"
-          ? "Signed in as Administrator! Opening Admin Dashboard..."
-          : "Signed in successfully! Redirecting to your account..."
+          ? (language === "bn" ? "এডমিন হিসেবে লগইন সফল হয়েছে! ড্যাশবোর্ডে নিয়ে যাওয়া হচ্ছে..." : "Signed in as Administrator! Opening Admin Dashboard...")
+          : (language === "bn" ? "সফলভাবে লগইন হয়েছে! আপনার অ্যাকাউন্টে নিয়ে যাওয়া হচ্ছে..." : "Signed in successfully! Redirecting to your account...")
       );
       setTimeout(() => {
         window.location.href = destination;
       }, 700);
     } catch {
-      setError("An unexpected error occurred. Please try again.");
+      setError(language === "bn" ? "একটি অপ্রত্যাশিত সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।" : "An unexpected error occurred. Please try again.");
       setLoading(false);
     }
   };
@@ -103,9 +105,9 @@ export default function LoginForm() {
             )}
           </Link>
           <div>
-            <h1 className="text-xl font-black text-gray-900">Sign In to Your Account</h1>
+            <h1 className="text-xl font-black text-gray-900">{t("auth", "signInTitle")}</h1>
             <p className="text-xs text-gray-500 mt-1">
-              Manage your orders, saved addresses, and wishlist.
+              {t("auth", "signInSubtitle")}
             </p>
           </div>
         </div>
@@ -129,7 +131,7 @@ export default function LoginForm() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-1.5">
             <Label htmlFor="login-email" className="text-xs font-bold text-gray-800">
-              Email Address
+              {language === "bn" ? "ইমেইল অ্যাড্রেস" : "Email Address"}
             </Label>
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -148,13 +150,13 @@ export default function LoginForm() {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="login-password" className="text-xs font-bold text-gray-800">
-                Password
+                {t("auth", "password")}
               </Label>
               <Link
                 href="/forgot-password"
-                className="text-xs font-bold text-sg-pink hover:underline"
+                className="text-xs font-bold text-[#e91e63] hover:underline"
               >
-                Forgot password?
+                {t("auth", "forgotPassword")}
               </Link>
             </div>
             <div className="relative">
@@ -162,7 +164,7 @@ export default function LoginForm() {
               <Input
                 id="login-password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Enter your password"
+                placeholder={language === "bn" ? "আপনার পাসওয়ার্ড লিখুন" : "Enter your password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -183,15 +185,15 @@ export default function LoginForm() {
             id="login-submit-btn"
             type="submit"
             disabled={loading}
-            className="w-full h-11 rounded-xl bg-sg-pink hover:bg-sg-pink-hover text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
+            className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-pink-600 text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
           >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Signing In...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {language === "bn" ? "লগইন হচ্ছে..." : "Signing In..."}
               </>
             ) : (
               <>
-                Sign In <ArrowRight className="h-4 w-4 ml-1.5" />
+                {t("auth", "signInBtn")} <ArrowRight className="h-4 w-4 ml-1.5" />
               </>
             )}
           </Button>
@@ -199,15 +201,16 @@ export default function LoginForm() {
 
         {/* Footer / Switch */}
         <div className="text-center pt-2 border-t border-gray-100 text-xs text-gray-500">
-          <span>Don&apos;t have an account yet? </span>
+          <span>{t("auth", "noAccount")} </span>
           <Link
             href={redirectTo !== "/account" ? `/register?redirect=${encodeURIComponent(redirectTo)}` : "/register"}
             className="font-bold text-[#e91e63] hover:underline"
           >
-            Create Account
+            {t("auth", "createAccount")}
           </Link>
         </div>
       </div>
     </div>
   );
 }
+

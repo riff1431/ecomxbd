@@ -24,10 +24,12 @@ import {
   trackRemoveFromCart as trackGA4RemoveFromCart,
   trackBeginCheckout,
 } from "@/lib/analytics/datalayer";
+import { useLanguage } from "@/context/language-context";
 
 const FREE_SHIPPING_THRESHOLD = 2500;
 
 export default function CartPage() {
+  const { language, t, toBn, formatPriceBn } = useLanguage();
   const {
     items,
     itemCount,
@@ -115,10 +117,10 @@ export default function CartPage() {
       {/* Breadcrumb Navigation */}
       <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-muted">
         <Link href="/" className="hover:text-text transition-colors">
-          Home
+          {t("mobileNav", "home")}
         </Link>
         <ChevronRight className="h-3 w-3 text-zinc-400" />
-        <span className="text-text font-bold">Shopping Cart</span>
+        <span className="text-text font-bold">{t("cartPage", "pageTitle")}</span>
       </nav>
 
       {/* Header */}
@@ -126,10 +128,12 @@ export default function CartPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-text flex items-center gap-2.5">
             <ShoppingBag className="h-7 w-7 text-primary-600" />
-            Your Shopping Bag
+            {t("cartPage", "pageTitle")}
           </h1>
           <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
-            {itemCount} genuine item{itemCount === 1 ? "" : "s"} selected for checkout.
+            {language === "bn"
+              ? `${toBn(itemCount)} টি পণ্য সিলেক্ট করা হয়েছে`
+              : `${itemCount} genuine item${itemCount === 1 ? "" : "s"} selected for checkout.`}
           </p>
         </div>
 
@@ -141,7 +145,7 @@ export default function CartPage() {
             className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 self-start sm:self-auto"
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
-            Clear Bag
+            {t("cartPage", "clearCart")}
           </Button>
         )}
       </div>
@@ -152,14 +156,14 @@ export default function CartPage() {
             <ShoppingBag className="h-8 w-8 stroke-[1.2]" />
           </div>
           <div className="space-y-1">
-            <h2 className="text-lg font-black text-text">Your cart is currently empty</h2>
+            <h2 className="text-lg font-black text-text">{t("cartPage", "emptyStateTitle")}</h2>
             <p className="text-xs sm:text-sm text-text-secondary max-w-sm mx-auto leading-relaxed">
-              Explore 100% authentic skincare, haircare, and cosmetics imported directly from authorized brands.
+              {t("cartPage", "emptyStateDesc")}
             </p>
           </div>
           <Link href="/products" className="inline-block pt-2">
             <Button className="rounded-xl text-xs font-bold px-6 h-11">
-              Explore Authentic Products
+              {t("cartPage", "continueShopping")}
             </Button>
           </Link>
         </div>
@@ -174,16 +178,22 @@ export default function CartPage() {
                   <Truck className="h-4 w-4 text-primary-600" />
                   {amountNeeded > 0 ? (
                     <span>
-                      Add <strong>{formatPrice(amountNeeded)}</strong> more to get <strong>FREE Delivery</strong> inside Dhaka!
+                      {language === "bn" ? (
+                        <>ফ্রি ডেলিভারির জন্য আরও <strong>{formatPriceBn(amountNeeded)}</strong> এর পণ্য যোগ করুন!</>
+                      ) : (
+                        <>Add <strong>{formatPrice(amountNeeded)}</strong> more to get <strong>FREE Delivery</strong> inside Dhaka!</>
+                      )}
                     </span>
                   ) : (
                     <span className="text-emerald-700 flex items-center gap-1">
                       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                      Congratulations! You unlocked FREE Delivery inside Dhaka!
+                      {language === "bn"
+                        ? "অভিনন্দন! আপনি ফ্রি ডেলিভারি আনলক করেছেন!"
+                        : "Congratulations! You unlocked FREE Delivery inside Dhaka!"}
                     </span>
                   )}
                 </span>
-                <span className="font-extrabold">{freeShippingProgress}%</span>
+                <span className="font-extrabold">{toBn(freeShippingProgress)}%</span>
               </div>
 
               <div className="h-2 w-full overflow-hidden rounded-full bg-primary-100">
@@ -227,7 +237,7 @@ export default function CartPage() {
                         {item.name}
                       </Link>
                       <p className="text-xs font-black text-text">
-                        {formatPrice(item.price)}
+                        {formatPriceBn(item.price)}
                       </p>
                     </div>
                   </div>
@@ -244,7 +254,7 @@ export default function CartPage() {
                         <Minus className="h-3.5 w-3.5" />
                       </button>
                       <span className="w-8 text-center text-xs font-extrabold text-text">
-                        {item.quantity}
+                        {toBn(item.quantity)}
                       </span>
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
@@ -257,14 +267,14 @@ export default function CartPage() {
 
                     <div className="text-right min-w-18.75">
                       <span className="text-xs sm:text-sm font-black text-text">
-                        {formatPrice(item.price * item.quantity)}
+                        {formatPriceBn(item.price * item.quantity)}
                       </span>
                     </div>
 
                     <button
                       onClick={() => handleRemoveItem(item)}
                       className="text-text-muted hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                      title="Remove product"
+                      title={t("wishlist", "remove")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -278,7 +288,7 @@ export default function CartPage() {
           <div className="lg:col-span-4 space-y-4">
             <div className="rounded-3xl border border-border bg-white p-6 shadow-card space-y-5 sticky top-24">
               <h2 className="text-base font-black text-text border-b border-border pb-3">
-                Order Summary
+                {t("cartPage", "orderSummary")}
               </h2>
 
               {/* Coupon Form */}
@@ -288,11 +298,11 @@ export default function CartPage() {
                     type="text"
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    placeholder="Coupon or Promo code"
+                    placeholder={t("cartPage", "promoCode")}
                     className="flex-1 rounded-xl border px-3.5 py-2 text-xs font-mono uppercase focus:outline-none"
                   />
                   <Button type="submit" size="sm" disabled={isApplying} className="rounded-xl text-xs font-bold h-9">
-                    Apply
+                    {t("cartPage", "applyPromo")}
                   </Button>
                 </form>
 
@@ -306,32 +316,38 @@ export default function CartPage() {
               {/* Breakdown */}
               <div className="space-y-2.5 text-xs text-text-secondary border-t border-border pt-4">
                 <div className="flex justify-between">
-                  <span>Subtotal ({itemCount} items)</span>
-                  <span className="font-bold text-text">{formatPrice(subtotal)}</span>
+                  <span>
+                    {t("cart", "subtotal")} ({toBn(itemCount)} {language === "bn" ? "টি পণ্য" : "items"})
+                  </span>
+                  <span className="font-bold text-text">{formatPriceBn(subtotal)}</span>
                 </div>
 
                 {discount > 0 && (
                   <div className="flex justify-between font-bold text-emerald-700">
-                    <span>Discount</span>
-                    <span>-{formatPrice(discount)}</span>
+                    <span>{t("cart", "discount")}</span>
+                    <span>-{formatPriceBn(discount)}</span>
                   </div>
                 )}
 
                 <div className="flex justify-between">
-                  <span>Estimated Delivery Fee</span>
-                  <span>{amountNeeded === 0 ? "FREE" : "Calculated at checkout"}</span>
+                  <span>{t("cartPage", "estimatedDelivery")}</span>
+                  <span>
+                    {amountNeeded === 0
+                      ? (language === "bn" ? "ফ্রি" : "FREE")
+                      : (language === "bn" ? "চেকআউটে নির্ধারিত হবে" : "Calculated at checkout")}
+                  </span>
                 </div>
 
                 <div className="flex justify-between border-t border-border pt-3 text-base font-black text-text">
-                  <span>Estimated Total</span>
-                  <span className="text-lg text-primary-700">{formatPrice(total)}</span>
+                  <span>{t("cart", "total")}</span>
+                  <span className="text-lg text-primary-700">{formatPriceBn(total)}</span>
                 </div>
               </div>
 
               {/* Proceed to Checkout CTA */}
               <Link href="/checkout" onClick={handleProceedToCheckout} className="block">
                 <Button className="w-full h-12 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-extrabold text-sm shadow-md transition-all active:scale-95">
-                  <span>Proceed to Checkout</span>
+                  <span>{t("cartPage", "proceedToCheckout")}</span>
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </Link>
@@ -340,15 +356,15 @@ export default function CartPage() {
               <div className="pt-2 border-t border-border space-y-2 text-[11px] text-text-muted font-medium">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                  <span>100% Genuine Direct Brand Imports</span>
+                  <span>{t("footer", "authenticTitle")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Truck className="h-4 w-4 text-primary-600 shrink-0" />
-                  <span>Cash on Delivery (COD) All Across Bangladesh</span>
+                  <span>{t("footer", "codTitle")}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <RotateCcw className="h-4 w-4 text-primary-600 shrink-0" />
-                  <span>7-Day Easy Return & Instant Refund Guarantee</span>
+                  <span>{t("footer", "returnTitle")}</span>
                 </div>
               </div>
             </div>

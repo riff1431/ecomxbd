@@ -71,7 +71,7 @@ export function StorefrontHeader() {
   const pathname = usePathname();
   const { wishlistCount } = useWishlist();
   const { itemCount, openCart } = useCart();
-  const { language, t, isSwitcherEnabled } = useLanguage();
+  const { language, t, isSwitcherEnabled, toBn, formatPriceBn } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -252,7 +252,9 @@ export function StorefrontHeader() {
         {isSearching ? (
           <div className="p-6 text-center text-xs text-gray-500">
             <Loader2 className="mx-auto h-5 w-5 animate-spin text-[#e91e63]" />
-            <p className="mt-2 font-medium">Searching authentic beauty & skincare...</p>
+            <p className="mt-2 font-medium">
+              {language === "bn" ? "প্রোডাক্ট অনুসন্ধান করা হচ্ছে..." : "Searching authentic beauty & skincare..."}
+            </p>
           </div>
         ) : hasAnyResults ? (
           <div className="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
@@ -261,7 +263,7 @@ export function StorefrontHeader() {
               <div>
                 <span className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-[#e91e63] flex items-center gap-1">
                   <Sparkles className="h-3 w-3" />
-                  Key Actives & Ingredients
+                  {t("header", "actives")}
                 </span>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {searchResults.ingredients.map((ing) => (
@@ -283,7 +285,7 @@ export function StorefrontHeader() {
             {searchResults.concerns && searchResults.concerns.length > 0 && (
               <div className="pt-2 border-t border-gray-100">
                 <span className="px-2 text-[10px] font-extrabold uppercase tracking-wider text-purple-600 flex items-center gap-1">
-                  Skin Concerns
+                  {t("header", "concerns")}
                 </span>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {searchResults.concerns.map((con) => (
@@ -293,7 +295,7 @@ export function StorefrontHeader() {
                       onClick={() => setShowSearchDropdown(false)}
                       className="inline-flex items-center gap-1 rounded-full bg-purple-50 border border-purple-200 px-3 py-1 text-xs font-bold text-purple-700 hover:bg-purple-100 transition-colors"
                     >
-                      <Sparkle className="h-2.5 w-2.5 text-purple-600 shrink-0" />
+                      <Sparkles className="h-2.5 w-2.5 text-purple-600 shrink-0" />
                       <span>{con.name}</span>
                     </Link>
                   ))}
@@ -305,7 +307,7 @@ export function StorefrontHeader() {
             {searchResults.categories.length > 0 && (
               <div className="pt-2 border-t border-gray-100">
                 <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                  Categories
+                  {t("header", "categories")}
                 </span>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {searchResults.categories.map((cat) => (
@@ -326,7 +328,7 @@ export function StorefrontHeader() {
             {searchResults.brands.length > 0 && (
               <div className="pt-2 border-t border-gray-100">
                 <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                  Brands
+                  {t("header", "brands")}
                 </span>
                 <div className="mt-1 flex flex-wrap gap-1.5">
                   {searchResults.brands.map((b) => (
@@ -347,7 +349,7 @@ export function StorefrontHeader() {
             {searchResults.products.length > 0 && (
               <div className="pt-2 border-t border-gray-100">
                 <span className="px-2 text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                  Products
+                  {t("header", "products")}
                 </span>
                 <div className="mt-1 space-y-1">
                   {searchResults.products.map((prod) => (
@@ -380,7 +382,7 @@ export function StorefrontHeader() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="text-xs font-black text-gray-900">
-                          {formatPrice(prod.sale_price ?? prod.regular_price)}
+                          {formatPriceBn(prod.sale_price ?? prod.regular_price)}
                         </p>
                       </div>
                     </Link>
@@ -396,13 +398,13 @@ export function StorefrontHeader() {
                 onClick={handleSearchSubmit}
                 className="w-full text-center text-xs font-bold text-[#e91e63] hover:underline py-1"
               >
-                View all results for &ldquo;{searchQuery}&rdquo; &rarr;
+                {t("header", "viewAllResults")} &ldquo;{searchQuery}&rdquo; &rarr;
               </button>
             </div>
           </div>
         ) : (
           <div className="p-4 text-center text-xs text-gray-500">
-            No results found for &ldquo;{searchQuery}&rdquo;.
+            {t("header", "noResults")}
           </div>
         )}
       </div>
@@ -908,12 +910,16 @@ export function StorefrontHeader() {
                 <User className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-medium">Welcome to {headerConfig.logoText || "Blush & Budget"}</p>
+                <p className="text-xs text-gray-500 font-medium">
+                  {language === "bn"
+                    ? `${headerConfig.logoText || "Blush & Budget"}-এ স্বাগতম`
+                    : `Welcome to ${headerConfig.logoText || "Blush & Budget"}`}
+                </p>
                 <Link
-                  href={user ? "/account" : "/auth/login"}
+                  href={user ? "/account" : "/login"}
                   className="text-xs font-black text-[#e91e63] hover:underline"
                 >
-                  {user ? "View My Account" : "Sign In / Register"}
+                  {user ? t("header", "account") : `${t("header", "login")} / ${t("auth", "signUpBtn")}`}
                 </Link>
               </div>
             </div>
@@ -921,7 +927,7 @@ export function StorefrontHeader() {
             {/* Quick Mobile Action Shortcuts: Wishlist, Routine Finder */}
             <div className="p-3 grid grid-cols-2 gap-2 bg-gray-50 border-b border-gray-100">
               <Link
-                href="/account/wishlist"
+                href="/wishlist"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-between p-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:border-[#e91e63] hover:text-[#e91e63] transition-colors shadow-2xs"
               >
@@ -931,13 +937,13 @@ export function StorefrontHeader() {
                 </div>
                 {wishlistCount > 0 && (
                   <span className="flex h-4.5 min-w-4.5 items-center justify-center rounded-full bg-[#e91e63] px-1.5 text-[10px] font-black text-white">
-                    {wishlistCount}
+                    {toBn(wishlistCount)}
                   </span>
                 )}
               </Link>
 
               <Link
-                href={config.routineFinderHref || "/products?category=skin-care"}
+                href={config.routineFinderHref || "/quiz"}
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-1.5 p-2.5 rounded-xl bg-white border border-gray-200 text-xs font-bold text-gray-800 hover:border-[#e91e63] hover:text-[#e91e63] transition-colors shadow-2xs"
               >
@@ -962,10 +968,10 @@ export function StorefrontHeader() {
                     className="text-xs font-black text-pink-600 hover:text-pink-700 flex items-center gap-2"
                   >
                     <BookOpen className="h-4 w-4 text-pink-500" />
-                    <span>Beauty Blog & Guides</span>
+                    <span>{t("blog", "title")}</span>
                   </Link>
                   <span className="text-[10px] font-extrabold text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">
-                    Journal
+                    {language === "bn" ? "জার্নাল" : "Journal"}
                   </span>
                 </div>
               </div>

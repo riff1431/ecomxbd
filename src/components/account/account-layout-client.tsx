@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils";
 import { customerNavItems } from "@/config/site";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/context/language-context";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard,
@@ -44,6 +45,38 @@ export default function AccountLayoutClient({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { language, t } = useLanguage();
+
+  const getTranslatedTitle = (href: string, fallback: string) => {
+    switch (href) {
+      case "/account":
+        return t("account", "navDashboard");
+      case "/account/orders":
+        return t("account", "navOrders");
+      case "/account/track":
+        return t("account", "navTrack");
+      case "/account/wishlist":
+        return t("account", "navWishlist");
+      case "/account/addresses":
+        return t("account", "navAddresses");
+      case "/account/reviews":
+        return t("account", "navReviews");
+      case "/account/returns":
+        return t("account", "navReturns");
+      case "/account/points":
+        return t("account", "navPoints");
+      case "/account/vouchers":
+        return t("account", "navVouchers");
+      case "/account/notifications":
+        return t("account", "navNotifications");
+      case "/account/profile":
+        return language === "bn" ? "প্রোফাইল তথ্য" : "Profile";
+      case "/account/security":
+        return t("account", "navSecurity");
+      default:
+        return fallback;
+    }
+  };
 
   const handleLogout = async () => {
     const supabase = createClient();
@@ -63,8 +96,12 @@ export default function AccountLayoutClient({
         <aside className="w-full lg:w-64 shrink-0">
           <nav className="rounded-3xl border border-gray-200 bg-white p-3 shadow-sm space-y-1">
             <div className="border-b border-gray-100 px-3 py-3">
-              <h2 className="text-base font-black text-gray-900 tracking-tight">My Account</h2>
-              <p className="text-[11px] text-gray-400">Customer portal & settings</p>
+              <h2 className="text-base font-black text-gray-900 tracking-tight">
+                {t("account", "myAccount")}
+              </h2>
+              <p className="text-[11px] text-gray-400">
+                {t("account", "portalSubtitle")}
+              </p>
             </div>
 
             <ul className="space-y-0.5 pt-2">
@@ -84,7 +121,7 @@ export default function AccountLayoutClient({
                       )}
                     >
                       <Icon className={cn("h-4 w-4 shrink-0", active ? "text-[#e91e63]" : "text-gray-400")} />
-                      <span>{item.title}</span>
+                      <span>{getTranslatedTitle(item.href, item.title)}</span>
                     </Link>
                   </li>
                 );
@@ -97,7 +134,7 @@ export default function AccountLayoutClient({
                   className="flex w-full items-center gap-3 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
                 >
                   <LogOut className="h-4 w-4 shrink-0 text-gray-400 group-hover:text-red-600" />
-                  <span>Logout</span>
+                  <span>{t("account", "logout")}</span>
                 </button>
               </li>
             </ul>

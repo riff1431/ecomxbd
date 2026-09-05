@@ -7,8 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/shared/ui/button";
 import { Input } from "@/components/shared/ui/input";
 import { Label } from "@/components/shared/ui/label";
+import { useLanguage } from "@/context/language-context";
 
 export default function ForgotPasswordPage() {
+  const { language, t } = useLanguage();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -35,44 +37,50 @@ export default function ForgotPasswordPage() {
 
       setSuccess(true);
     } catch {
-      setError("An unexpected error occurred. Please try again.");
+      setError(
+        language === "bn"
+          ? "একটি অপ্রত্যাশিত সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
+          : "An unexpected error occurred. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary-50 via-white to-accent-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-pink-50/40 via-white to-pink-50/30 px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-lg font-bold text-white shadow-lg">
-              eX
-            </div>
-            <span className="text-2xl font-bold text-text">ecomX</span>
+            <span className="text-2xl font-black text-gray-900 tracking-[0.15em] uppercase font-sans">
+              Blush &amp; Budget
+            </span>
           </Link>
           <p className="mt-2 text-sm text-text-secondary">
-            Reset your password
+            {language === "bn" ? "পাসওয়ার্ড রিসেট করুন" : "Reset your password"}
           </p>
         </div>
 
         {/* Card */}
-        <div className="rounded-2xl border border-border bg-white p-8 shadow-modal">
+        <div className="rounded-2xl border border-border bg-white p-8 shadow-card">
           {success ? (
             <div className="text-center space-y-4">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
-              <h2 className="text-lg font-semibold text-text">Check your email</h2>
+              <h2 className="text-lg font-semibold text-text">
+                {language === "bn" ? "আপনার ইমেইল চেক করুন" : "Check your email"}
+              </h2>
               <p className="text-sm text-text-secondary">
-                We sent a password reset link to <strong>{email}</strong>. 
-                Please check your inbox and spam folder.
+                {language === "bn"
+                  ? `আমরা আপনার ইমেইলে (${email}) পাসওয়ার্ড রিসেটের লিঙ্ক পাঠিয়েছি। ইনবক্স অথবা স্প্যাম ফোল্ডার চেক করুন।`
+                  : `We sent a password reset link to ${email}. Please check your inbox and spam folder.`}
               </p>
               <Link href="/login">
                 <Button variant="outline" className="mt-4">
-                  <ArrowLeft className="h-4 w-4" />
-                  Back to Sign In
+                  <ArrowLeft className="h-4 w-4 mr-1.5" />
+                  {language === "bn" ? "লগইন পেজে ফিরুন" : "Back to Sign In"}
                 </Button>
               </Link>
             </div>
@@ -86,7 +94,9 @@ export default function ForgotPasswordPage() {
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
+                  <Label htmlFor="email">
+                    {language === "bn" ? "ইমেইল অ্যাড্রেস" : "Email Address"}
+                  </Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" />
                     <Input
@@ -101,20 +111,22 @@ export default function ForgotPasswordPage() {
                     />
                   </div>
                   <p className="text-xs text-text-muted">
-                    Enter the email associated with your account and we&apos;ll send a reset link.
+                    {language === "bn"
+                      ? "আপনার অ্যাকাউন্টের সাথে যুক্ত ইমেইলটি লিখুন, আমরা পাসওয়ার্ড রিসেটের লিঙ্ক পাঠাব।"
+                      : "Enter the email associated with your account and we'll send a reset link."}
                   </p>
                 </div>
 
-                <Button type="submit" className="w-full" size="lg" disabled={loading}>
-                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Send Reset Link
+                <Button type="submit" className="w-full bg-[#e91e63] hover:bg-pink-600 text-white font-bold" size="lg" disabled={loading}>
+                  {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  {language === "bn" ? "রিসেট লিঙ্ক পাঠান" : "Send Reset Link"}
                 </Button>
               </form>
 
               <div className="mt-6 text-center text-sm text-text-secondary">
-                Remember your password?{" "}
-                <Link href="/login" className="font-medium text-primary-600 hover:underline">
-                  Sign in
+                {language === "bn" ? "পাসওয়ার্ড মনে পড়েছে? " : "Remember your password? "}
+                <Link href="/login" className="font-bold text-[#e91e63] hover:underline">
+                  {language === "bn" ? "লগইন করুন" : "Sign in"}
                 </Link>
               </div>
             </>
@@ -124,3 +136,4 @@ export default function ForgotPasswordPage() {
     </div>
   );
 }
+

@@ -43,6 +43,7 @@ import {
   trackInitiateCheckout,
 } from "@/lib/analytics/datalayer";
 import { type StoreFeatureSettings } from "@/features/settings/feature-settings-actions";
+import { useLanguage } from "@/context/language-context";
 
 interface ProductDetailClientProps {
   product: any;
@@ -58,6 +59,7 @@ export function ProductDetailClient({
   featureSettings,
 }: ProductDetailClientProps) {
   const router = useRouter();
+  const { language, t, toBn, formatPriceBn } = useLanguage();
   const [quantity, setQuantity] = useState(1);
   const { isWishlisted, toggleWishlist } = useWishlist();
   const { addItem } = useCart();
@@ -345,12 +347,12 @@ export function ProductDetailClient({
             <div className="absolute left-3.5 top-3.5 flex flex-col gap-1.5 z-10 pointer-events-none">
               {discountPercent > 0 && (
                 <span className="rounded-full bg-[#e91e63] px-3 py-1 text-xs font-black text-white shadow-sm">
-                  -{discountPercent}% OFF
+                  -{toBn(discountPercent)}% {t("product", "off")}
                 </span>
               )}
               {product.authenticity_verified !== false && (
                 <span className="rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold text-white shadow-xs flex items-center gap-1">
-                  <ShieldCheck className="h-3 w-3" /> 100% Authentic
+                  <ShieldCheck className="h-3 w-3" /> {t("footer", "authenticTitle")}
                 </span>
               )}
               {originCountry && (
@@ -451,7 +453,7 @@ export function ProductDetailClient({
               )}
               {product.sku && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-zinc-100 border border-zinc-200 px-2 py-0.5 font-mono text-[11px] font-bold text-zinc-600">
-                  ID / SKU: #{product.sku}
+                  {language === "bn" ? "প্রোডাক্ট আইডি / এসকেইউ:" : "ID / SKU:"} #{toBn(product.sku)}
                 </span>
               )}
             </div>
@@ -469,8 +471,10 @@ export function ProductDetailClient({
                   <Star className="h-4 w-4 fill-current" />
                   <Star className="h-4 w-4 fill-current" />
                 </div>
-                <span className="font-bold text-text">5.0</span>
-                <span className="text-text-muted font-medium">(24 Verified Buyer Reviews)</span>
+                <span className="font-bold text-text">{toBn(5.0)}</span>
+                <span className="text-text-muted font-medium">
+                  {language === "bn" ? "(২৪ টি ভেরিফাইড বায়ার রিভিউ)" : "(24 Verified Buyer Reviews)"}
+                </span>
               </div>
 
               <button
@@ -480,12 +484,12 @@ export function ProductDetailClient({
                 {copied ? (
                   <>
                     <Check className="h-3.5 w-3.5 text-emerald-600" />
-                    <span className="text-emerald-700">Link Copied</span>
+                    <span className="text-emerald-700">{language === "bn" ? "লিংক কপি হয়েছে" : "Link Copied"}</span>
                   </>
                 ) : (
                   <>
                     <Share2 className="h-3.5 w-3.5" />
-                    <span>Share</span>
+                    <span>{language === "bn" ? "শেয়ার" : "Share"}</span>
                   </>
                 )}
               </button>
@@ -520,21 +524,25 @@ export function ProductDetailClient({
           <div className="rounded-2xl border border-border bg-surface-secondary/40 p-4 space-y-1">
             <div className="flex items-baseline gap-3 flex-wrap">
               <span className="text-2xl sm:text-3xl font-black text-text">
-                {formatPrice(effectivePrice)}
+                {formatPriceBn(effectivePrice)}
               </span>
               {product.regular_price > effectivePrice && (
                 <>
                   <span className="text-sm font-semibold text-text-muted line-through">
-                    {formatPrice(product.regular_price)}
+                    {formatPriceBn(product.regular_price)}
                   </span>
                   <span className="rounded-lg bg-accent-500/10 border border-accent-500/20 px-2 py-0.5 text-xs font-extrabold text-accent-700">
-                    You Save {formatPrice(product.regular_price - effectivePrice)}
+                    {language === "bn"
+                      ? `সাশ্রয় ${formatPriceBn(product.regular_price - effectivePrice)}`
+                      : `You Save ${formatPrice(product.regular_price - effectivePrice)}`}
                   </span>
                 </>
               )}
             </div>
             <p className="text-[11px] text-text-muted">
-              Tax included. Free Delivery available inside Dhaka over ৳2,500.
+              {language === "bn"
+                ? "ট্যাক্স অন্তর্ভুক্ত। ২,০০০ টাকার অর্ডারে সারা দেশে ফ্রি ডেলিভারি।"
+                : "Tax included. Free Delivery available inside Dhaka over ৳2,500."}
             </p>
           </div>
 
@@ -543,7 +551,7 @@ export function ProductDetailClient({
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-text">
-                  Select Shade / Size:
+                  {language === "bn" ? "শেড / সাইজ নির্বাচন করুন:" : "Select Shade / Size:"}
                 </span>
                 {selectedVariant && (
                   <span className="text-xs font-bold text-pink-600">
@@ -584,7 +592,9 @@ export function ProductDetailClient({
 
           {/* Availability Status */}
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-text-muted font-medium">Availability:</span>
+            <span className="text-text-muted font-medium">
+              {language === "bn" ? "লভ্যতা:" : "Availability:"}
+            </span>
             <span
               className={cn(
                 "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 font-bold",
@@ -594,7 +604,7 @@ export function ProductDetailClient({
               )}
             >
               <Check className="h-3 w-3" />
-              {isOutOfStock ? "Sold Out" : "In Stock (Guaranteed Authentic)"}
+              {isOutOfStock ? t("productDetail", "outOfStock") : t("productDetail", "inStock")}
             </span>
           </div>
 
@@ -612,7 +622,7 @@ export function ProductDetailClient({
                   <Minus className="h-4 w-4" />
                 </button>
                 <span className="w-10 text-center text-sm font-extrabold text-text">
-                  {quantity}
+                  {toBn(quantity)}
                 </span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
@@ -640,11 +650,13 @@ export function ProductDetailClient({
               >
                 {justAdded ? (
                   <>
-                    <Check className="h-4 w-4 mr-1.5 animate-in zoom-in-50" /> Added to Bag!
+                    <Check className="h-4 w-4 mr-1.5 animate-in zoom-in-50" />
+                    {language === "bn" ? "কার্ট-এ যোগ হয়েছে!" : "Added to Bag!"}
                   </>
                 ) : (
                   <>
-                    <ShoppingBag className="h-4 w-4 mr-1.5" /> Add to Bag ({quantity})
+                    <ShoppingBag className="h-4 w-4 mr-1.5" />
+                    {t("productDetail", "addToCart")} ({toBn(quantity)})
                   </>
                 )}
               </Button>
@@ -660,7 +672,7 @@ export function ProductDetailClient({
               className="ripple-container w-full h-11 rounded-xl font-extrabold text-xs sm:text-sm bg-accent-500 hover:bg-accent-600 text-white shadow-md transition-all active:scale-95 hover:shadow-[0_8px_20px_-4px_rgba(249,115,22,0.4)]"
             >
               <Zap className="h-4 w-4 fill-current mr-1.5" />
-              Buy Now (Cash on Delivery)
+              {t("productDetail", "orderNow")} ({t("checkout", "cod")})
             </Button>
           </div>
 
@@ -671,29 +683,29 @@ export function ProductDetailClient({
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-[#e91e63]" />
                   <span className="text-xs font-black text-pink-950 uppercase tracking-wider">
-                    Authenticity &amp; Provenance Guarantee
+                    {language === "bn" ? "১০০% অরিজিনাল ও অথেন্টিসিটি গ্যারান্টি" : "Authenticity & Provenance Guarantee"}
                   </span>
                 </div>
                 <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                  Verified Genuine
+                  {language === "bn" ? "ভেরিফাইড খাঁটি" : "Verified Genuine"}
                 </span>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-[11px] pt-1">
                 <div className="rounded-xl bg-white p-2 border border-pink-100 shadow-2xs">
-                  <span className="text-gray-400 font-medium block">Origin:</span>
+                  <span className="text-gray-400 font-medium block">{language === "bn" ? "উৎস দেশ:" : "Origin:"}</span>
                   <span className="font-bold text-gray-900">{originCountry}</span>
                 </div>
                 <div className="rounded-xl bg-white p-2 border border-pink-100 shadow-2xs">
-                  <span className="text-gray-400 font-medium block">Batch Code:</span>
+                  <span className="text-gray-400 font-medium block">{language === "bn" ? "ব্যাচ কোড:" : "Batch Code:"}</span>
                   <span className="font-mono font-bold text-gray-900">
                     {product.batch_number || "LOT2024BD01"}
                   </span>
                 </div>
                 <div className="rounded-xl bg-white p-2 border border-pink-100 shadow-2xs col-span-2 sm:col-span-1">
-                  <span className="text-gray-400 font-medium block">Shelf Freshness:</span>
+                  <span className="text-gray-400 font-medium block">{language === "bn" ? "মেয়াদ:" : "Shelf Freshness:"}</span>
                   <span className="font-bold text-emerald-700">
-                    {product.expiry_date ? `Exp: ${product.expiry_date}` : "24M Fresh Guarantee"}
+                    {product.expiry_date ? `Exp: ${product.expiry_date}` : (language === "bn" ? "২৪ মাস ফ্রেশ গ্যারান্টি" : "24M Fresh Guarantee")}
                   </span>
                 </div>
               </div>
@@ -704,18 +716,18 @@ export function ProductDetailClient({
           <div className="grid grid-cols-3 gap-2 rounded-2xl border border-border bg-surface-secondary/50 p-3.5 text-center text-xs">
             <div className="flex flex-col items-center gap-1">
               <ShieldCheck className="h-4.5 w-4.5 text-[#e91e63]" />
-              <span className="font-bold text-text text-[11px]">100% Authentic</span>
-              <span className="text-[10px] text-text-muted">Direct Importer</span>
+              <span className="font-bold text-text text-[11px]">{t("footer", "authenticTitle")}</span>
+              <span className="text-[10px] text-text-muted">{language === "bn" ? "সরাসরি আমদানিকৃত" : "Direct Importer"}</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <Truck className="h-4.5 w-4.5 text-[#e91e63]" />
-              <span className="font-bold text-text text-[11px]">24–48h Dispatch</span>
+              <span className="font-bold text-text text-[11px]">{t("footer", "deliveryTitle")}</span>
               <span className="text-[10px] text-text-muted">Steadfast &amp; Pathao</span>
             </div>
             <div className="flex flex-col items-center gap-1">
               <RotateCcw className="h-4.5 w-4.5 text-[#e91e63]" />
-              <span className="font-bold text-text text-[11px]">7-Day Returns</span>
-              <span className="text-[10px] text-text-muted">Easy Wallet Refund</span>
+              <span className="font-bold text-text text-[11px]">{t("footer", "returnTitle")}</span>
+              <span className="text-[10px] text-text-muted">{language === "bn" ? "সহজ এক্সচেঞ্জ" : "Easy Wallet Refund"}</span>
             </div>
           </div>
         </div>
@@ -730,13 +742,13 @@ export function ProductDetailClient({
       <div className="rounded-3xl border border-border bg-white shadow-xs overflow-hidden">
         <div className="flex border-b border-border overflow-x-auto no-scrollbar bg-surface-secondary/40">
           {[
-            { id: "description", label: "Description" },
-            { id: "benefits", label: "Key Benefits" },
-            { id: "usage", label: "How to Use" },
-            { id: "ingredients", label: "Ingredients & Specs" },
-            { id: "authenticity", label: "Authenticity & Provenance" },
-            { id: "warranty", label: "Delivery & Returns" },
-            { id: "reviews", label: "Customer Reviews & Q&A" },
+            { id: "description", label: t("productDetail", "tabDescription") },
+            { id: "benefits", label: t("productDetail", "tabBenefits") },
+            { id: "usage", label: t("productDetail", "tabUsage") },
+            { id: "ingredients", label: t("productDetail", "tabIngredients") },
+            { id: "authenticity", label: t("productDetail", "tabAuthenticity") },
+            { id: "warranty", label: language === "bn" ? "ডেলিভারি ও রিটার্ন" : "Delivery & Returns" },
+            { id: "reviews", label: language === "bn" ? "রিভিউ ও প্রশ্নোত্তর" : "Customer Reviews & Q&A" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -857,21 +869,27 @@ export function ProductDetailClient({
               <div className="flex items-center gap-3 p-4 rounded-2xl bg-pink-50/60 border border-pink-200">
                 <ShieldCheck className="h-8 w-8 text-[#e91e63] shrink-0" />
                 <div>
-                  <h4 className="font-black text-gray-900 text-sm">100% Guaranteed Brand Authenticity</h4>
+                  <h4 className="font-black text-gray-900 text-sm">
+                    {language === "bn" ? "১০০% গ্যারান্টিযুক্ত ব্র্যান্ড অথেন্টিসিটি" : "100% Guaranteed Brand Authenticity"}
+                  </h4>
                   <p className="text-xs text-gray-600">
-                    Imported directly from authorized manufacturers in {originCountry}. Zero replicas or expired stock guaranteed.
+                    {language === "bn"
+                      ? `সরাসরি ${originCountry}-এর অথরাইজড প্রস্তুতকারক থেকে আমদানিকৃত। কোনো রেপ্লিকা বা মেয়াদোত্তীর্ণ পণ্যের সুযোগ নেই।`
+                      : `Imported directly from authorized manufacturers in ${originCountry}. Zero replicas or expired stock guaranteed.`}
                   </p>
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 text-xs">
                 <div className="p-3.5 rounded-xl border border-gray-200 bg-surface-secondary/40 space-y-1">
-                  <span className="font-bold text-gray-900 block">Batch Code:</span>
+                  <span className="font-bold text-gray-900 block">{language === "bn" ? "ব্যাচ কোড:" : "Batch Code:"}</span>
                   <span className="font-mono text-gray-700">{product.batch_number || "LOT2024BD01"}</span>
                 </div>
                 <div className="p-3.5 rounded-xl border border-gray-200 bg-surface-secondary/40 space-y-1">
-                  <span className="font-bold text-gray-900 block">Freshness Shelf-Life:</span>
-                  <span className="text-emerald-700 font-bold">{product.expiry_date ? `Exp: ${product.expiry_date}` : "24 Months After Opening (PAO)"}</span>
+                  <span className="font-bold text-gray-900 block">{language === "bn" ? "মেয়াদ:" : "Freshness Shelf-Life:"}</span>
+                  <span className="text-emerald-700 font-bold">
+                    {product.expiry_date ? `Exp: ${product.expiry_date}` : (language === "bn" ? "খোলার পর ২৪ মাস ব্যবহারযোগ্য" : "24 Months After Opening (PAO)")}
+                  </span>
                 </div>
               </div>
             </div>
@@ -879,10 +897,24 @@ export function ProductDetailClient({
 
           {activeTab === "warranty" && (
             <div className="space-y-3 max-w-3xl">
-              <p className="font-bold text-text">Nationwide Shipping &amp; Returns Policy:</p>
-              <p>• Inside Dhaka: Delivered within 24–48 hours via fast courier (Steadfast / Pathao).</p>
-              <p>• Outside Dhaka: Delivered in 2–4 business days with Cash on Delivery available nationwide.</p>
-              <p>• 7-Day Return Guarantee: Returns accepted if package is unopened and intact.</p>
+              <p className="font-bold text-text">
+                {language === "bn" ? "সারা দেশে ডেলিভারি ও রিটার্ন পলিসি:" : "Nationwide Shipping & Returns Policy:"}
+              </p>
+              <p>
+                {language === "bn"
+                  ? "• ঢাকার ভেতরে: দ্রুততম কুরিয়ারে ২৪–৪৮ ঘণ্টার মধ্যে ডেলিভারি।"
+                  : "• Inside Dhaka: Delivered within 24–48 hours via fast courier (Steadfast / Pathao)."}
+              </p>
+              <p>
+                {language === "bn"
+                  ? "• ঢাকার বাইরে: ৩-৫ কার্যদিবসে সারা দেশে হোম ডেলিভারি ও ক্যাশ অন ডেলিভারি সুবিধা।"
+                  : "• Outside Dhaka: Delivered in 2–4 business days with Cash on Delivery available nationwide."}
+              </p>
+              <p>
+                {language === "bn"
+                  ? "• ৭ দিনের সহজ রিটার্ন: পণ্য অক্ষত ও সিলযুক্ত অবস্থায় ৭ দিনের মধ্যে সহজ এক্সচেঞ্জ ও রিটার্ন।"
+                  : "• 7-Day Return Guarantee: Returns accepted if package is unopened and intact."}
+              </p>
             </div>
           )}
 
@@ -899,13 +931,13 @@ export function ProductDetailClient({
         <div className="space-y-5 pt-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <h3 className="text-base sm:text-lg font-black uppercase tracking-wider text-text">
-              You May Also Love
+              {language === "bn" ? "আপনার আরও পছন্দ হতে পারে" : "You May Also Love"}
             </h3>
             <Link
               href="/products"
               className="text-xs font-extrabold text-[#e91e63] hover:underline"
             >
-              View More &rarr;
+              {t("home", "viewAll")} &rarr;
             </Link>
           </div>
 
@@ -933,7 +965,7 @@ export function ProductDetailClient({
               <h4 className="text-xs font-black text-text truncate">{product.name}</h4>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-black text-pink-600">
-                  {formatPrice(effectivePrice)}
+                  {formatPriceBn(effectivePrice)}
                 </span>
                 {selectedVariant && (
                   <span className="text-[10px] font-bold text-gray-500 truncate">
@@ -959,7 +991,7 @@ export function ProductDetailClient({
                 size="sm"
                 className="rounded-xl h-10 px-4 bg-[#e91e63] hover:bg-[#d81b60] text-white text-xs font-black shadow-md active:scale-95"
               >
-                Buy Now
+                {t("product", "buyNow")}
               </Button>
             </div>
           </div>

@@ -13,8 +13,6 @@ import {
   Phone,
   ArrowRight,
   CheckCircle2,
-  Sparkles,
-  ShieldCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/shared/ui/button";
@@ -24,8 +22,10 @@ import { getHomepageConfig } from "@/features/marketing/homepage-actions";
 import { registerUserAccount } from "@/features/account/actions";
 import { type HomepageFullConfig, DEFAULT_HOMEPAGE_CONFIG } from "@/features/marketing/homepage-types";
 import { trackCompleteRegistration } from "@/lib/analytics/datalayer";
+import { useLanguage } from "@/context/language-context";
 
 function RegisterForm() {
+  const { language, t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/account";
@@ -63,19 +63,18 @@ function RegisterForm() {
     setNeedsVerification(false);
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
+      setError(language === "bn" ? "পাসওয়ার্ড দুটি মেলেনি।" : "Passwords do not match.");
       return;
     }
 
     if (formData.password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError(language === "bn" ? "পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে।" : "Password must be at least 8 characters.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1. Create account via robust server action (bypasses public SMTP email rate limit & syncs profile)
       const res = await registerUserAccount({
         email: formData.email.trim(),
         password: formData.password,
@@ -91,7 +90,6 @@ function RegisterForm() {
 
       trackCompleteRegistration("email", "success");
 
-      // 2. Establish active client session immediately
       const supabase = createClient();
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email.trim(),
@@ -99,27 +97,42 @@ function RegisterForm() {
       });
 
       if (signInError) {
-        // In case immediate sign-in needs manual step
-        setSuccessMsg("Account created successfully! Please sign in with your credentials.");
+        setSuccessMsg(
+          language === "bn"
+            ? "অ্যাকাউন্ট তৈরি হয়েছে! অনুগ্রহ করে আপনার পাসওয়ার্ড দিয়ে লগইন করুন।"
+            : "Account created successfully! Please sign in with your credentials."
+        );
         setNeedsVerification(true);
         setLoading(false);
         return;
       }
 
       if (signInData?.session) {
-        setSuccessMsg("Account created and logged in! Redirecting to your account...");
+        setSuccessMsg(
+          language === "bn"
+            ? "অ্যাকাউন্ট তৈরি এবং লগইন সফল হয়েছে! অ্যাকাউন্টে নিয়ে যাওয়া হচ্ছে..."
+            : "Account created and logged in! Redirecting to your account..."
+        );
         setTimeout(() => {
           window.location.href = redirectTo;
         }, 1000);
         return;
       }
 
-      setSuccessMsg("Account created successfully! Redirecting...");
+      setSuccessMsg(
+        language === "bn"
+          ? "অ্যাকাউন্ট তৈরি সফল হয়েছে! রিডাইরেক্ট হচ্ছে..."
+          : "Account created successfully! Redirecting..."
+      );
       setTimeout(() => {
         window.location.href = redirectTo;
       }, 1000);
     } catch {
-      setError("An unexpected error occurred. Please try again.");
+      setError(
+        language === "bn"
+          ? "একটি অপ্রত্যাশিত সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।"
+          : "An unexpected error occurred. Please try again."
+      );
       setLoading(false);
     }
   };
@@ -131,7 +144,7 @@ function RegisterForm() {
         <div className="text-center space-y-3">
           <Link href="/" className="inline-flex items-center justify-center">
             {logoImg ? (
-                <img
+              <img
                 src={logoImg}
                 alt={brandName}
                 className="h-9 sm:h-10 max-h-10 w-auto max-w-45 object-contain"
@@ -143,9 +156,9 @@ function RegisterForm() {
             )}
           </Link>
           <div>
-            <h1 className="text-xl font-black text-gray-900">Create an Account</h1>
+            <h1 className="text-xl font-black text-gray-900">{t("auth", "signUpTitle")}</h1>
             <p className="text-xs text-gray-500 mt-1">
-              Join thousands of authentic skincare and beauty enthusiasts.
+              {t("auth", "signUpSubtitle")}
             </p>
           </div>
         </div>
@@ -161,9 +174,9 @@ function RegisterForm() {
               <div className="pt-2 border-t border-emerald-200/60 flex justify-end">
                 <Link
                   href={`/login?redirect=${encodeURIComponent(redirectTo)}`}
-                  className="inline-flex items-center gap-1 font-black text-sg-pink hover:underline"
+                  className="inline-flex items-center gap-1 font-black text-[#e91e63] hover:underline"
                 >
-                  Proceed to Sign In &rarr;
+                  {language === "bn" ? "লগইন পেজে যান →" : "Proceed to Sign In →"}
                 </Link>
               </div>
             )}
@@ -182,14 +195,14 @@ function RegisterForm() {
           <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="reg-name" className="text-xs font-bold text-gray-800">
-                Full Name
+                {language === "bn" ? "পূর্ণ নাম" : "Full Name"}
               </Label>
               <div className="relative">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="reg-name"
                   type="text"
-                  placeholder="Rahim Ahmed"
+                  placeholder={language === "bn" ? "যেমন: মোহাম্মদ রাহিম" : "Rahim Ahmed"}
                   value={formData.fullName}
                   onChange={(e) => updateField("fullName", e.target.value)}
                   required
@@ -201,7 +214,7 @@ function RegisterForm() {
 
             <div className="space-y-1.5">
               <Label htmlFor="reg-email" className="text-xs font-bold text-gray-800">
-                Email Address
+                {language === "bn" ? "ইমেইল অ্যাড্রেস" : "Email Address"}
               </Label>
               <div className="relative">
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -220,7 +233,7 @@ function RegisterForm() {
 
             <div className="space-y-1.5">
               <Label htmlFor="reg-phone" className="text-xs font-bold text-gray-800">
-                Phone Number
+                {language === "bn" ? "মোবাইল নম্বর" : "Phone Number"}
               </Label>
               <div className="relative">
                 <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -238,14 +251,14 @@ function RegisterForm() {
 
             <div className="space-y-1.5">
               <Label htmlFor="reg-password" className="text-xs font-bold text-gray-800">
-                Password (min. 8 characters)
+                {language === "bn" ? "পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)" : "Password (min. 8 characters)"}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="reg-password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a strong password"
+                  placeholder={language === "bn" ? "একটি নিরাপদ পাসওয়ার্ড দিন" : "Create a strong password"}
                   value={formData.password}
                   onChange={(e) => updateField("password", e.target.value)}
                   required
@@ -266,14 +279,14 @@ function RegisterForm() {
 
             <div className="space-y-1.5">
               <Label htmlFor="reg-confirm" className="text-xs font-bold text-gray-800">
-                Confirm Password
+                {language === "bn" ? "পাসওয়ার্ড নিশ্চিত করুন" : "Confirm Password"}
               </Label>
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   id="reg-confirm"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Repeat your password"
+                  placeholder={language === "bn" ? "পাসওয়ার্ড পুনরায় লিখুন" : "Repeat your password"}
                   value={formData.confirmPassword}
                   onChange={(e) => updateField("confirmPassword", e.target.value)}
                   required
@@ -287,19 +300,19 @@ function RegisterForm() {
               id="register-submit-btn"
               type="submit"
               disabled={loading || !!successMsg}
-              className="w-full h-11 rounded-xl bg-sg-pink hover:bg-sg-pink-hover text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
+              className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-pink-600 text-white font-extrabold text-sm shadow-md transition-all active:scale-95 mt-2"
             >
               {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating Your Account...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {language === "bn" ? "অ্যাকাউন্ট তৈরি হচ্ছে..." : "Creating Your Account..."}
                 </>
               ) : successMsg ? (
                 <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" /> Success!
+                  <CheckCircle2 className="mr-2 h-4 w-4" /> {language === "bn" ? "সফল হয়েছে!" : "Success!"}
                 </>
               ) : (
                 <>
-                  Create Account <ArrowRight className="h-4 w-4 ml-1.5" />
+                  {t("auth", "signUpBtn")} <ArrowRight className="h-4 w-4 ml-1.5" />
                 </>
               )}
             </Button>
@@ -308,12 +321,12 @@ function RegisterForm() {
 
         {/* Footer / Switch */}
         <div className="text-center pt-2 border-t border-gray-100 text-xs text-gray-500">
-          <span>Already have an account? </span>
+          <span>{t("auth", "haveAccount")} </span>
           <Link
             href={redirectTo !== "/account" ? `/login?redirect=${encodeURIComponent(redirectTo)}` : "/login"}
             className="font-bold text-[#e91e63] hover:underline"
           >
-            Sign In
+            {t("auth", "loginHere")}
           </Link>
         </div>
       </div>
@@ -328,4 +341,5 @@ export default function RegisterPage() {
     </Suspense>
   );
 }
+
 

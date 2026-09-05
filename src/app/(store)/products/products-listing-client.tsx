@@ -23,6 +23,7 @@ import { ProductCard, type ProductCardData } from "@/components/storefront/produ
 import { Button } from "@/components/shared/ui/button";
 import { cn } from "@/lib/utils";
 import { trackViewItemList } from "@/lib/analytics/datalayer";
+import { useLanguage } from "@/context/language-context";
 
 interface ProductsListingClientProps {
   products: ProductCardData[];
@@ -110,6 +111,7 @@ export function ProductsListingClient({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+  const { language, t, toBn, formatPriceBn } = useLanguage();
 
   // Track view_item_list event on product catalog load
   useEffect(() => {
@@ -204,6 +206,14 @@ export function ProductsListingClient({
     b.name.toLowerCase().includes(brandSearchTerm.toLowerCase())
   );
 
+  const pricePresets = [
+    { label: t("catalog", "allPrices"), min: null, max: null },
+    { label: language === "bn" ? "৫০০ টাকার নিচে" : "Under ৳500", min: null, max: "500" },
+    { label: language === "bn" ? "৳৫০০ - ৳১,০০০" : "৳500 - ৳1,000", min: "500", max: "1000" },
+    { label: language === "bn" ? "৳১,০০০ - ৳২,০০০" : "৳1,000 - ৳2,000", min: "1000", max: "2000" },
+    { label: language === "bn" ? "২,০০০ টাকার উপরে" : "Above ৳2,000", min: "2000", max: null },
+  ];
+
   // Filter content component reused in both desktop sidebar & mobile drawer
   const FilterContent = () => (
     <div className="space-y-6">
@@ -212,7 +222,7 @@ export function ProductsListingClient({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5 text-purple-600" /> Skin Concern
+              <Sparkles className="h-3.5 w-3.5 text-purple-600" /> {t("catalog", "skinConcern")}
             </span>
             {currentSkinConcern && (
               <button
@@ -220,7 +230,7 @@ export function ProductsListingClient({
                 onClick={() => updateParam("skin_concern", null)}
                 className="text-[10px] font-bold text-red-600 hover:underline"
               >
-                Reset
+                {t("catalog", "resetFilters")}
               </button>
             )}
           </div>
@@ -257,7 +267,7 @@ export function ProductsListingClient({
         <div className="space-y-3 pt-5 border-t border-gray-100">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
-              <Droplets className="h-3.5 w-3.5 text-pink-600" /> Skin Type
+              <Droplets className="h-3.5 w-3.5 text-pink-600" /> {t("catalog", "skinType")}
             </span>
             {currentSkinType && (
               <button
@@ -265,7 +275,7 @@ export function ProductsListingClient({
                 onClick={() => updateParam("skin_type", null)}
                 className="text-[10px] font-bold text-red-600 hover:underline"
               >
-                Reset
+                {t("catalog", "resetFilters")}
               </button>
             )}
           </div>
@@ -302,7 +312,7 @@ export function ProductsListingClient({
         <div className="space-y-3 pt-5 border-t border-gray-100">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
-              <Zap className="h-3.5 w-3.5 text-emerald-600" /> Key Actives
+              <Zap className="h-3.5 w-3.5 text-emerald-600" /> {t("catalog", "keyActives")}
             </span>
             {currentKeyActive && (
               <button
@@ -310,7 +320,7 @@ export function ProductsListingClient({
                 onClick={() => updateParam("key_actives", null)}
                 className="text-[10px] font-bold text-red-600 hover:underline"
               >
-                Reset
+                {t("catalog", "resetFilters")}
               </button>
             )}
           </div>
@@ -347,7 +357,7 @@ export function ProductsListingClient({
         <div className="space-y-3 pt-5 border-t border-gray-100">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
-              <Globe className="h-3.5 w-3.5 text-blue-600" /> Provenance / Origin
+              <Globe className="h-3.5 w-3.5 text-blue-600" /> {t("catalog", "origin")}
             </span>
             {currentOrigin && (
               <button
@@ -355,7 +365,7 @@ export function ProductsListingClient({
                 onClick={() => updateParam("origin", null)}
                 className="text-[10px] font-bold text-red-600 hover:underline"
               >
-                Reset
+                {t("catalog", "resetFilters")}
               </button>
             )}
           </div>
@@ -391,7 +401,7 @@ export function ProductsListingClient({
       <div className="space-y-3 pt-5 border-t border-gray-100">
         <div className="flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
-            <span className="text-[#e91e63]">৳</span> Filter by Price
+            <span className="text-[#e91e63]">৳</span> {t("catalog", "priceRange")}
           </span>
           {(currentMinPrice || currentMaxPrice) && (
             <button
@@ -399,14 +409,14 @@ export function ProductsListingClient({
               onClick={() => updatePriceRange(null, null)}
               className="text-[10px] font-bold text-red-600 hover:underline"
             >
-              Reset Price
+              {language === "bn" ? "প্রাইস রিসেট" : "Reset Price"}
             </button>
           )}
         </div>
 
         {/* Quick Price Preset Chips */}
         <div className="grid grid-cols-1 gap-1.5">
-          {PRICE_PRESETS.map((preset, idx) => {
+          {pricePresets.map((preset, idx) => {
             const isSelected =
               preset.min === (currentMinPrice || null) &&
               preset.max === (currentMaxPrice || null);
@@ -440,7 +450,7 @@ export function ProductsListingClient({
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">৳</span>
               <input
                 type="number"
-                placeholder="Min"
+                placeholder={language === "bn" ? "সর্বনিম্ন" : "Min"}
                 value={customMin}
                 onChange={(e) => setCustomMin(e.target.value)}
                 className="w-full rounded-xl border pl-6 pr-2 py-1.5 text-xs font-bold focus:outline-none"
@@ -451,7 +461,7 @@ export function ProductsListingClient({
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-gray-400">৳</span>
               <input
                 type="number"
-                placeholder="Max"
+                placeholder={language === "bn" ? "সর্বোচ্চ" : "Max"}
                 value={customMax}
                 onChange={(e) => setCustomMax(e.target.value)}
                 className="w-full rounded-xl border pl-6 pr-2 py-1.5 text-xs font-bold focus:outline-none"
@@ -462,7 +472,7 @@ export function ProductsListingClient({
             type="submit"
             className="w-full rounded-xl bg-gray-900 py-1.5 text-[11px] font-bold text-white hover:bg-[#e91e63] transition-colors"
           >
-            Apply Price Filter
+            {language === "bn" ? "প্রাইস ফিল্টার প্রয়োগ করুন" : "Apply Price Filter"}
           </button>
         </form>
       </div>
@@ -471,7 +481,7 @@ export function ProductsListingClient({
       <div className="space-y-3 pt-5 border-t border-gray-100">
         <div className="flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-wider text-gray-900">
-            Filter by Brand
+            {t("catalog", "brands")}
           </span>
           {currentBrand && (
             <button
@@ -479,7 +489,7 @@ export function ProductsListingClient({
               onClick={() => updateParam("brand", null)}
               className="text-[10px] font-bold text-red-600 hover:underline"
             >
-              Reset
+              {t("catalog", "resetFilters")}
             </button>
           )}
         </div>
@@ -489,7 +499,7 @@ export function ProductsListingClient({
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
           <input
             type="text"
-            placeholder="Search brands..."
+            placeholder={language === "bn" ? "ব্র্যান্ড খুঁজুন..." : "Search brands..."}
             value={brandSearchTerm}
             onChange={(e) => setBrandSearchTerm(e.target.value)}
             className="w-full rounded-lg border pl-7 pr-2 py-1 text-[11px] focus:outline-none"
@@ -510,7 +520,7 @@ export function ProductsListingClient({
                 : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             )}
           >
-            <span>All Brands</span>
+            <span>{language === "bn" ? "সকল ব্র্যান্ড" : "All Brands"}</span>
             {!currentBrand && <Check className="h-3.5 w-3.5 text-[#e91e63]" />}
           </button>
 
@@ -543,7 +553,7 @@ export function ProductsListingClient({
       <div className="space-y-3 pt-5 border-t border-gray-100">
         <div className="flex items-center justify-between">
           <span className="text-xs font-black uppercase tracking-wider text-gray-900">
-            Product Categories
+            {t("catalog", "categories")}
           </span>
           {currentCategory && (
             <button
@@ -551,7 +561,7 @@ export function ProductsListingClient({
               onClick={() => updateParam("category", null)}
               className="text-[10px] font-bold text-red-600 hover:underline"
             >
-              Reset
+              {t("catalog", "resetFilters")}
             </button>
           )}
         </div>
@@ -561,7 +571,7 @@ export function ProductsListingClient({
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
             <input
               type="text"
-              placeholder="Search categories..."
+              placeholder={language === "bn" ? "ক্যাটাগরি খুঁজুন..." : "Search categories..."}
               value={catSearchTerm}
               onChange={(e) => setCatSearchTerm(e.target.value)}
               className="w-full rounded-lg border pl-7 pr-2 py-1 text-[11px] focus:outline-none"
@@ -583,7 +593,7 @@ export function ProductsListingClient({
                 : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             )}
           >
-            <span>All Categories</span>
+            <span>{language === "bn" ? "সকল ক্যাটাগরি" : "All Categories"}</span>
             {!currentCategory && <Check className="h-3.5 w-3.5 text-[#e91e63]" />}
           </button>
 
@@ -626,7 +636,7 @@ export function ProductsListingClient({
           className="flex-1 rounded-xl text-xs font-extrabold border-gray-200 hover:bg-pink-50 hover:text-[#e91e63] hover:border-pink-200"
         >
           <Filter className="h-3.5 w-3.5 mr-1.5 text-[#e91e63]" />
-          Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          {t("catalog", "filterBy")} {activeFiltersCount > 0 && `(${toBn(activeFiltersCount)})`}
         </Button>
 
         <div className="relative flex-1">
@@ -635,9 +645,9 @@ export function ProductsListingClient({
             onChange={(e) => handleSortChange(e.target.value)}
             className="w-full appearance-none rounded-xl border border-gray-200 bg-white py-2 pl-3 pr-8 text-xs font-bold text-gray-800 shadow-2xs focus:outline-none"
           >
-            <option value="default">Sort: Newest</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
+            <option value="default">{t("catalog", "sortDefault")}</option>
+            <option value="price_asc">{t("catalog", "sortPriceAsc")}</option>
+            <option value="price_desc">{t("catalog", "sortPriceDesc")}</option>
           </select>
           <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
         </div>
@@ -649,7 +659,7 @@ export function ProductsListingClient({
         <aside className="hidden lg:block lg:col-span-1 rounded-3xl border border-gray-200 bg-white p-6 shadow-xs sticky top-24 max-h-[85vh] overflow-y-auto no-scrollbar">
           <div className="flex items-center justify-between pb-4 border-b border-gray-100">
             <h3 className="font-black text-sm uppercase tracking-wider text-gray-900 flex items-center gap-2">
-              <SlidersHorizontal className="h-4 w-4 text-[#e91e63]" /> Filter Catalog
+              <SlidersHorizontal className="h-4 w-4 text-[#e91e63]" /> {t("catalog", "filterBy")}
             </h3>
             {activeFiltersCount > 0 && (
               <button
@@ -657,7 +667,7 @@ export function ProductsListingClient({
                 onClick={clearAllFilters}
                 className="text-[11px] font-bold text-[#e91e63] hover:underline"
               >
-                Clear all ({activeFiltersCount})
+                {t("catalog", "resetFilters")} ({toBn(activeFiltersCount)})
               </button>
             )}
           </div>
@@ -672,20 +682,24 @@ export function ProductsListingClient({
           {/* Desktop Sort Header & Active Filter Chips */}
           <div className="hidden lg:flex items-center justify-between pb-2">
             <div className="text-xs font-bold text-gray-500">
-              Showing <span className="font-extrabold text-gray-900">{products.length}</span> authentic products
+              {language === "bn" ? (
+                <>মোট <span className="font-extrabold text-gray-900">{toBn(products.length)}</span> টি প্রোডাক্ট পাওয়া গেছে</>
+              ) : (
+                <>Showing <span className="font-extrabold text-gray-900">{products.length}</span> authentic products</>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-500">Sort by:</span>
+              <span className="text-xs font-bold text-gray-500">{t("catalog", "sortBy")}:</span>
               <div className="relative">
                 <select
                   value={currentSort || "default"}
                   onChange={(e) => handleSortChange(e.target.value)}
                   className="appearance-none rounded-xl border border-gray-200 bg-white py-1.5 pl-3 pr-8 text-xs font-extrabold text-gray-800 shadow-2xs focus:outline-none cursor-pointer"
                 >
-                  <option value="default">Featured / Newest</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
+                  <option value="default">{t("catalog", "sortDefault")}</option>
+                  <option value="price_asc">{t("catalog", "sortPriceAsc")}</option>
+                  <option value="price_desc">{t("catalog", "sortPriceDesc")}</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
               </div>
@@ -695,10 +709,12 @@ export function ProductsListingClient({
           {/* Active Filter Chips Bar */}
           {activeFiltersCount > 0 && (
             <div className="flex flex-wrap items-center gap-2 bg-pink-50/50 border border-pink-100 p-2.5 rounded-2xl">
-              <span className="text-[11px] font-bold text-pink-950">Active Filters:</span>
+              <span className="text-[11px] font-bold text-pink-950">
+                {language === "bn" ? "সক্রিয় ফিল্টারসমূহ:" : "Active Filters:"}
+              </span>
               {currentCategory && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-2.5 py-0.5 text-xs font-bold text-pink-700 shadow-2xs">
-                  Category: {categories.find((c) => c.slug === currentCategory)?.name || currentCategory}
+                  {t("catalog", "categories")}: {categories.find((c) => c.slug === currentCategory)?.name || currentCategory}
                   <button onClick={() => updateParam("category", null)} className="hover:text-red-500">
                     <X className="h-3 w-3" />
                   </button>
@@ -706,7 +722,7 @@ export function ProductsListingClient({
               )}
               {currentBrand && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-2.5 py-0.5 text-xs font-bold text-pink-700 shadow-2xs">
-                  Brand: {brands.find((b) => b.slug === currentBrand)?.name || currentBrand}
+                  {t("catalog", "brands")}: {brands.find((b) => b.slug === currentBrand)?.name || currentBrand}
                   <button onClick={() => updateParam("brand", null)} className="hover:text-red-500">
                     <X className="h-3 w-3" />
                   </button>
@@ -714,7 +730,7 @@ export function ProductsListingClient({
               )}
               {currentSkinConcern && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white border border-purple-200 px-2.5 py-0.5 text-xs font-bold text-purple-700 shadow-2xs">
-                  Concern: {currentSkinConcern}
+                  {t("catalog", "skinConcern")}: {currentSkinConcern}
                   <button onClick={() => updateParam("skin_concern", null)} className="hover:text-red-500">
                     <X className="h-3 w-3" />
                   </button>
@@ -722,7 +738,7 @@ export function ProductsListingClient({
               )}
               {currentSkinType && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-2.5 py-0.5 text-xs font-bold text-pink-700 shadow-2xs">
-                  Skin: {currentSkinType}
+                  {t("catalog", "skinType")}: {currentSkinType}
                   <button onClick={() => updateParam("skin_type", null)} className="hover:text-red-500">
                     <X className="h-3 w-3" />
                   </button>
@@ -730,7 +746,7 @@ export function ProductsListingClient({
               )}
               {currentKeyActive && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white border border-emerald-200 px-2.5 py-0.5 text-xs font-bold text-emerald-700 shadow-2xs">
-                  Active: {currentKeyActive}
+                  {t("catalog", "keyActives")}: {currentKeyActive}
                   <button onClick={() => updateParam("key_actives", null)} className="hover:text-red-500">
                     <X className="h-3 w-3" />
                   </button>
@@ -738,7 +754,7 @@ export function ProductsListingClient({
               )}
               {currentOrigin && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white border border-blue-200 px-2.5 py-0.5 text-xs font-bold text-blue-700 shadow-2xs">
-                  Origin: {currentOrigin}
+                  {t("catalog", "origin")}: {currentOrigin}
                   <button onClick={() => updateParam("origin", null)} className="hover:text-red-500">
                     <X className="h-3 w-3" />
                   </button>
@@ -746,7 +762,7 @@ export function ProductsListingClient({
               )}
               {(currentMinPrice || currentMaxPrice) && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-white border border-pink-200 px-2.5 py-0.5 text-xs font-bold text-pink-700 shadow-2xs">
-                  Price: ৳{currentMinPrice || "0"} – ৳{currentMaxPrice || "Any"}
+                  {t("catalog", "priceRange")}: {currentMinPrice ? formatPriceBn(Number(currentMinPrice)) : (language === "bn" ? "যেকোনো" : "0")} – {currentMaxPrice ? formatPriceBn(Number(currentMaxPrice)) : (language === "bn" ? "সর্বোচ্চ" : "Any")}
                   <button onClick={() => updatePriceRange(null, null)} className="hover:text-red-500">
                     <X className="h-3 w-3" />
                   </button>
@@ -757,7 +773,7 @@ export function ProductsListingClient({
                 onClick={clearAllFilters}
                 className="text-[11px] font-extrabold text-red-600 hover:underline ml-auto"
               >
-                Clear all
+                {t("catalog", "resetFilters")}
               </button>
             </div>
           )}
@@ -769,16 +785,16 @@ export function ProductsListingClient({
                 <ShoppingBag className="h-8 w-8 stroke-1" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-base font-black text-gray-900">No matching products found</h3>
+                <h3 className="text-base font-black text-gray-900">{t("catalog", "noProductsFound")}</h3>
                 <p className="text-xs text-gray-500 max-w-sm">
-                  We couldn&apos;t find any items matching your selected filters. Try clearing some filters or searching for another term.
+                  {t("catalog", "noProductsDesc")}
                 </p>
               </div>
               <Button
                 onClick={clearAllFilters}
                 className="rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-xs"
               >
-                Reset All Filters
+                {t("catalog", "resetFilters")}
               </Button>
             </div>
           ) : (
@@ -806,7 +822,7 @@ export function ProductsListingClient({
               <div className="flex items-center gap-2">
                 <SlidersHorizontal className="h-4 w-4 text-[#e91e63]" />
                 <h3 className="font-black text-sm uppercase tracking-wider text-gray-900">
-                  Filter Products
+                  {t("catalog", "filterBy")}
                 </h3>
               </div>
               <button
@@ -827,7 +843,9 @@ export function ProductsListingClient({
                 onClick={() => setMobileFilterOpen(false)}
                 className="w-full rounded-xl bg-[#e91e63] hover:bg-[#d81b60] text-white font-extrabold text-xs"
               >
-                View {products.length} Results
+                {language === "bn"
+                  ? `${toBn(products.length)} টি প্রোডাক্ট দেখুন`
+                  : `View ${products.length} Results`}
               </Button>
               {activeFiltersCount > 0 && (
                 <Button
@@ -835,7 +853,7 @@ export function ProductsListingClient({
                   onClick={clearAllFilters}
                   className="w-full text-xs font-bold text-gray-500 hover:text-red-600"
                 >
-                  Clear All Filters
+                  {t("catalog", "resetFilters")}
                 </Button>
               )}
             </div>
