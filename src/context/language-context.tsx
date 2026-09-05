@@ -8,10 +8,25 @@ import {
 } from "@/lib/i18n/translations";
 import { formatPrice } from "@/lib/utils";
 
+export interface LocalizationConfig {
+  default_language: "bn" | "en";
+  enable_language_switcher: boolean;
+  show_homepage_language_bar: boolean;
+}
+
+export const DEFAULT_LOCALIZATION_CONFIG: LocalizationConfig = {
+  default_language: "bn",
+  enable_language_switcher: true,
+  show_homepage_language_bar: true,
+};
+
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   toggleLanguage: () => void;
+  isSwitcherEnabled: boolean;
+  showHomepageBar: boolean;
+  defaultLanguage: Language;
   t: <N extends keyof (typeof translations)["bn"]>(
     namespace: N,
     key: keyof (typeof translations)["bn"][N]
@@ -22,41 +37,60 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  // Default to Bangla ('bn')
-  const [language, setLanguageState] = useState<Language>("bn");
+export function LanguageProvider({
+  children,
+  initialConfig,
+}: {
+  children: React.ReactNode;
+  initialConfig?: LocalizationConfig;
+}) {
+  const config = initialConfig || DEFAULT_LOCALIZATION_CONFIG;
+  const configuredDefault = config.default_language || "bn";
+
+  // If switcher is disabled by admin, strictly lock to admin's configured default language
+  const [language, setLanguageState] = useState<Language>(configuredDefault);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    if (!config.enable_language_switcher) {
+      setLanguageState(configuredDefault);
+      return;
+    }
+
     try {
       const saved = localStorage.getItem("ecom_lang") as Language | null;
       if (saved === "en" || saved === "bn") {
         setLanguageState(saved);
       } else {
-        // Explicitly set 'bn' as the default for new visitors
-        setLanguageState("bn");
-        localStorage.setItem("ecom_lang", "bn");
+        setLanguageState(configuredDefault);
+        localStorage.setItem("ecom_lang", configuredDefault);
       }
     } catch {
-      // Ignore localStorage errors (e.g. incognito)
+      // Ignore localStorage errors
     }
     setMounted(true);
-  }, []);
+  }, [config.enable_language_switcher, configuredDefault]);
 
+  // Synchronize document attributes and font classes for Hind Siliguri vs Inter
   useEffect(() => {
     if (typeof document !== "undefined") {
-      document.documentElement.lang = language === "bn" ? "bn" : "en";
+      const isBn = language === "bn";
+      document.documentElement.lang = isBn ? "bn" : "en";
+      document.documentElement.classList.toggle("lang-bn", isBn);
+      document.documentElement.classList.toggle("lang-en", !isBn);
     }
   }, [language]);
 
   const setLanguage = useCallback((lang: Language) => {
+    if (!config.enable_language_switcher) return; // Admin locked
     setLanguageState(lang);
     try {
       localStorage.setItem("ecom_lang", lang);
     } catch {}
-  }, []);
+  }, [config.enable_language_switcher]);
 
   const toggleLanguage = useCallback(() => {
+    if (!config.enable_language_switcher) return; // Admin locked
     setLanguageState((prev) => {
       const next = prev === "bn" ? "en" : "bn";
       try {
@@ -64,7 +98,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
       } catch {}
       return next;
     });
-  }, []);
+  }, [config.enable_language_switcher]);
 
   const t = useCallback(
     <N extends keyof (typeof translations)["bn"]>(
@@ -110,6 +144,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         language,
         setLanguage,
         toggleLanguage,
+        isSwitcherEnabled: config.enable_language_switcher,
+        showHomepageBar: config.show_homepage_language_bar,
+        defaultLanguage: configuredDefault,
         t,
         toBn,
         formatPriceBn,
@@ -128,6 +165,9 @@ export function useLanguage() {
       language: "bn" as Language,
       setLanguage: () => {},
       toggleLanguage: () => {},
+      isSwitcherEnabled: true,
+      showHomepageBar: true,
+      defaultLanguage: "bn" as Language,
       t: <N extends keyof (typeof translations)["bn"]>(
         namespace: N,
         key: keyof (typeof translations)["bn"][N]

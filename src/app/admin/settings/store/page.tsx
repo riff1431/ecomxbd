@@ -1,4 +1,4 @@
-import { getStoreSettings } from "@/features/settings/actions";
+import { getStoreSettings, getLocalizationSettings } from "@/features/settings/actions";
 import { StoreSettingsClient } from "./store-settings-client";
 
 export const metadata = {
@@ -6,6 +6,14 @@ export const metadata = {
 };
 
 export default async function AdminStoreSettingsPage() {
-  const settings = await getStoreSettings();
-  return <StoreSettingsClient initialSettings={settings} />;
+  const [settings, localizationSettings] = await Promise.all([
+    getStoreSettings(),
+    getLocalizationSettings(),
+  ]);
+  return (
+    <StoreSettingsClient
+      initialSettings={settings}
+      initialLocalizationSettings={localizationSettings}
+    />
+  );
 }

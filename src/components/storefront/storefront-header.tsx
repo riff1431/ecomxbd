@@ -71,7 +71,7 @@ export function StorefrontHeader() {
   const pathname = usePathname();
   const { wishlistCount } = useWishlist();
   const { itemCount, openCart } = useCart();
-  const { language, t } = useLanguage();
+  const { language, t, isSwitcherEnabled } = useLanguage();
   const [user, setUser] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -438,9 +438,11 @@ export function StorefrontHeader() {
                 {t("header", "announcementText")}
               </span>
             </div>
-            <div className="shrink-0 flex items-center gap-1.5">
-              <LanguageSwitcher variant="header-top" />
-            </div>
+            {isSwitcherEnabled && (
+              <div className="shrink-0 flex items-center gap-1.5">
+                <LanguageSwitcher variant="header-top" />
+              </div>
+            )}
           </div>
 
           {/* Desktop & Tablet View (>= 640px) */}
@@ -473,8 +475,12 @@ export function StorefrontHeader() {
             <span className="hidden sm:inline-flex text-emerald-400 font-semibold items-center gap-1">
               <ShieldCheck className="h-3.5 w-3.5" /> {t("header", "authenticGuarantee")}
             </span>
-            <span className="hidden sm:inline text-zinc-700">|</span>
-            <LanguageSwitcher variant="header-top" />
+            {isSwitcherEnabled && (
+              <>
+                <span className="hidden sm:inline text-zinc-700">|</span>
+                <LanguageSwitcher variant="header-top" />
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -941,9 +947,11 @@ export function StorefrontHeader() {
             </div>
 
             {/* Mobile Language Switcher */}
-            <div className="p-3 border-b border-gray-100 bg-white">
-              <LanguageSwitcher variant="mobile" />
-            </div>
+            {isSwitcherEnabled && (
+              <div className="p-3 border-b border-gray-100 bg-white">
+                <LanguageSwitcher variant="mobile" />
+              </div>
+            )}
 
               {/* Beauty Blog & Editorial Guide Link */}
               <div className="py-1">

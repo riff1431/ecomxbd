@@ -5,14 +5,17 @@ import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { StorefrontFooter } from "@/components/storefront/storefront-footer";
 import { MobileBottomNav } from "@/components/storefront/mobile-bottom-nav";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
+import { getLocalizationSettings } from "@/features/settings/actions";
 
-export default function StorefrontLayout({
+export default async function StorefrontLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const localizationSettings = await getLocalizationSettings();
+
   return (
-    <LanguageProvider>
+    <LanguageProvider initialConfig={localizationSettings}>
       <WishlistProvider>
         <CartProvider>
           <div className="flex min-h-screen flex-col bg-white">

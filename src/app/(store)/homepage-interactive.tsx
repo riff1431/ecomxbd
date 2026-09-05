@@ -31,7 +31,7 @@ export function HomepageInteractive({
   products,
   config = DEFAULT_HOMEPAGE_CONFIG,
 }: HomepageInteractiveProps) {
-  const { language, t } = useLanguage();
+  const { language, t, isSwitcherEnabled, showHomepageBar } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -182,17 +182,19 @@ export function HomepageInteractive({
       {/* ============================================================ */}
       {/* 1.5 HOMEPAGE QUICK LANGUAGE & AUTHENTICITY BAR */}
       {/* ============================================================ */}
-      <section className="container-main flex items-center justify-between gap-3 py-1 flex-wrap">
-        <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
-          <Sparkles className="h-4 w-4 text-[#e91e63] shrink-0" />
-          <span>
-            {language === "bn"
-              ? "১০০% খাঁটি ও অথেনটিক প্রসাধনী — সারা দেশে দ্রুত ডেলিভারি"
-              : "100% Genuine & Authentic Beauty Products — Fast Nationwide Delivery"}
-          </span>
-        </div>
-        <LanguageSwitcher variant="homepage-pill" />
-      </section>
+      {isSwitcherEnabled && showHomepageBar && (
+        <section className="container-main flex items-center justify-between gap-3 py-1 flex-wrap">
+          <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
+            <Sparkles className="h-4 w-4 text-[#e91e63] shrink-0" />
+            <span>
+              {language === "bn"
+                ? "১০০% খাঁটি ও অথেনটিক প্রসাধনী — সারা দেশে দ্রুত ডেলিভারি"
+                : "100% Genuine & Authentic Beauty Products — Fast Nationwide Delivery"}
+            </span>
+          </div>
+          <LanguageSwitcher variant="homepage-pill" />
+        </section>
+      )}
 
       {/* ============================================================ */}
       {/* 2. POND'S MIRACLE ME SLIM STRIP BANNER */}

@@ -144,3 +144,36 @@ export async function saveInvoiceSettings(settings: Partial<InvoiceSettings>) {
   revalidatePath("/orders");
   return { success: true };
 }
+
+// Storefront Localization & Language Settings
+export interface LocalizationSettings {
+  default_language: "bn" | "en";
+  enable_language_switcher: boolean;
+  show_homepage_language_bar: boolean;
+}
+
+const DEFAULT_LOCALIZATION_SETTINGS: LocalizationSettings = {
+  default_language: "bn",
+  enable_language_switcher: true,
+  show_homepage_language_bar: true,
+};
+
+export async function getLocalizationSettings(): Promise<LocalizationSettings> {
+  try {
+    const settings = await getSettingsByGroup("localization");
+    return {
+      default_language: settings.default_language === "en" ? "en" : "bn",
+      enable_language_switcher: settings.enable_language_switcher !== false,
+      show_homepage_language_bar: settings.show_homepage_language_bar !== false,
+    };
+  } catch {
+    return DEFAULT_LOCALIZATION_SETTINGS;
+  }
+}
+
+export async function saveLocalizationSettings(settings: Partial<LocalizationSettings>) {
+  await updateGroupSettings("localization", settings);
+  revalidatePath("/", "layout");
+  revalidatePath("/admin/settings/store");
+  return { success: true };
+}

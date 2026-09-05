@@ -64,7 +64,8 @@
   --color-admin-sidebar-text-active: #ffffff;
 
   /* --- Typography --- */
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-sans: var(--font-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  --font-bengali: var(--font-bengali), "Hind Siliguri", -apple-system, sans-serif;
 
   /* --- Radius Scale --- */
   --radius-xs: 0.25rem;
@@ -94,6 +95,22 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   max-width: 100vw;
+}
+
+/* Authentic Bengali Typography: Applies Hind Siliguri exclusively when Bangla is active */
+html[lang="bn"],
+html.lang-bn,
+html[lang="bn"] body,
+html.lang-bn body {
+  font-family: var(--font-bengali), var(--font-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* English Typography: Strictly Inter / Standard Sans (Never Hind Siliguri) */
+html[lang="en"],
+html.lang-en,
+html[lang="en"] body,
+html.lang-en body {
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 /* Mobile tap target defaults & Active touch bounce */

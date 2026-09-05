@@ -13,7 +13,12 @@ export function LanguageSwitcher({
   variant = "header-top",
   className,
 }: LanguageSwitcherProps) {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, isSwitcherEnabled } = useLanguage();
+
+  // If language switcher is disabled by admin, hide completely
+  if (!isSwitcherEnabled) {
+    return null;
+  }
 
   if (variant === "header-top") {
     return (
