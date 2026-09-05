@@ -9,6 +9,7 @@ import { useWishlist } from "@/context/wishlist-context";
 import { useCart } from "@/context/cart-context";
 import { triggerMicroRipple } from "@/lib/ui-effects";
 import { QuickViewModal } from "./quick-view-modal";
+import { useLanguage } from "@/context/language-context";
 import { type ProductCardConfig } from "@/features/marketing/homepage-types";
 import {
   trackAddToCart as trackGA4AddToCart,
@@ -41,6 +42,7 @@ export function ProductCard({
   cardSettings?: ProductCardConfig;
 }) {
   const router = useRouter();
+  const { language, toBn, formatPriceBn } = useLanguage();
   const [showQuickView, setShowQuickView] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const [imgSrc, setImgSrc] = useState(product.image_url || "/product_placeholder.svg");
@@ -202,7 +204,7 @@ export function ProductCard({
             className="pointer-events-none"
           >
             <span className="rounded-md bg-[#e91e63] px-2 py-0.5 text-[10px] font-black text-white shadow-xs tracking-wider">
-              {discountPercent}% OFF
+              {toBn(discountPercent)}% {language === "bn" ? "ছাড়" : "OFF"}
             </span>
           </div>
         )}
@@ -249,7 +251,7 @@ export function ProductCard({
             className="bg-[#e91e63] py-1 text-center shadow-xs pointer-events-none"
           >
             <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-white">
-              {cardSettings?.freeShippingText || "FREE SHIPPING"}
+              {language === "bn" ? "ফ্রি ডেলিভারি" : (cardSettings?.freeShippingText || "FREE SHIPPING")}
             </span>
           </div>
         )}
@@ -286,7 +288,7 @@ export function ProductCard({
                 <Star className="h-3 w-3 fill-current text-amber-200" />
               </div>
               <span className="text-[10px] text-gray-500 font-semibold">
-                ({product.rating ? product.rating.toFixed(1) : "4.3"})
+                ({toBn(product.rating ? product.rating.toFixed(1) : "4.3")})
               </span>
             </div>
           ) : <div />}
@@ -302,11 +304,11 @@ export function ProductCard({
         {/* Pricing Row */}
         <div className="flex items-baseline gap-2 pt-0.5">
           <span className="text-sm sm:text-base font-black text-[#e91e63]">
-            {formatPrice(product.sale_price ?? product.regular_price)}
+            {formatPriceBn(product.sale_price ?? product.regular_price)}
           </span>
           {product.sale_price && product.sale_price < product.regular_price && (
             <span className="text-[11px] sm:text-xs text-gray-400 line-through font-medium">
-              {formatPrice(product.regular_price)}
+              {formatPriceBn(product.regular_price)}
             </span>
           )}
         </div>
@@ -332,14 +334,14 @@ export function ProductCard({
               {justAdded ? (
                 <>
                   <Check className="h-3 w-3 stroke-3 animate-in zoom-in-50" />
-                  <span>ADDED!</span>
+                  <span>{language === "bn" ? "যোগ হয়েছে!" : "ADDED!"}</span>
                 </>
               ) : product.is_in_stock === false ? (
-                <span>OUT OF STOCK</span>
+                <span>{language === "bn" ? "স্টক শেষ" : "OUT OF STOCK"}</span>
               ) : (
                 <>
                   <ShoppingBag className="h-3 w-3" />
-                  <span>{cardSettings?.addToCartText || "ADD TO CART"}</span>
+                  <span>{language === "bn" ? "কার্ট-এ যোগ করুন" : (cardSettings?.addToCartText || "ADD TO CART")}</span>
                 </>
               )}
             </button>
@@ -358,7 +360,7 @@ export function ProductCard({
               )}
             >
               <Zap className="h-3 w-3 fill-current text-amber-400" />
-              <span>{cardSettings?.orderNowText || "ORDER NOW"}</span>
+              <span>{language === "bn" ? "এখনই অর্ডার" : (cardSettings?.orderNowText || "ORDER NOW")}</span>
             </button>
           </div>
         </div>

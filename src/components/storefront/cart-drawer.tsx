@@ -16,6 +16,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useCart, CartItem } from "@/context/cart-context";
+import { useLanguage } from "@/context/language-context";
 import { formatPrice, cn } from "@/lib/utils";
 import { Button } from "@/components/shared/ui/button";
 import {
@@ -27,6 +28,7 @@ import {
 const FREE_SHIPPING_THRESHOLD = 2000;
 
 export function CartDrawer() {
+  const { language, toBn, formatPriceBn, t } = useLanguage();
   const {
     items,
     itemCount,
@@ -123,12 +125,14 @@ export function CartDrawer() {
         <div className="bg-sg-black rounded-tl-xl flex flex-col text-center px-2 pt-2.5 pb-1.5 items-center w-full min-w-17.5">
           <ShoppingBag className="h-5 w-5 text-white stroke-2" />
           <div className="flex flex-col text-xs font-bold items-center leading-none mt-1">
-            <span>{itemCount}</span>
-            <span className="text-[10px] text-zinc-400 uppercase tracking-wider mt-0.5">ITEMS</span>
+            <span>{toBn(itemCount)}</span>
+            <span className="text-[10px] text-zinc-400 uppercase tracking-wider mt-0.5">
+              {language === "bn" ? "টি আইটেম" : "ITEMS"}
+            </span>
           </div>
         </div>
         <div className="bg-[#e91e63] rounded-bl-xl text-center text-xs font-black px-1.5 py-1.5 w-full">
-          <span>{formatPrice(subtotal)}</span>
+          <span>{formatPriceBn(subtotal)}</span>
         </div>
       </button>
 
@@ -154,7 +158,9 @@ export function CartDrawer() {
                 >
                   <X className="h-5 w-5 stroke-2" />
                 </button>
-                <h2 className="text-base font-bold text-gray-900">Your Shopping Bag</h2>
+                <h2 className="text-base font-bold text-gray-900">
+                  {language === "bn" ? "আপনার কার্ট" : "Your Shopping Bag"}
+                </h2>
                 <div className="w-5" /> {/* balance spacing */}
               </div>
 
@@ -165,12 +171,24 @@ export function CartDrawer() {
                     <Truck className="h-4 w-4 text-[#e91e63]" />
                     {amountNeeded > 0 ? (
                       <span>
-                        Add <strong className="text-[#e91e63]">{formatPrice(amountNeeded)}</strong> more for <strong>FREE Delivery</strong>!
+                        {language === "bn" ? (
+                          <>
+                            ফ্রি ডেলিভারির জন্য আরও <strong className="text-[#e91e63]">{formatPriceBn(amountNeeded)}</strong> যোগ করুন!
+                          </>
+                        ) : (
+                          <>
+                            Add <strong className="text-[#e91e63]">{formatPrice(amountNeeded)}</strong> more for <strong>FREE Delivery</strong>!
+                          </>
+                        )}
                       </span>
                     ) : (
                       <span className="text-emerald-700 flex items-center gap-1">
                         <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        You unlocked <strong>FREE Delivery</strong> nationwide!
+                        {language === "bn" ? (
+                          <>অভিনন্দন! আপনি সারা দেশে <strong>ফ্রি ডেলিভারি</strong> পেয়েছেন!</>
+                        ) : (
+                          <>You unlocked <strong>FREE Delivery</strong> nationwide!</>
+                        )}
                       </span>
                     )}
                   </div>
@@ -191,10 +209,12 @@ export function CartDrawer() {
                     <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gray-100 mx-auto text-gray-400">
                       <ShoppingBag className="h-10 w-10 stroke-1" />
                     </div>
-                    <p className="text-sm font-semibold text-gray-500">Your Shopping Bag is Empty</p>
+                    <p className="text-sm font-semibold text-gray-500">
+                      {language === "bn" ? "আপনার কার্ট খালি" : "Your Shopping Bag is Empty"}
+                    </p>
                     <Link href="/products" onClick={closeCart} className="inline-block mt-2">
                       <Button className="px-8 py-2.5 bg-black text-white rounded-xl text-xs font-bold tracking-widest hover:bg-[#e91e63] transition-colors uppercase">
-                        START SHOPPING
+                        {language === "bn" ? "কেনাকাটা শুরু করুন" : "START SHOPPING"}
                       </Button>
                     </Link>
                   </div>
@@ -227,7 +247,7 @@ export function CartDrawer() {
                           )}
                           <p className="line-clamp-1 text-xs font-bold text-gray-900">{item.name}</p>
                           <p className="text-xs font-black text-gray-900 mt-0.5">
-                            {formatPrice(item.price)}
+                            {formatPriceBn(item.price)}
                           </p>
                         </div>
 
@@ -241,7 +261,7 @@ export function CartDrawer() {
                               <Minus className="h-3 w-3" />
                             </button>
                             <span className="w-6 text-center text-xs font-bold text-gray-900">
-                              {item.quantity}
+                              {toBn(item.quantity)}
                             </span>
                             <button
                               onClick={() => updateQuantity(item.id, item.quantity + 1)}
@@ -274,11 +294,11 @@ export function CartDrawer() {
                       type="text"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                      placeholder="Coupon Code"
+                      placeholder={language === "bn" ? "কুপন কোড" : "Coupon Code"}
                       className="flex-1 rounded-xl border px-3 py-1.5 text-xs uppercase font-mono focus:outline-none"
                     />
                     <Button type="submit" size="sm" disabled={isApplying} className="rounded-xl text-xs font-bold bg-black text-white hover:bg-[#e91e63]">
-                      Apply
+                      {language === "bn" ? "প্রয়োগ" : "Apply"}
                     </Button>
                   </form>
 
@@ -291,24 +311,24 @@ export function CartDrawer() {
                   {/* Pricing Breakdown */}
                   <div className="space-y-1.5 text-xs text-gray-700">
                     <div className="flex justify-between">
-                      <span>Subtotal</span>
-                      <span className="font-bold text-gray-900">{formatPrice(subtotal)}</span>
+                      <span>{language === "bn" ? "সাবটোটাল" : "Subtotal"}</span>
+                      <span className="font-bold text-gray-900">{formatPriceBn(subtotal)}</span>
                     </div>
                     {discount > 0 && (
                       <div className="flex justify-between text-emerald-700 font-bold">
-                        <span>Discount</span>
-                        <span>-{formatPrice(discount)}</span>
+                        <span>{language === "bn" ? "ছাড়" : "Discount"}</span>
+                        <span>-{formatPriceBn(discount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between border-t border-gray-200 pt-2 text-sm font-black text-gray-900">
-                      <span>Total</span>
-                      <span className="text-base text-[#e91e63]">{formatPrice(total)}</span>
+                      <span>{language === "bn" ? "সর্বমোট" : "Total"}</span>
+                      <span className="text-base text-[#e91e63]">{formatPriceBn(total)}</span>
                     </div>
                   </div>
 
                   <Link href="/checkout" onClick={handleProceedToCheckout} className="block">
                     <Button className="w-full h-11 rounded-xl bg-[#e91e63] hover:bg-sg-pink-hover text-white font-extrabold text-sm shadow-md transition-all active:scale-95">
-                      <span>PROCEED TO CHECKOUT</span>
+                      <span>{language === "bn" ? "অর্ডার কনফার্ম করুন" : "PROCEED TO CHECKOUT"}</span>
                       <ArrowRight className="h-4 w-4 ml-1.5" />
                     </Button>
                   </Link>

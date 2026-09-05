@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { useWishlist } from "@/context/wishlist-context";
+import { useLanguage } from "@/context/language-context";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -19,7 +20,7 @@ interface NavItem {
   href?: string;
   icon: React.ComponentType<{ className?: string }>;
   isActive: boolean;
-  badge?: number;
+  badge?: number | string;
   action?: () => void;
   external?: boolean;
 }
@@ -28,39 +29,40 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const { itemCount, openCart } = useCart();
   const { wishlistCount } = useWishlist();
+  const { t, toBn } = useLanguage();
 
   // Don't show in admin dashboard or checkout
   if (pathname.startsWith("/admin") || pathname.startsWith("/checkout")) return null;
 
   const navItems: NavItem[] = [
     {
-      label: "HOME",
+      label: t("mobileNav", "home"),
       href: "/",
       icon: Home,
       isActive: pathname === "/",
     },
     {
-      label: "CATEGORIES",
+      label: t("mobileNav", "categories"),
       href: "/products",
       icon: LayoutGrid,
       isActive: pathname === "/categories" || pathname.startsWith("/products"),
     },
     {
-      label: "WISHLIST",
+      label: t("mobileNav", "wishlist"),
       href: "/account/wishlist",
       icon: Heart,
-      badge: wishlistCount,
+      badge: wishlistCount > 0 ? toBn(wishlistCount) : undefined,
       isActive: pathname === "/account/wishlist",
     },
     {
-      label: "CART",
+      label: t("mobileNav", "cart"),
       action: openCart,
       icon: ShoppingBag,
-      badge: itemCount,
+      badge: itemCount > 0 ? toBn(itemCount) : undefined,
       isActive: false,
     },
     {
-      label: "ACCOUNT",
+      label: t("mobileNav", "account"),
       href: "/account",
       icon: User,
       isActive: pathname.startsWith("/account") && pathname !== "/account/wishlist",
@@ -85,7 +87,7 @@ export function MobileBottomNav() {
                     item.isActive ? "text-[#e91e63] stroke-[2.4]" : "text-gray-600 stroke-[1.8]"
                   )}
                 />
-                {item.badge !== undefined && item.badge > 0 && (
+                {item.badge !== undefined && item.badge !== "" && item.badge !== 0 && (
                   <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#e91e63] px-1 text-[9px] font-black text-white shadow-xs">
                     {item.badge}
                   </span>

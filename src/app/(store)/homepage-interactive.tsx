@@ -19,6 +19,8 @@ import {
   type HomepageFullConfig,
   DEFAULT_HOMEPAGE_CONFIG,
 } from "@/features/marketing/homepage-types";
+import { useLanguage } from "@/context/language-context";
+import { LanguageSwitcher } from "@/components/storefront/language-switcher";
 
 interface HomepageInteractiveProps {
   products: ProductCardData[];
@@ -29,6 +31,7 @@ export function HomepageInteractive({
   products,
   config = DEFAULT_HOMEPAGE_CONFIG,
 }: HomepageInteractiveProps) {
+  const { language, t } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -177,6 +180,21 @@ export function HomepageInteractive({
       </section>
 
       {/* ============================================================ */}
+      {/* 1.5 HOMEPAGE QUICK LANGUAGE & AUTHENTICITY BAR */}
+      {/* ============================================================ */}
+      <section className="container-main flex items-center justify-between gap-3 py-1 flex-wrap">
+        <div className="flex items-center gap-2 text-xs font-bold text-gray-800">
+          <Sparkles className="h-4 w-4 text-[#e91e63] shrink-0" />
+          <span>
+            {language === "bn"
+              ? "১০০% খাঁটি ও অথেনটিক প্রসাধনী — সারা দেশে দ্রুত ডেলিভারি"
+              : "100% Genuine & Authentic Beauty Products — Fast Nationwide Delivery"}
+          </span>
+        </div>
+        <LanguageSwitcher variant="homepage-pill" />
+      </section>
+
+      {/* ============================================================ */}
       {/* 2. POND'S MIRACLE ME SLIM STRIP BANNER */}
       {/* ============================================================ */}
       <section className="container-main">
@@ -199,8 +217,11 @@ export function HomepageInteractive({
       <section className="container-main">
         <div className="text-center mb-3">
           <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
-            DEALS YOU CANNOT MISS
+            {language === "bn" ? t("home", "dealsTitle") : "DEALS YOU CANNOT MISS"}
           </h2>
+          {language === "bn" && (
+            <p className="text-[11px] text-gray-500 mt-0.5">{t("home", "dealsSubtitle")}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
@@ -227,8 +248,11 @@ export function HomepageInteractive({
       <section className="container-main space-y-3">
         <div className="text-center mb-3">
           <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
-            TOP BRANDS & OFFERS
+            {language === "bn" ? t("home", "topBrandsTitle") : "TOP BRANDS & OFFERS"}
           </h2>
+          {language === "bn" && (
+            <p className="text-[11px] text-gray-500 mt-0.5">{t("home", "topBrandsSubtitle")}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
@@ -255,8 +279,11 @@ export function HomepageInteractive({
       <section className="container-main">
         <div className="text-center mb-3">
           <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
-            LIMITED TIME OFFERS
+            {language === "bn" ? t("home", "limitedOffersTitle") : "LIMITED TIME OFFERS"}
           </h2>
+          {language === "bn" && (
+            <p className="text-[11px] text-gray-500 mt-0.5">{t("home", "limitedOffersSubtitle")}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
@@ -289,8 +316,11 @@ export function HomepageInteractive({
       <section className="container-main">
         <div className="text-center mb-3">
           <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
-            SHOP BEAUTY PRODUCTS BY CATEGORY
+            {language === "bn" ? t("home", "shopByCategoryTitle") : "SHOP BEAUTY PRODUCTS BY CATEGORY"}
           </h2>
+          {language === "bn" && (
+            <p className="text-[11px] text-gray-500 mt-0.5">{t("home", "shopByCategorySubtitle")}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
@@ -325,7 +355,7 @@ export function HomepageInteractive({
               {/* Bottom Subtle Pill */}
               <div className="relative z-10 pb-2.5 px-2 text-center w-full">
                 <span className="inline-block rounded-full bg-white/25 backdrop-blur-xs px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold text-white uppercase tracking-wider group-hover:bg-[#e91e63] group-hover:text-white transition-colors shadow-xs">
-                  SHOP NOW
+                  {language === "bn" ? "কিনুন" : "SHOP NOW"}
                 </span>
               </div>
             </Link>
@@ -364,15 +394,17 @@ export function HomepageInteractive({
         <div className="flex items-center justify-between border-b border-gray-200 pb-2">
           <div>
             <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-gray-900 font-sans">
-              {trendingTitle}
+              {language === "bn" ? t("home", "trendingTitle") : trendingTitle}
             </h2>
-            <p className="text-[11px] text-gray-500">{trendingSubtitle}</p>
+            <p className="text-[11px] text-gray-500">
+              {language === "bn" ? t("home", "trendingSubtitle") : trendingSubtitle}
+            </p>
           </div>
           <Link
             href="/products"
             className="text-xs font-bold text-[#e91e63] hover:underline flex items-center gap-1 group"
           >
-            <span>{trendingViewAllText}</span>
+            <span>{language === "bn" ? t("home", "trendingViewAll") : trendingViewAllText}</span>
           </Link>
         </div>
 
@@ -389,18 +421,28 @@ export function HomepageInteractive({
       {/* ============================================================ */}
       <section className="container-main">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-          {trustPillars.map((tp, idx) => (
-            <div
-              key={tp.id || idx}
-              className="flex items-center gap-2.5 rounded-2xl border border-gray-200 bg-white p-3 sm:p-4 shadow-xs transition-all duration-300 hover:shadow-sm hover:border-gray-300"
-            >
-              {renderTrustIcon(tp.iconName, tp.imageUrl)}
-              <div>
-                <h4 className="text-xs font-black text-gray-900">{tp.title}</h4>
-                <p className="text-[10px] text-gray-500">{tp.subtitle}</p>
+          {trustPillars.map((tp, idx) => {
+            const bnPillars = [
+              { title: t("home", "authenticProducts"), subtitle: t("home", "authenticDesc") },
+              { title: t("home", "fastDelivery"), subtitle: t("home", "fastDeliveryDesc") },
+              { title: t("home", "codAvailable"), subtitle: t("home", "codDesc") },
+              { title: t("home", "easyReturns"), subtitle: t("home", "easyReturnsDesc") },
+            ];
+            const title = language === "bn" && bnPillars[idx] ? bnPillars[idx].title : tp.title;
+            const subtitle = language === "bn" && bnPillars[idx] ? bnPillars[idx].subtitle : tp.subtitle;
+            return (
+              <div
+                key={tp.id || idx}
+                className="flex items-center gap-2.5 rounded-2xl border border-gray-200 bg-white p-3 sm:p-4 shadow-xs transition-all duration-300 hover:shadow-sm hover:border-gray-300"
+              >
+                {renderTrustIcon(tp.iconName, tp.imageUrl)}
+                <div>
+                  <h4 className="text-xs font-black text-gray-900">{title}</h4>
+                  <p className="text-[10px] text-gray-500">{subtitle}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </div>

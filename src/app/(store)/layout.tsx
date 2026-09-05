@@ -1,3 +1,4 @@
+import { LanguageProvider } from "@/context/language-context";
 import { WishlistProvider } from "@/context/wishlist-context";
 import { CartProvider } from "@/context/cart-context";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
@@ -11,16 +12,18 @@ export default function StorefrontLayout({
   children: React.ReactNode;
 }) {
   return (
-    <WishlistProvider>
-      <CartProvider>
-        <div className="flex min-h-screen flex-col bg-white">
-          <StorefrontHeader />
-          <main className="flex-1 pb-16 lg:pb-0">{children}</main>
-          <StorefrontFooter />
-          <MobileBottomNav />
-          <CartDrawer />
-        </div>
-      </CartProvider>
-    </WishlistProvider>
+    <LanguageProvider>
+      <WishlistProvider>
+        <CartProvider>
+          <div className="flex min-h-screen flex-col bg-white">
+            <StorefrontHeader />
+            <main className="flex-1 pb-16 lg:pb-0">{children}</main>
+            <StorefrontFooter />
+            <MobileBottomNav />
+            <CartDrawer />
+          </div>
+        </CartProvider>
+      </WishlistProvider>
+    </LanguageProvider>
   );
 }
