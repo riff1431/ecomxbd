@@ -187,35 +187,99 @@ export function HomepageFooterEditor({ config, onChange }: HomepageFooterEditorP
 
   return (
     <div className="space-y-6">
-      {/* 1. Value Props / Trust Pillars Strip Toggle */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-[#e91e63]" />
-              Trust Pillars & Guarantees Strip
-            </h2>
-            <span className="rounded-full bg-pink-100 text-pink-700 text-[10px] font-bold px-2 py-0.5">
-              Top Footer Strip
-            </span>
+      {/* 1. Value Props / Trust Pillars Strip Toggle & Direct Editor */}
+      <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-[#e91e63]" />
+                Trust Pillars & Guarantees Strip
+              </h2>
+              <span className="rounded-full bg-pink-100 text-pink-700 text-[10px] font-bold px-2 py-0.5">
+                Top Footer Strip
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Configure visibility, titles, subtitles, and icons for the 4 trust guarantees appearing at the top of the footer.
+            </p>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Displays the 4 high-contrast trust badges: 100% Authentic, Express 24-48h Delivery, 7-Day Free Replacement, and Cash on Delivery.
-          </p>
+
+          <label className="relative inline-flex items-center cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={footer.showTrustPillars !== false}
+              onChange={(e) => updateFooter("showTrustPillars", e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#e91e63]"></div>
+            <span className="ml-3 text-xs font-bold text-gray-800">
+              {footer.showTrustPillars !== false ? "Strip Active" : "Strip Hidden"}
+            </span>
+          </label>
         </div>
 
-        <label className="relative inline-flex items-center cursor-pointer shrink-0">
-          <input
-            type="checkbox"
-            checked={footer.showTrustPillars !== false}
-            onChange={(e) => updateFooter("showTrustPillars", e.target.checked)}
-            className="sr-only peer"
-          />
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#e91e63]"></div>
-          <span className="ml-3 text-xs font-bold text-gray-800">
-            {footer.showTrustPillars !== false ? "Strip Active" : "Strip Hidden"}
-          </span>
-        </label>
+        {/* 4 Pillars Card Fields */}
+        {footer.showTrustPillars !== false && (
+          <div className="pt-3 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            {(config.trustPillars || DEFAULT_HOMEPAGE_CONFIG.trustPillars).map((tp, idx) => (
+              <div key={tp.id || idx} className="rounded-xl border border-gray-200 bg-gray-50/70 p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-black uppercase text-[#e91e63]">
+                    Pillar #{idx + 1}: {tp.title}
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-gray-400">ID: {tp.id}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 mb-0.5">Title</label>
+                    <input
+                      type="text"
+                      value={tp.title}
+                      onChange={(e) => {
+                        const list = [...(config.trustPillars || DEFAULT_HOMEPAGE_CONFIG.trustPillars)];
+                        list[idx] = { ...list[idx], title: e.target.value };
+                        onChange({ ...config, trustPillars: list });
+                      }}
+                      className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-[#e91e63]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-700 mb-0.5">Subtitle</label>
+                    <input
+                      type="text"
+                      value={tp.subtitle}
+                      onChange={(e) => {
+                        const list = [...(config.trustPillars || DEFAULT_HOMEPAGE_CONFIG.trustPillars)];
+                        list[idx] = { ...list[idx], subtitle: e.target.value };
+                        onChange({ ...config, trustPillars: list });
+                      }}
+                      className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 focus:outline-none focus:border-[#e91e63]"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-gray-700 mb-0.5">Icon</label>
+                  <select
+                    value={tp.iconName || "shield"}
+                    onChange={(e) => {
+                      const list = [...(config.trustPillars || DEFAULT_HOMEPAGE_CONFIG.trustPillars)];
+                      list[idx] = { ...list[idx], iconName: e.target.value };
+                      onChange({ ...config, trustPillars: list });
+                    }}
+                    className="w-full rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#e91e63]"
+                  >
+                    <option value="shield">Shield (100% Authentic Guarantee)</option>
+                    <option value="truck">Truck (Express 24-48h Delivery)</option>
+                    <option value="rotate">Rotate (7-Day Replacement / Returns)</option>
+                    <option value="clock">Clock (24/7 Customer Service)</option>
+                    <option value="zap">Banknote / Zap (Cash on Delivery)</option>
+                  </select>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 2. Brand & Identity Settings */}
