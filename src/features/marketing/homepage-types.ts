@@ -115,6 +115,15 @@ export interface HomepageFaqSectionConfig {
   seoDescriptionHtml?: string;
   seoDescriptionHtmlBn?: string;
   faqs: HomepageFaqItem[];
+  // WhatsApp Banner Assistance Controls
+  showWhatsappCard?: boolean;
+  whatsappTitle?: string;
+  whatsappTitleBn?: string;
+  whatsappSubtitle?: string;
+  whatsappSubtitleBn?: string;
+  whatsappButtonText?: string;
+  whatsappButtonTextBn?: string;
+  whatsappNumber?: string;
 }
 
 export interface FooterLinkItem {
@@ -739,6 +748,16 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
           "শতভাগ নিরাপদ ও সার্টিফাইড। আমরা ক্ষতিকর ব্লিচিং এজেন্ট, বিষাক্ত কেমিক্যাল বা অনুমোদনহীন উপাদানযুক্ত কোনো পণ্য বিক্রি করি না। আমাদের প্রতিটি ব্র্যান্ড আন্তর্জাতিক কসমেটিক নিরাপত্তা মানদণ্ড (যেমন কোরিয়ান MFDS, ইউরোপীয় ইউনিয়ন ও ইউএস এফডিএ) মেনে প্রস্তুত, যা ত্বকের ক্ষতি না করে ভেতর থেকে প্রাকৃতিক সুস্থতা ও গ্লো বজায় রাখে।",
       },
     ],
+    showWhatsappCard: true,
+    whatsappTitle: "Need help choosing the right beauty products?",
+    whatsappTitleBn: "সঠিক প্রোডাক্ট নির্বাচনে সাহায্য প্রয়োজন?",
+    whatsappSubtitle:
+      "Chat directly with our certified beauty advisors on WhatsApp daily 10 AM to 10 PM.",
+    whatsappSubtitleBn:
+      "আমাদের বিউটি এক্সপার্টরা প্রতিদিন সকাল ১০টা থেকে রাত ১০টা পর্যন্ত হোয়াটসঅ্যাপে সক্রিয় আছেন।",
+    whatsappButtonText: "Chat on WhatsApp",
+    whatsappButtonTextBn: "হোয়াটসঅ্যাপে ফ্রি পরামর্শ নিন",
+    whatsappNumber: "+880 1700-000000",
   },
 
   // 10. Footer Comprehensive Configuration

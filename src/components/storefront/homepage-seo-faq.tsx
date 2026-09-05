@@ -348,36 +348,61 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
           })}
         </div>
 
-        {/* Need More Assistance Banner */}
-        <div className="mt-8 sm:mt-12 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white p-5 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-xl">
-          <div className="flex items-center gap-3.5 sm:gap-4 text-center sm:text-left">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-600 text-white shadow-xs">
-              <PhoneCall className="h-6 w-6" />
+        {/* Need More Assistance Banner (100% Admin Controllable) */}
+        {config?.showWhatsappCard !== false && (
+          <div className="mt-8 sm:mt-12 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white p-5 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-xl">
+            <div className="flex items-center gap-3.5 sm:gap-4 text-center sm:text-left">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-600 text-white shadow-xs">
+                <PhoneCall className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-base font-black">
+                  {language === "bn"
+                    ? config?.whatsappTitleBn || config?.whatsappTitle || "সঠিক প্রোডাক্ট নির্বাচনে সাহায্য প্রয়োজন?"
+                    : config?.whatsappTitle || "Need help choosing the right beauty products?"}
+                </p>
+                <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
+                  {language === "bn"
+                    ? config?.whatsappSubtitleBn ||
+                      config?.whatsappSubtitle ||
+                      "আমাদের বিউটি এক্সপার্টরা প্রতিদিন সকাল ১০টা থেকে রাত ১০টা পর্যন্ত হোয়াটসঅ্যাপে সক্রিয় আছেন।"
+                    : config?.whatsappSubtitle ||
+                      "Chat directly with our certified beauty advisors on WhatsApp daily 10 AM to 10 PM."}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm sm:text-base font-black">
-                {language === "bn"
-                  ? "সঠিক প্রোডাক্ট নির্বাচনে সাহায্য প্রয়োজন?"
-                  : "Need help choosing the right beauty products?"}
-              </p>
-              <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
-                {language === "bn"
-                  ? "আমাদের বিউটি এক্সপার্টরা প্রতিদিন সকাল ১০টা থেকে রাত ১০টা পর্যন্ত হোয়াটসঅ্যাপে সক্রিয় আছেন।"
-                  : "Chat directly with our certified beauty advisors on WhatsApp daily 10 AM to 10 PM."}
-              </p>
-            </div>
-          </div>
 
-          <a
-            href="https://wa.me/8801700000000"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full sm:w-auto shrink-0 justify-center rounded-xl bg-[#e91e63] px-6 py-3 text-xs sm:text-sm font-black text-white hover:bg-pink-700 transition-colors shadow-md flex items-center gap-2 text-center"
-          >
-            <span>{language === "bn" ? "হোয়াটসঅ্যাপে ফ্রি পরামর্শ নিন" : "Chat on WhatsApp"}</span>
-            <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
+            {(() => {
+              const rawNum = config?.whatsappNumber || "+880 1700-000000";
+              const trimmed = rawNum.trim();
+              let waHref = "https://wa.me/8801700000000";
+              if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+                waHref = trimmed;
+              } else {
+                const digits = trimmed.replace(/[^0-9]/g, "");
+                if (digits.startsWith("880")) waHref = `https://wa.me/${digits}`;
+                else if (digits.startsWith("0")) waHref = `https://wa.me/88${digits}`;
+                else if (digits) waHref = `https://wa.me/${digits}`;
+              }
+              const btnLabel =
+                language === "bn"
+                  ? config?.whatsappButtonTextBn || config?.whatsappButtonText || "হোয়াটসঅ্যাপে ফ্রি পরামর্শ নিন"
+                  : config?.whatsappButtonText || "Chat on WhatsApp";
+
+              return (
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto shrink-0 justify-center rounded-xl bg-[#e91e63] px-6 py-3 text-xs sm:text-sm font-black text-white hover:bg-pink-700 transition-colors shadow-md flex items-center gap-2 text-center cursor-pointer"
+                >
+                  <span>{btnLabel}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </a>
+              );
+            })()}
+          </div>
+        )}
       </div>
     </section>
   );
