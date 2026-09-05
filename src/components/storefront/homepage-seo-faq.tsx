@@ -1,14 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
 import {
   ChevronDown,
-  HelpCircle,
-  ShieldCheck,
-  Truck,
+  ChevronUp,
   Sparkles,
   PhoneCall,
   CheckCircle2,
+  ShieldCheck,
+  Truck,
+  RotateCcw,
+  Search,
+  Eye,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/context/language-context";
@@ -24,6 +29,8 @@ interface HomepageSeoFaqProps {
 export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
   const { language } = useLanguage();
   const [openFaqId, setOpenFaqId] = useState<string | null>("faq-1");
+  const [isGuideExpanded, setIsGuideExpanded] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   if (config && config.enabled === false) {
     return null;
@@ -31,16 +38,16 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
 
   const heading =
     language === "bn"
-      ? config?.headingBn || config?.heading || "প্রয়োজনীয় প্রশ্নোত্তর ও বিউটি শপিং গাইড"
-      : config?.heading || "Frequently Asked Questions & Beauty Guide";
+      ? config?.headingBn || config?.heading || "বাংলাদেশে আসল কসমেটিকস ও স্কিনকেয়ারের বিশ্বস্ত গন্তব্য"
+      : config?.heading || "Authentic Cosmetics Shop in Bangladesh: Your Beauty Destination";
 
   const subtitle =
     language === "bn"
       ? config?.subtitleBn ||
         config?.subtitle ||
-        "বাংলাদেশে ১০০% খাঁটি কসমেটিকস, দ্রুত ডেলিভারি ও স্কিনকেয়ার সম্পর্কিত তথ্য"
+        "১০০% খাঁটি আন্তর্জাতিক স্কিনকেয়ার ও মেকআপ কালেকশন — সারা দেশে ক্যাশ অন ডেলিভারি ও ফ্রি বিউটি পরামর্শ।"
       : config?.subtitle ||
-        "Everything you need to know about authentic cosmetics, delivery, and skincare in Bangladesh";
+        "Explore 100% genuine skincare, makeup & haircare with nationwide Cash on Delivery, doorstep inspection, and expert beauty guidance.";
 
   const seoDescription =
     language === "bn"
@@ -49,11 +56,28 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
 
   const faqs = config?.faqs || [];
 
+  // Extract unique categories for filter tabs
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    faqs.forEach((item) => {
+      if (item.category && item.category.trim()) {
+        set.add(item.category.trim());
+      }
+    });
+    return Array.from(set);
+  }, [faqs]);
+
+  // Filtered FAQs based on selected category tab
+  const filteredFaqs = useMemo(() => {
+    if (selectedCategory === "all") return faqs;
+    return faqs.filter((item) => item.category === selectedCategory);
+  }, [faqs, selectedCategory]);
+
   const toggleFaq = (id: string) => {
     setOpenFaqId((prev) => (prev === id ? null : id));
   };
 
-  // Structured Data (JSON-LD FAQPage) for Google Search SEO
+  // Structured Data (JSON-LD FAQPage) for Google Search Rich Snippets & AEO
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -70,7 +94,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
   return (
     <section
       id="homepage-seo-faq"
-      className="border-t border-zinc-200/80 bg-linear-to-b from-white via-pink-50/20 to-white py-14 sm:py-20"
+      className="border-t border-zinc-200/90 bg-linear-to-b from-white via-pink-50/25 to-white py-12 sm:py-16 lg:py-20 overflow-hidden"
       aria-labelledby="seo-faq-heading"
     >
       {/* Schema.org FAQPage JSON-LD Structured Data */}
@@ -81,53 +105,181 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
 
       <div className="container-main max-w-5xl px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-14">
-          <div className="inline-flex items-center gap-2 rounded-full bg-pink-100/80 px-3.5 py-1 text-xs font-bold text-pink-700 mb-3.5 border border-pink-200/60 shadow-2xs">
-            <Sparkles className="h-3.5 w-3.5 text-pink-600" />
-            <span>{language === "bn" ? "অফিসিয়াল বিউটি গাইড" : "Official Beauty Guide"}</span>
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
+          <div className="inline-flex items-center gap-2 rounded-full bg-pink-100/80 px-3.5 py-1 text-xs font-bold text-pink-700 mb-3 border border-pink-200/70 shadow-2xs">
+            <Sparkles className="h-3.5 w-3.5 text-pink-600 shrink-0" />
+            <span>{language === "bn" ? "অফিসিয়াল বিউটি গাইড ও প্রশ্নোত্তর" : "Official Beauty Guide & FAQs"}</span>
           </div>
 
           <h2
             id="seo-faq-heading"
-            className="text-2xl sm:text-3xl lg:text-4xl font-black text-zinc-900 tracking-tight leading-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl font-black text-zinc-900 tracking-tight leading-tight sm:leading-snug"
           >
             {heading}
           </h2>
 
-          <p className="mt-3 text-sm sm:text-base text-zinc-600 leading-relaxed">
+          <p className="mt-3 text-xs sm:text-sm md:text-base text-zinc-600 leading-relaxed max-w-2xl mx-auto">
             {subtitle}
           </p>
+
+          {/* Quick-Access Category Navigation Pills */}
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 pt-1">
+            <Link
+              href="/products?category=skin-care"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 border border-zinc-200 shadow-2xs hover:border-pink-300 hover:text-pink-600 transition-colors"
+            >
+              <span>🧴</span>
+              <span>{language === "bn" ? "স্কিনকেয়ার" : "Skin Care"}</span>
+            </Link>
+            <Link
+              href="/products?category=makeup"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 border border-zinc-200 shadow-2xs hover:border-pink-300 hover:text-pink-600 transition-colors"
+            >
+              <span>💄</span>
+              <span>{language === "bn" ? "মেকআপ" : "Makeup"}</span>
+            </Link>
+            <Link
+              href="/products?category=hair-care"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 border border-zinc-200 shadow-2xs hover:border-pink-300 hover:text-pink-600 transition-colors"
+            >
+              <span>🌿</span>
+              <span>{language === "bn" ? "হেয়ার কেয়ার" : "Hair Care"}</span>
+            </Link>
+            <Link
+              href="/brands"
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-1.5 text-xs font-semibold text-zinc-700 border border-zinc-200 shadow-2xs hover:border-pink-300 hover:text-pink-600 transition-colors"
+            >
+              <span>✨</span>
+              <span>{language === "bn" ? "টপ ব্র্যান্ডস" : "Top Brands"}</span>
+            </Link>
+            <Link
+              href="/products?discount=true"
+              className="inline-flex items-center gap-1.5 rounded-full bg-pink-50 px-3.5 py-1.5 text-xs font-bold text-pink-700 border border-pink-200 shadow-2xs hover:bg-pink-100 transition-colors"
+            >
+              <span>🏷️</span>
+              <span>{language === "bn" ? "স্পেশাল অফার" : "Special Offers"}</span>
+            </Link>
+          </div>
         </div>
 
-        {/* Humanized SEO Introduction Box (Similar to Beauty Booth / Ogerio) */}
+        {/* Humanized SEO Editorial Guide (Similar to Beauty Booth / Ogerio) */}
         {seoDescription && (
-          <article className="rounded-2xl border border-pink-100 bg-linear-to-br from-pink-50/40 via-white to-pink-50/20 p-5 sm:p-7 shadow-xs mb-10 text-zinc-700 text-sm sm:text-base leading-relaxed">
+          <article className="rounded-2xl sm:rounded-3xl border border-pink-100/90 bg-linear-to-br from-pink-50/50 via-white to-pink-50/30 p-5 sm:p-7 md:p-8 shadow-xs mb-10 text-zinc-700">
+            {/* Editorial Content with Expandable Container for Clean Mobile UX & 100% SEO Crawlability */}
             <div
-              className="prose prose-sm sm:prose-base max-w-none text-zinc-700 leading-relaxed space-y-3"
-              dangerouslySetInnerHTML={{ __html: seoDescription }}
-            />
+              className={cn(
+                "relative transition-all duration-300",
+                !isGuideExpanded ? "max-h-72 sm:max-h-80 overflow-hidden" : "max-h-none"
+              )}
+            >
+              <div
+                className="prose prose-sm sm:prose-base max-w-none text-zinc-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: seoDescription }}
+              />
 
-            {/* Trust highlights row */}
-            <div className="mt-6 pt-5 border-t border-pink-100/80 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs sm:text-sm font-semibold text-zinc-800">
-              <div className="flex items-center gap-2">
+              {/* Gradient Mask when collapsed */}
+              {!isGuideExpanded && (
+                <div className="absolute inset-x-0 bottom-0 h-28 bg-linear-to-t from-white via-white/85 to-transparent pointer-events-none" />
+              )}
+            </div>
+
+            {/* Read More / Read Less Toggle */}
+            <div className="mt-4 pt-3 border-t border-pink-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setIsGuideExpanded(!isGuideExpanded)}
+                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-[#e91e63] hover:text-pink-700 bg-white px-4 py-2 rounded-xl border border-pink-200 shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+                aria-expanded={isGuideExpanded}
+              >
+                <span>
+                  {isGuideExpanded
+                    ? language === "bn"
+                      ? "সংক্ষেপ করুন"
+                      : "Show Less"
+                    : language === "bn"
+                      ? "সম্পূর্ণ বিউটি গাইড পড়ুন"
+                      : "Read Full Beauty Guide"}
+                </span>
+                {isGuideExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </button>
+
+              <p className="text-[11px] sm:text-xs text-zinc-500 text-center sm:text-right">
+                {language === "bn"
+                  ? "১০০% সার্টিফাইড আন্তর্জাতিক কসমেটিকস ও স্কিনকেয়ার"
+                  : "100% Certified Direct Imports & Verified Batch Codes"}
+              </p>
+            </div>
+
+            {/* Trust Highlights Grid */}
+            <div className="mt-5 pt-5 border-t border-pink-100/90 grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs sm:text-sm font-semibold text-zinc-800">
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-white/70 border border-pink-50">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>{language === "bn" ? "১০০% অরিজিনাল ব্যাচ কোড" : "100% Verified Batch Codes"}</span>
+                <span className="leading-tight text-[11px] sm:text-xs font-bold">
+                  {language === "bn" ? "আসল ব্যাচ কোড গ্যারান্টি" : "Verified Batch Codes"}
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>{language === "bn" ? "২৪-৪৮ ঘণ্টায় দ্রুত ডেলিভারি" : "Express 24-48h Delivery"}</span>
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-white/70 border border-pink-50">
+                <Truck className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="leading-tight text-[11px] sm:text-xs font-bold">
+                  {language === "bn" ? "২৪-৪৮ ঘণ্টায় ডেলিভারি" : "Express 24-48h Delivery"}
+                </span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                <span>{language === "bn" ? "সরাসরি খুলে চেক করার সুবিধা" : "Doorstep Inspection Available"}</span>
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-white/70 border border-pink-50">
+                <Eye className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="leading-tight text-[11px] sm:text-xs font-bold">
+                  {language === "bn" ? "পার্সেল চেক করার সুবিধা" : "Doorstep Parcel Check"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 p-2 rounded-xl bg-white/70 border border-pink-50">
+                <RotateCcw className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span className="leading-tight text-[11px] sm:text-xs font-bold">
+                  {language === "bn" ? "৭ দিনের ফ্রি রিপ্লেসমেন্ট" : "7-Day Free Replacement"}
+                </span>
               </div>
             </div>
           </article>
         )}
 
+        {/* Category Filter Tabs for FAQs (if multiple categories exist) */}
+        {categories.length > 1 && (
+          <div className="mb-6 flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory("all")}
+              className={cn(
+                "rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+                selectedCategory === "all"
+                  ? "bg-[#e91e63] text-white shadow-xs"
+                  : "bg-white text-zinc-600 border border-zinc-200 hover:border-pink-200 hover:text-zinc-900"
+              )}
+            >
+              {language === "bn" ? "সব প্রশ্ন" : "All Questions"} ({faqs.length})
+            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategory(cat)}
+                className={cn(
+                  "rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors cursor-pointer",
+                  selectedCategory === cat
+                    ? "bg-[#e91e63] text-white shadow-xs"
+                    : "bg-white text-zinc-600 border border-zinc-200 hover:border-pink-200 hover:text-zinc-900"
+                )}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* FAQ Accordion List */}
-        <div className="space-y-3.5">
-          {faqs.map((faq, idx) => {
+        <div className="space-y-3">
+          {filteredFaqs.map((faq, idx) => {
             const isOpen = openFaqId === faq.id;
             const q = language === "bn" && faq.questionBn ? faq.questionBn : faq.question;
             const a = language === "bn" && faq.answerBn ? faq.answerBn : faq.answer;
@@ -138,21 +290,21 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
                 className={cn(
                   "rounded-2xl border transition-all duration-200 overflow-hidden",
                   isOpen
-                    ? "border-pink-300/80 bg-white shadow-md ring-2 ring-pink-500/10"
-                    : "border-zinc-200/80 bg-white/80 hover:bg-white hover:border-zinc-300"
+                    ? "border-pink-300 bg-white shadow-md ring-2 ring-pink-500/10"
+                    : "border-zinc-200/80 bg-white/90 hover:bg-white hover:border-zinc-300"
                 )}
               >
                 <button
                   type="button"
                   onClick={() => toggleFaq(faq.id)}
-                  className="flex w-full items-center justify-between gap-4 p-4 sm:p-5 text-left transition-colors cursor-pointer"
+                  className="flex w-full items-center justify-between gap-3 sm:gap-4 p-4 sm:p-5 text-left transition-colors cursor-pointer"
                   aria-expanded={isOpen}
                   aria-controls={`faq-answer-${faq.id}`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start sm:items-center gap-3">
                     <span
                       className={cn(
-                        "flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-colors",
+                        "flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-xl text-xs font-bold transition-colors mt-0.5 sm:mt-0",
                         isOpen
                           ? "bg-pink-600 text-white shadow-xs"
                           : "bg-zinc-100 text-zinc-600"
@@ -163,11 +315,11 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
 
                     <div>
                       {faq.category && (
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-pink-600 block mb-0.5">
+                        <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-pink-600 block mb-0.5">
                           {faq.category}
                         </span>
                       )}
-                      <span className="text-sm sm:text-base font-bold text-zinc-900 leading-snug">
+                      <span className="text-xs sm:text-sm md:text-base font-bold text-zinc-900 leading-snug">
                         {q}
                       </span>
                     </div>
@@ -175,7 +327,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
 
                   <div
                     className={cn(
-                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-200",
+                      "flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-200",
                       isOpen ? "rotate-180 bg-pink-100 text-pink-700" : "bg-zinc-100 text-zinc-500"
                     )}
                   >
@@ -188,7 +340,7 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
                     id={`faq-answer-${faq.id}`}
                     className="px-5 pb-5 pt-1 sm:px-6 sm:pb-6 text-xs sm:text-sm text-zinc-600 leading-relaxed border-t border-pink-50 animate-in fade-in-50 duration-150"
                   >
-                    <p>{a}</p>
+                    <p className="whitespace-pre-line leading-relaxed">{a}</p>
                   </div>
                 )}
               </div>
@@ -197,21 +349,21 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
         </div>
 
         {/* Need More Assistance Banner */}
-        <div className="mt-10 rounded-2xl bg-zinc-900 text-white p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
-          <div className="flex items-center gap-3.5 text-center sm:text-left">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pink-600 text-white shadow-xs">
-              <PhoneCall className="h-5 w-5" />
+        <div className="mt-8 sm:mt-12 rounded-2xl sm:rounded-3xl bg-zinc-900 text-white p-5 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-5 shadow-xl">
+          <div className="flex items-center gap-3.5 sm:gap-4 text-center sm:text-left">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-pink-600 text-white shadow-xs">
+              <PhoneCall className="h-6 w-6" />
             </div>
             <div>
               <p className="text-sm sm:text-base font-black">
                 {language === "bn"
-                  ? "আরও কোনো প্রশ্ন বা স্কিনকেয়ার পরামর্শ প্রয়োজন?"
-                  : "Have more questions or need skincare advice?"}
+                  ? "সঠিক প্রোডাক্ট নির্বাচনে সাহায্য প্রয়োজন?"
+                  : "Need personalized skincare consultation?"}
               </p>
-              <p className="text-xs text-zinc-400 mt-0.5">
+              <p className="text-xs sm:text-sm text-zinc-400 mt-0.5">
                 {language === "bn"
-                  ? "আমাদের বিউটি স্পেশালিস্টরা প্রতিদিন সকাল ১০টা থেকে রাত ১০টা পর্যন্ত সক্রিয় আছেন।"
-                  : "Our certified beauty experts are available daily 10 AM to 10 PM."}
+                  ? "আমাদের বিউটি এক্সপার্টরা প্রতিদিন সকাল ১০টা থেকে রাত ১০টা পর্যন্ত হোয়াটসঅ্যাপে সক্রিয় আছেন।"
+                  : "Chat directly with our certified beauty advisors on WhatsApp daily 10 AM to 10 PM."}
               </p>
             </div>
           </div>
@@ -220,12 +372,14 @@ export function HomepageSeoFaq({ config }: HomepageSeoFaqProps) {
             href="https://wa.me/8801700000000"
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 rounded-xl bg-[#e91e63] px-5 py-2.5 text-xs sm:text-sm font-black text-white hover:bg-sg-pink-hover transition-colors shadow-md flex items-center gap-2"
+            className="w-full sm:w-auto shrink-0 justify-center rounded-xl bg-[#e91e63] px-6 py-3 text-xs sm:text-sm font-black text-white hover:bg-pink-700 transition-colors shadow-md flex items-center gap-2 text-center"
           >
-            <span>{language === "bn" ? "হোয়াটসঅ্যাপে মেসেজ দিন" : "Chat on WhatsApp"}</span>
+            <span>{language === "bn" ? "হোয়াটসঅ্যাপে ফ্রি পরামর্শ নিন" : "Chat on WhatsApp"}</span>
+            <ArrowRight className="h-4 w-4" />
           </a>
         </div>
       </div>
     </section>
   );
 }
+

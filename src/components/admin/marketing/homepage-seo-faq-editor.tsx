@@ -160,37 +160,47 @@ export function HomepageSeoFaqEditor({ config, onChange }: HomepageSeoFaqEditorP
 
       {/* Humanized SEO Introduction Box */}
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs space-y-4">
-        <div>
-          <h3 className="text-sm font-bold text-gray-900">
-            Humanized SEO Introduction & Buyer Guide
-          </h3>
-          <p className="text-xs text-gray-500 mt-0.5">
-            Rich intro block explaining authenticity, imports, and fast delivery (similar to Beauty Booth / Ogerio footer guide).
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-bold text-gray-900">
+              Humanized SEO Editorial Guide & Buying Journey
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Multi-chapter content explaining authenticity, tropical climate skincare, and nationwide delivery (similar to Beauty Booth / Ogerio). Standard HTML tags supported: &lt;p&gt;, &lt;h3&gt;, &lt;strong&gt;, &lt;a href="..."&gt;.
+            </p>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[11px] font-bold text-gray-700 mb-1">
-              SEO Intro Text (English)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-gray-700">
+                SEO Editorial Guide (English HTML)
+              </label>
+              <span className="text-[10px] text-gray-400 font-mono">HTML Supported</span>
+            </div>
             <textarea
-              rows={4}
+              rows={12}
               value={faqSection.seoDescriptionHtml || ""}
               onChange={(e) => updateSection("seoDescriptionHtml", e.target.value)}
               className="w-full rounded-xl border p-3 text-xs text-gray-800 focus:outline-none focus:border-[#e91e63] font-mono leading-relaxed"
+              placeholder="<p>Finding a trustworthy cosmetics shop...</p>"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-gray-700 mb-1">
-              SEO Intro Text (বাংলা)
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-[11px] font-bold text-gray-700">
+                SEO Editorial Guide (বাংলা HTML)
+              </label>
+              <span className="text-[10px] text-gray-400 font-mono">HTML Supported</span>
+            </div>
             <textarea
-              rows={4}
+              rows={12}
               value={faqSection.seoDescriptionHtmlBn || ""}
               onChange={(e) => updateSection("seoDescriptionHtmlBn", e.target.value)}
-              className="w-full rounded-xl border p-3 text-xs text-gray-800 focus:outline-none focus:border-[#e91e63] leading-relaxed"
+              className="w-full rounded-xl border p-3 text-xs text-gray-800 focus:outline-none focus:border-[#e91e63] font-mono leading-relaxed"
+              placeholder="<p>বাংলাদেশে একটি নির্ভরযোগ্য অনলাইন কসমেটিকস শপ...</p>"
             />
           </div>
         </div>
@@ -311,7 +321,7 @@ export function HomepageSeoFaqEditor({ config, onChange }: HomepageSeoFaqEditorP
                     Answer (English)
                   </label>
                   <textarea
-                    rows={3}
+                    rows={4}
                     value={faq.answer}
                     onChange={(e) => updateFaq(idx, "answer", e.target.value)}
                     className="w-full rounded-xl border p-2.5 text-xs text-gray-800 leading-relaxed focus:outline-none focus:border-[#e91e63]"
@@ -323,7 +333,7 @@ export function HomepageSeoFaqEditor({ config, onChange }: HomepageSeoFaqEditorP
                     Answer (বাংলা)
                   </label>
                   <textarea
-                    rows={3}
+                    rows={4}
                     value={faq.answerBn || ""}
                     onChange={(e) => updateFaq(idx, "answerBn", e.target.value)}
                     className="w-full rounded-xl border p-2.5 text-xs text-gray-800 leading-relaxed focus:outline-none focus:border-[#e91e63]"

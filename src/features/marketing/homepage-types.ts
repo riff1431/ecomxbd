@@ -545,64 +545,198 @@ export const DEFAULT_HOMEPAGE_CONFIG: HomepageFullConfig = {
   // 9. SEO & Humanized FAQ Section (Inspired by Beauty Booth & Ogerio)
   faqSection: {
     enabled: true,
-    heading: "Frequently Asked Questions & Beauty Guide",
-    headingBn: "প্রয়োজনীয় প্রশ্নোত্তর ও বিউটি শপিং গাইড",
-    subtitle: "Everything you need to know about authentic cosmetics, delivery, and skincare in Bangladesh",
-    subtitleBn: "বাংলাদেশে ১০০% অথেনটিক কসমেটিকস, দ্রুত ডেলিভারি ও স্কিনকেয়ার সম্পর্কিত সাধারণ তথ্যাবলী",
-    seoDescriptionHtml:
-      "Welcome to <strong>Blush &amp; Budget</strong>, your premier destination for 100% authentic international skincare, hair care, and beauty products in Bangladesh. We bring you the most beloved Korean, Japanese, UK, and USA brands directly from authorized distributors. From cult-favorite snail mucin essences and soothing centella serums to dermatologist-tested cleansers and sunscreens, every item is guaranteed original with nationwide Cash on Delivery and dedicated customer support.",
-    seoDescriptionHtmlBn:
-      "<strong>ব্লাশ অ্যান্ড বাজেট (Blush &amp; Budget)</strong>-এ আপনাকে স্বাগতম। আমরা বাংলাদেশে ১০০% খাঁটি ও সার্টিফাইড আন্তর্জাতিক স্কিনকেয়ার, হেয়ার কেয়ার এবং মেকআপের নির্ভরযোগ্য প্ল্যাটফর্ম। কোরিয়ান গ্লাস স্কিন রুটিন থেকে শুরু করে ইউকে এবং ইউএসএ-এর স্বনামধন্য ডার্মাটোলজিক্যাল ব্র্যান্ডগুলো সরাসরি অনুমোদিত ডিস্ট্রিবিউটর থেকে সংগ্রহ করে সারা বাংলাদেশে ক্যাশ অন ডেলিভারিতে দ্রুত পৌঁছে দেওয়া হয়।",
+    heading: "Authentic Cosmetics Shop in Bangladesh: Your Beauty Destination",
+    headingBn: "বাংলাদেশে আসল কসমেটিকস ও স্কিনকেয়ারের বিশ্বস্ত গন্তব্য",
+    subtitle:
+      "Explore 100% genuine skincare, makeup & haircare with nationwide Cash on Delivery, doorstep inspection, and expert beauty guidance.",
+    subtitleBn:
+      "১০০% খাঁটি আন্তর্জাতিক স্কিনকেয়ার ও মেকআপ কালেকশন — সারা দেশে ক্যাশ অন ডেলিভারি, পার্সেল চেক করার সুবিধা ও ফ্রি বিউটি পরামর্শ।",
+    seoDescriptionHtml: `<div class="space-y-4 text-zinc-700 leading-relaxed text-sm sm:text-base">
+  <p>
+    Finding a trustworthy <strong>cosmetics shop in Bangladesh</strong> is no longer just about hunting for a low price or picking a random bottle off a shelf. When it comes to your skin, face, and hair, authenticity is everything. At <strong>Blush &amp; Budget</strong>, we started with a clear mission: every beauty lover in Bangladesh deserves 100% genuine, dermatologist-approved skincare and makeup without paying inflated prices or worrying about counterfeit products. We believe shopping for beauty should feel transparent, comforting, and inspiring.
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    Why Genuine Cosmetics Matter for Your Skin Health
+  </h3>
+  <p>
+    Counterfeit cosmetics are unfortunately widespread in local markets. Applying unverified replicas can cause persistent breakouts, chemical irritation, allergic flare-ups, and long-term skin barrier damage. That is why at Blush &amp; Budget, we strictly avoid secondary resellers or unofficial intermediaries. We source our inventory directly from verified brand hubs and authorized global distributors in Seoul, Tokyo, London, and New York. Every serum, moisturizer, sunscreen, and lipstick comes with its manufacturer batch code, verifiable tamper-evident seals, and guaranteed shelf freshness.
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    Skincare Designed for Bangladesh’s Humid Tropical Weather
+  </h3>
+  <p>
+    Skincare is deeply personal, especially in our climate. Between intense monsoon humidity, scorching summer heat, and urban dust in cities like Dhaka and Chittagong, heavy occlusive creams often clog pores. That is why we curate lightweight, non-comedogenic essentials that actually suit South Asian skin types. Explore our <a href="/products?category=skin-care" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">Skincare Products in Bangladesh</a> to discover gentle low-pH cleansers, soothing centella toners, hydrating hyaluronic acid essences, and oil-free daily sunscreens that leave zero white cast.
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    Wearable, Long-Lasting Makeup for Every Occasion
+  </h3>
+  <p>
+    Whether you prefer a soft, dewy "no-makeup" look for university or office wear, or vibrant, high-pigment glamour for festive weddings and celebrations, our <a href="/products?category=makeup" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">Makeup Collection</a> is handpicked for sweat resistance and all-day comfort. From velvety lip tints and cushion compacts to smudge-proof eyeliners and lightweight setting powders, we bring you formulas that flatter warm undertones effortlessly.
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    The Korean &amp; Japanese Beauty Revolution
+  </h3>
+  <p>
+    K-Beauty and J-Beauty have transformed how we think about self-care. Rather than masking skin problems with thick layers, gentle botanical ingredients like snail mucin, heartleaf, propolis, rice water, and fermented galactomyces heal your moisture barrier from within. Discover cult-favorite products from top global names on our <a href="/brands" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">Official Brand Directory</a>, where you can browse authentic formulations loved by millions worldwide.
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    Nourishing Hair &amp; Scalp Care for Daily Pollution Protection
+  </h3>
+  <p>
+    Hard water, dust, and humid weather frequently cause scalp buildup, frizz, and excessive hair breakage. We offer targeted solutions in our <a href="/products?category=hair-care" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">Hair Care Collection</a>, featuring clarifying scalps scrubs, peptide-infused strengthening shampoos, and botanical hair oils that restore vitality and shine from root to tip.
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    Shop with Complete Peace of Mind: 64-District Cash on Delivery
+  </h3>
+  <p>
+    We believe you should feel 100% confident every time you order. That is why Blush &amp; Budget offers nationwide Cash on Delivery across all 64 districts of Bangladesh. More importantly, we encourage our customers to <strong>inspect their parcels at their doorstep</strong> before completing payment. Combined with our 7-day hassle-free replacement policy and free skincare guidance on WhatsApp, we are here to make your online beauty shopping enjoyable, honest, and truly risk-free.
+  </p>
+</div>`,
+    seoDescriptionHtmlBn: `<div class="space-y-4 text-zinc-700 leading-relaxed text-sm sm:text-base">
+  <p>
+    বাংলাদেশে একটি নির্ভরযোগ্য <strong>অনলাইন কসমেটিকস শপ</strong> খুঁজে পাওয়া এখন আর কেবল কম দামে পণ্য কেনার বিষয় নয়। আপনার ত্বক, মুখ ও চুলের যত্ন নেওয়ার জন্য পণ্যের আসল ও খাঁটি হওয়া সবচেয়ে জরুরি। <strong>Blush &amp; Budget (ব্লাশ অ্যান্ড বাজেট)</strong> তৈরি হয়েছে এই বিশ্বাস থেকেই—বাংলাদেশের প্রতিটি বিউটি প্রেমী যেন কোনো নকলের ভয় বা অতিরিক্ত দাম ছাড়া ১০০% অথেনটিক ও ব্র্যান্ড-প্রত্যয়িত রূপচর্চা সামগ্রী কিনতে পারেন।
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    আসল ও সার্টিফাইড কসমেটিকস কেন ত্বকের জন্য অত্যন্ত জরুরি?
+  </h3>
+  <p>
+    লোকাল মার্কেটে নকল ও ভেজাল বিউটি প্রোডাক্টের ছড়াছড়ি ত্বক ও স্বাস্থ্যের জন্য চরম ঝুঁকিপূর্ণ। অরিজিনাল নয় এমন রেপ্লিকা ব্যবহারের ফলে ত্বকের স্বাভাবিক ব্যারিয়ার নষ্ট হয়ে ব্রণের উপদ্রব, ক্ষতিকর পার্শ্বপ্রতিক্রিয়া ও স্থায়ী দাগের সৃষ্টি হতে পারে। তাই Blush &amp; Budget-এ আমরা কোনো থার্ড পার্টি বা অনির্ভরযোগ্য সোর্স থেকে পণ্য নিই না। আমাদের প্রতিটি প্রোডাক্ট সরাসরি সিউল (দক্ষিণ কোরিয়া), টোকিও, লন্ডন ও ইউএসএ-এর অফিশিয়াল ব্র্যান্ড ও অনুমোদিত ডিস্ট্রিবিউটর থেকে আমদানি করা। প্রতিটি পণ্যে রয়েছে আসল ম্যানুফ্যাকচারার ব্যাচ কোড ও ইনট্যাক্ট হাইজিন সিল।
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    আমাদের দেশের আবহাওয়ার উপযোগী স্কিনকেয়ার সলিউশন
+  </h3>
+  <p>
+    বাংলাদেশের গরম, অতিরিক্ত আর্দ্রতা ও ধুলাবালির কারণে সবার ত্বকে ভারী ক্রিম বা অয়েলি লোশন মানানসই হয় না। তৈলাক্ত ও ব্রনপ্রবণ ত্বকের জন্য দরকার হালকা ও জেল-বেসড প্রোডাক্ট। আমাদের <a href="/products?category=skin-care" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">স্কিনকেয়ার কালেকশন</a>-এ রয়েছে লো-পিএইচ ফেসওয়াশ, সেন্টেলা ও নিয়াসিনামাইড সিরাম, লাইটওয়েট ময়েশ্চারাইজার এবং হোয়াইট কাস্ট-হীন সানস্ক্রিন যা চিটচিটে না হয়ে ত্বকে গভীর সুরক্ষা দেয়।
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    আকর্ষণীয় ও দীর্ঘস্থায়ী মেকআপ কালেকশন
+  </h3>
+  <p>
+    দৈনন্দিন অফিস ও ভার্সিটি লুকের জন্য নো-মেকআপ গ্লো হোক কিংবা বিয়ে ও উৎসবের জমকালো সাজ—আমাদের <a href="/products?category=makeup" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">মেকআপ কালেকশন</a> সাজানো হয়েছে দীর্ঘস্থায়ী ও ঘাম-প্রতিরোধী প্রোডাক্ট দিয়ে। লিপ টিন্ট, কুশন ফাউন্ডেশন, ওয়াটারপ্রুফ আইলাইনার থেকে শুরু করে ফিক্সিং স্প্রে—সবই পাবেন নিশ্চিত কোয়ালিটিতে।
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    কোরিয়ান ও জাপানিজ স্কিনকেয়ার ট্রেন্ড
+  </h3>
+  <p>
+    কোরিয়ান গ্লাস স্কিন রুটিন এখন শুধু ট্রেন্ড নয়, বরং স্বাস্থ্যকর ত্বকের নির্ভরযোগ্য সমাধান। স্নেল মিউসিন, হার্টলিফ, রাইস ওয়াটার এবং প্রোবায়োটিকসের মতো প্রাকৃতিক উপাদান ত্বকের গভীর থেকে জেল্লা ফিরিয়ে আনে। বিশ্বের সেরা ব্র্যান্ডগুলোর কালেকশন এক্সপ্লোর করতে ভিজিট করুন আমাদের <a href="/brands" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">টপ ব্র্যান্ডস পেজ</a>।
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    চুল ও স্ক্যাল্পের বিশেষ যত্ন
+  </h3>
+  <p>
+    কঠিন পানি ও ধুলাবালির কারণে চুলের রুক্ষতা ও ড্যামেজ প্রতিরোধে আমাদের <a href="/products?category=hair-care" class="text-pink-600 font-semibold underline decoration-pink-300 underline-offset-2 hover:text-pink-700">হেয়ার কেয়ার ক্যাটাগরি</a>-তে রয়েছে সালফেট-মুক্ত শ্যাম্পু, স্ক্যাল্প স্কেলার এবং নারিশিং হেয়ার সিরাম।
+  </p>
+
+  <h3 class="text-base sm:text-lg font-bold text-zinc-900 mt-5 mb-1.5 flex items-center gap-2">
+    <span class="h-2 w-2 rounded-full bg-pink-500 inline-block"></span>
+    ৬৪ জেলায় ক্যাশ অন ডেলিভারি ও পার্সেল চেক করার স্বাধীনতা
+  </h3>
+  <p>
+    আপনার শপিং অভিজ্ঞতাকে শতভাগ নিরাপদ করতে Blush &amp; Budget দিচ্ছে সমগ্র বাংলাদেশের ৬৪টি জেলায় ক্যাশ অন ডেলিভারি সুবিধা। পার্সেল হাতে পেয়ে <strong>ডেলিভারিম্যানের সামনে খুলে চেক করে</strong> মূল্য পরিশোধ করার সম্পূর্ণ স্বাধীনতা রয়েছে। সাথে ৭ দিনের রিপ্লেসমেন্ট গ্যারান্টি এবং হোয়াটসঅ্যাপে অভিজ্ঞ বিউটি কনসালট্যান্টদের ফ্রি পরামর্শ।
+  </p>
+</div>`,
     faqs: [
       {
         id: "faq-1",
-        category: "Authenticity & Quality",
-        question: "How can I be sure that the products on Blush & Budget are 100% authentic?",
+        category: "Authenticity & Sourcing",
+        question: "How can I be 100% sure that the products on Blush & Budget are genuine and authentic?",
         questionBn: "আপনাদের প্রোডাক্টগুলো যে ১০০% আসল ও অরিজিনাল, তা কীভাবে নিশ্চিত হব?",
         answer:
-          "Every product in our inventory is directly procured from official brand partners or authorized global distributors in Seoul, London, and Dubai. Every item features original manufacturer batch codes verifiable on international batch checkers like CheckFresh, hygiene seals, and authentic hologram stickers. If proven non-authentic, we offer an unconditional 300% money-back guarantee.",
+          "We understand that buying beauty products online can feel stressful due to counterfeit copies in the market. Every item on Blush & Budget is imported directly from official brand partners or authorized distribution hubs in South Korea, the UK, the US, and Japan. Every product includes its original manufacturer batch code (verifiable on global batch checkers like CheckFresh), security seal, and barcode. If any item is ever shown to be counterfeit, we provide an unconditional 300% money-back guarantee.",
         answerBn:
-          "আমাদের প্রতিটি পণ্য সরাসরি ব্র্যান্ড অথবা আন্তর্জাতিক অনুমোদিত ডিস্ট্রিবিউটর থেকে সরাসরি আমদানি করা হয়। প্রতিটি বক্সে আসল ব্যাচ কোড, সিল ও হলোগ্রাম স্টিকার থাকে যা CheckFresh বা ব্র্যান্ড অ্যাপে ভেরিফাই করা যায়। কোনো পণ্য নকল প্রমাণিত হলে আমরা ৩০০% মানিব্যাক গ্যারান্টি প্রদান করি।",
+          "অনলাইনে কসমেটিকস কেনার সময় নকলের ভয় থাকা অত্যন্ত স্বাভাবিক। Blush & Budget-এর প্রতিটি প্রোডাক্ট সরাসরি সিউল, লন্ডন, টোকিও ও ইউএসএ-এর অনুমোদিত ডিস্ট্রিবিউশন হাব থেকে সরাসরি আনা হয়। প্রতিটি বক্সে আসল ম্যানুফ্যাকচারার ব্যাচ কোড ও সিল থাকে যা CheckFresh বা সংশ্লিষ্ট ব্র্যান্ড পোর্টালে সহজেই ভেরিফাই করা যায়। কোনো পণ্য নকল প্রমাণিত হলে আমরা নিঃশর্ত ৩০০% মানিব্যাক গ্যারান্টি প্রদান করি।",
       },
       {
         id: "faq-2",
-        category: "Delivery & Courier",
-        question: "How fast is delivery, and do you offer Cash on Delivery across all 64 districts?",
-        questionBn: "ডেলিভারি পেতে কত দিন সময় লাগে এবং সারা বাংলাদেশে কি ক্যাশ অন ডেলিভারি আছে?",
+        category: "Doorstep Inspection",
+        question: "Can I inspect the parcel and check the product before paying the courier rider?",
+        questionBn: "ডেলিভারিম্যানের সামনে পার্সেলটি কি খুলে চেক করে নেওয়া যাবে?",
         answer:
-          "Yes! We offer nationwide Cash on Delivery (COD) across all 64 districts in Bangladesh via SteadFast and Pathao Courier. Delivery within Dhaka City takes 24 to 48 hours, while deliveries outside Dhaka typically arrive within 3 to 5 business days with real-time SMS tracking updates.",
+          "Yes, absolutely! We want you to feel completely confident with your purchase. We actively encourage all our customers to inspect the outer packaging, hygiene seals, and product condition in front of the delivery rider before completing payment. You pay with total confidence.",
         answerBn:
-          "হ্যাঁ! সমগ্র বাংলাদেশের ৬৪টি জেলা ও থানা পর্যায়ে SteadFast এবং Pathao কুরিয়ারের মাধ্যমে হোম ডেলিভারি ক্যাশ অন ডেলিভারি (COD) সুবিধা রয়েছে। ঢাকা সিটির মধ্যে ২৪-৪৮ ঘণ্টা এবং ঢাকার বাইরে ৩-৫ কার্যদিবসের মধ্যে আপনার দোরগোড়ায় পার্সেল পৌঁছে দেওয়া হয়।",
+          "হ্যাঁ, অবশ্যই! আমাদের সম্মানিত গ্রাহকদের সম্পূর্ণ সন্তুষ্টির জন্য আমরা ডেলিভারিম্যানের সামনেই পার্সেলটি ভালো করে চেক করে নেওয়ার পরামর্শ দিই। পণ্যের প্যাকেজিং ও সিল ঠিক রয়েছে কিনা তা নিশ্চিত হয়ে তবেই পেমেন্ট করুন।",
       },
       {
         id: "faq-3",
-        category: "Doorstep Inspection",
-        question: "Can I inspect the parcel before paying the delivery rider?",
-        questionBn: "ডেলিভারিম্যানের সামনে পার্সেলটি কি খুলে চেক করে নেওয়া যাবে?",
+        category: "Delivery & Courier",
+        question: "How fast is delivery, and do you deliver across all 64 districts in Bangladesh?",
+        questionBn: "ডেলিভারি পেতে কত দিন সময় লাগে এবং সারা বাংলাদেশে কি ক্যাশ অন ডেলিভারি আছে?",
         answer:
-          "Absolutely! We encourage all our valued customers to inspect the outer packaging and ensure the ordered items are intact before handing over the payment to the delivery rider.",
+          "We offer nationwide Cash on Delivery (COD) across all 64 districts, thanas, and upazilas in Bangladesh via Steadfast and Pathao Courier. Delivery within Dhaka City takes 24 to 48 hours, while deliveries outside Dhaka typically arrive within 2 to 4 business days. You will receive live SMS updates with tracking details as soon as your parcel is dispatched.",
         answerBn:
-          "অবশ্যই! আমাদের সম্মানিত গ্রাহকদের সুবিধার্থে ক্যাশ অন ডেলিভারিতে ডেলিভারিম্যানের সামনে পার্সেলটি ভালো করে চেক করে মূল্য পরিশোধ করার সম্পূর্ণ স্বাধীনতা রয়েছে।",
+          "হ্যাঁ! সমগ্র বাংলাদেশের ৬৪টি জেলা ও থানা পর্যায়ে Steadfast এবং Pathao কুরিয়ারের মাধ্যমে ক্যাশ অন ডেলিভারি (COD) সুবিধা রয়েছে। ঢাকা সিটির মধ্যে মাত্র ২৪ থেকে ৪৮ ঘণ্টা এবং ঢাকার বাইরে সাধারণত ২ থেকে ৪ কার্যদিবসের মধ্যে হোম ডেলিভারি পৌঁছে দেওয়া হয়। পার্সেল পাঠানোর সাথে সাথে আপনি ট্র্যাকিং লিংক সহ এসএমএস নোটিফিকেশন পাবেন।",
       },
       {
         id: "faq-4",
-        category: "Returns & Exchanges",
-        question: "What is your return or replacement policy if I receive a damaged product?",
-        questionBn: "প্রোডাক্টে কোনো সমস্যা হলে রিটার্ন বা পরিবর্তনের নিয়ম কী?",
+        category: "Skincare Routines",
+        question: "How do I choose the best skincare routine for Bangladesh's humid weather and oily/acne-prone skin?",
+        questionBn: "আমাদের দেশের গরম ও অতিরিক্ত আর্দ্র আবহাওয়ায় তৈলাক্ত বা ব্রনপ্রবণ ত্বকের জন্য কেমন রুটিন বেছে নেওয়া উচিত?",
         answer:
-          "We provide a hassle-free 7-day replacement guarantee. If your product is damaged during transit, leaked, or has a manufacturing defect, simply contact our support hotline or WhatsApp with an unboxing video within 7 days. We will arrange a free courier pickup from your home and dispatch a fresh replacement immediately.",
+          "In hot and humid weather, the golden rule is lightweight layering without clogging pores. We recommend starting with a low-pH gentle cleanser, balancing with a soothing Centella or Heartleaf toner, targeting sebum and pores with a Niacinamide serum, locking hydration with an oil-free water gel cream, and finishing daily with a non-greasy, zero-white-cast SPF 50+ sunscreen.",
         answerBn:
-          "আমাদের রয়েছে সহজ ৭ দিনের রিটার্ন ও রিপ্লেসমেন্ট সুবিধা। কোনো কারণে ক্ষতিগ্রস্ত পার্সেল বা ভুল প্রোডাক্ট পৌঁছালে আনবক্সিং ভিডিও সহ আমাদের সাপোর্ট নম্বরে জানান। আমাদের কুরিয়ার প্রতিনিধি সরাসরি আপনার বাসা থেকে পার্সেল নিয়ে আসবেন এবং সম্পূর্ণ ফ্রিতে নতুন প্রোডাক্ট পাঠানো হবে।",
+          "আমাদের আর্দ্র আবহাওয়ায় ত্বকের লোমকূপ বন্ধ না করে হালকা ওয়াটার-বেসড প্রোডাক্ট বেছে নেওয়া সেরা উপায়। প্রথমে একটি মাইল্ড লো-পিএইচ ফেসওয়াশ দিয়ে মুখ ধুয়ে নিন, সেন্টেলা বা হার্টলিফ টোনার দিয়ে ত্বক শান্ত করুন, অতিরিক্ত তেল ও ব্রণের দাগের জন্য নিয়াসিনামাইড সিরাম দিন, জেল-বেসড ময়েশ্চারাইজার লাগান এবং দিনের বেলা অবশ্যই নন-গ্রীসি SPF 50+ সানস্ক্রিন ব্যবহার করুন।",
       },
       {
         id: "faq-5",
-        category: "Skincare Advice",
-        question: "Can I get customized skincare consultation for my skin type?",
-        questionBn: "আমার ত্বকের ধরন অনুযায়ী কি ফ্রি স্কিনকেয়ার পরামর্শ পেতে পারি?",
+        category: "Returns & Exchanges",
+        question: "What is your return or replacement policy if a product arrives damaged or incorrect?",
+        questionBn: "প্রোডাক্টে কোনো সমস্যা বা ভুল হলে রিটার্ন বা পরিবর্তনের নিয়ম কী?",
         answer:
-          "Yes! Our trained beauty advisors are available on WhatsApp, live chat, and hotline to help you choose the right cleanser, toner, serum, or moisturizer for acne, pigmentation, dryness, or anti-aging based on your unique skin profile.",
+          "We provide a hassle-free 7-day replacement guarantee. If an item arrives damaged, leaked, or incorrect, simply reach out to our WhatsApp support or customer care hotline with your order ID and a quick photo/unboxing video within 7 days. We will schedule a free courier pickup directly from your doorstep and dispatch a brand-new replacement immediately at zero extra cost.",
         answerBn:
-          "অবশ্যই! আপনার ত্বকের সমস্যা (যেমন: ব্রণের দাগ, রোদে পোড়া ভাব, বয়সের ছাপ বা শুষ্কতা) অনুযায়ী সঠিক প্রোডাক্ট বেছে নিতে আমাদের বিউটি এক্সপার্টরা হোয়াটসঅ্যাপ ও লাইভ সাপোর্টে সম্পূর্ণ বিনামূল্যে পরামর্শ দিয়ে থাকেন।",
+          "আমাদের রয়েছে ঝামেলাহীন ৭ দিনের রিপ্লেসমেন্ট সুবিধা। কোনো কারণে ক্ষতিগ্রস্ত পার্সেল বা ভুল প্রোডাক্ট পৌঁছালে আনবক্সিংয়ের সময় তোলা ছবি বা ভিডিও সহ আমাদের হোয়াটসঅ্যাপ সাপোর্ট বা হটলাইনে জানান। আমাদের কুরিয়ার প্রতিনিধি সরাসরি আপনার ঠিকানা থেকে পার্সেলটি সম্পূর্ণ ফ্রিতে সংগ্রহ করবে এবং সাথে সাথে নতুন প্রোডাক্ট পাঠানো হবে।",
+      },
+      {
+        id: "faq-6",
+        category: "Skincare Advisory",
+        question: "Can I get personalized skincare consultation for my skin concerns before buying?",
+        questionBn: "অর্ডার করার আগে কি আমার ত্বকের ধরন অনুযায়ী ফ্রি পরামর্শ পেতে পারি?",
+        answer:
+          "Yes, completely free! If you are unsure which serum, moisturizer, or routine matches your skin goals (acne, dark spots, sensitivity, dullness, or anti-aging), our certified beauty advisors are available on WhatsApp and live chat daily from 10 AM to 10 PM. We listen to your concerns and recommend only what your skin genuinely needs.",
+        answerBn:
+          "অবশ্যই এবং সম্পূর্ণ বিনামূল্যে! আপনার ত্বকের সমস্যা (যেমন: ব্রণের দাগ, রোদে পোড়া ভাব, মেছতা বা সংবেদনশীলতা) অনুযায়ী কোন পণ্যটি উপযুক্ত হবে তা জানতে আমাদের বিউটি এক্সপার্টরা প্রতিদিন সকাল ১০টা থেকে রাত ১০টা পর্যন্ত হোয়াটসঅ্যাপ ও লাইভ সাপোর্টে পরামর্শ দিতে প্রস্তুত থাকেন।",
+      },
+      {
+        id: "faq-7",
+        category: "Payment & Pricing",
+        question: "Do I need to pay any advance deposit for Cash on Delivery orders?",
+        questionBn: "ক্যাশ অন ডেলিভারিতে অর্ডার করতে কি কোনো অগ্রিম টাকা দিতে হয়?",
+        answer:
+          "For regular orders, you pay 100% of your bill directly to the courier rider upon delivery with zero advance payment. For certain remote upazila deliveries or high-value multi-item packages, a nominal courier confirmation deposit may be requested to protect against fraudulent bookings, which is fully adjusted against your final invoice.",
+        answerBn:
+          "স্বাভাবিক অর্ডারের ক্ষেত্রে কোনো অগ্রিম ছাড়াই সম্পূর্ণ মূল্য ডেলিভারিম্যানের কাছে ক্যাশ অন ডেলিভারিতে পরিশোধ করতে পারবেন। কেবল দূরবর্তী থানা এলাকা বা বড় অর্ডারের ক্ষেত্রে ফেক অর্ডার এড়াতে নামমাত্র কুরিয়ার ফি অগ্রিম গ্রহণ করা হতে পারে, যা আপনার মূল বিলের সাথে সম্পূর্ণ অ্যাডজাস্ট করা হয়।",
+      },
+      {
+        id: "faq-8",
+        category: "Product Safety",
+        question: "Are your skincare and makeup products free from harmful chemicals and bleaching agents?",
+        questionBn: "আপনাদের পণ্যগুলো কি ক্ষতিকর কেমিক্যাল ও স্টেরয়েড মুক্ত?",
+        answer:
+          "100% safe. We strictly refuse to stock dangerous fast-whitening creams that contain mercury, hydroquinone, or heavy steroids. Every brand we carry complies with strict international cosmetic safety standards (such as Korean MFDS, EU Cosmetic Safety Regulations, and US FDA compliance) focused on gentle barrier restoration, natural radiance, and long-term dermatological safety.",
+        answerBn:
+          "শতভাগ নিরাপদ। আমরা ক্ষতিকর মার্কারি, হাইড্রোকুইনোন বা বিপজ্জনক স্টেরয়েডযুক্ত কোনো কৃত্রিম ফর্সাকারী ক্রিম বিক্রি করি না। আমাদের প্রতিটি ব্র্যান্ড আন্তর্জাতিক কসমেটিক নিরাপত্তা মানদণ্ড (যেমন কোরিয়ান MFDS, ইউরোপীয় ইউনিয়ন ও ইউএস এফডিএ) মেনে প্রস্তুত, যা ত্বকের ক্ষতি না করে ভেতর থেকে প্রাকৃতিক সুস্থতা ও গ্লো প্রদান করে।",
       },
     ],
   },
