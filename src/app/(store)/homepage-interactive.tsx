@@ -274,30 +274,51 @@ export function HomepageInteractive({
       </section>
 
       {/* ============================================================ */}
-      {/* 5. VIBRANT PROMOTIONAL CARDS */}
+      {/* 5. VIBRANT PROMOTIONAL CARDS (Compact & Responsive Across All Screens) */}
       {/* ============================================================ */}
       <section className="container-main">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {limitedOffers.map((offer, idx) => (
-            <Link
-              key={offer.id || idx}
-              href={offer.href}
-              className="group relative overflow-hidden bg-linear-to-br from-primary-400 via-[#db2777] to-[#be185d] p-4 sm:p-6 shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl flex flex-col items-center justify-center text-center aspect-4/3 sm:aspect-square btn-soft-fill"
-              style={{
-                borderRadius: "32px 14px 32px 14px",
-              }}
-            >
-              {/* Slanted Navy Blue Ribbon Badge */}
-              <div className="bg-[#1e1b4b] text-white text-[10px] sm:text-xs font-black px-3.5 py-1 rounded-sm shadow-xs -rotate-3 uppercase tracking-wider mb-2 transform transition-transform group-hover:rotate-0">
-                {offer.ribbonText}
-              </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          {limitedOffers.map((offer, idx) => {
+            const cardGradients = [
+              "from-[#e91e63] via-[#db2777] to-[#be185d]", // BOGO - Signature Blush Pink
+              "from-[#9333ea] via-[#7e22ce] to-[#581c87]", // COMBO - Royal Purple
+              "from-[#f43f5e] via-[#e11d48] to-[#9f1239]", // OFFERS - Radiant Ruby
+              "from-[#0284c7] via-[#0369a1] to-[#075985]", // CLEARANCE - Sapphire Blue
+            ];
+            const gradient = cardGradients[idx % cardGradients.length];
 
-              {/* Big Bold White Typography */}
-              <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-md">
-                {offer.mainText}
-              </h3>
-            </Link>
-          ))}
+            return (
+              <Link
+                key={offer.id || idx}
+                href={offer.href}
+                className={cn(
+                  "group relative overflow-hidden p-3.5 sm:p-5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-lg flex flex-col items-center justify-center text-center rounded-2xl sm:rounded-3xl border border-white/20 bg-linear-to-br select-none",
+                  gradient,
+                  "h-28 sm:h-32 md:h-36 lg:h-38 w-full"
+                )}
+              >
+                {/* Decorative Ambient Glass Glow */}
+                <div className="pointer-events-none absolute -right-6 -bottom-6 h-20 w-20 sm:h-28 sm:w-28 rounded-full bg-white/15 blur-xl group-hover:scale-150 transition-transform duration-500" />
+                <div className="pointer-events-none absolute -left-6 -top-6 h-16 w-16 rounded-full bg-black/10 blur-lg" />
+
+                {/* Slanted Contrast Ribbon Badge */}
+                <div className="relative z-10 bg-[#0f172a] text-white text-[9px] sm:text-[10px] md:text-xs font-black px-2.5 py-0.5 rounded-md shadow-2xs -rotate-2 uppercase tracking-wider mb-1 transform transition-transform group-hover:rotate-0 group-hover:scale-105">
+                  {offer.ribbonText}
+                </div>
+
+                {/* Main Bold Typography */}
+                <h3 className="relative z-10 text-xl sm:text-2xl md:text-3xl font-black text-white uppercase tracking-tight drop-shadow-xs group-hover:scale-105 transition-transform duration-300">
+                  {offer.mainText}
+                </h3>
+
+                {/* Subtle Action Pill */}
+                <span className="relative z-10 mt-1 text-[9px] sm:text-[10px] font-bold text-white/80 group-hover:text-white flex items-center gap-1 transition-colors">
+                  <span>{language === "bn" ? "অফার দেখুন" : "Shop Deals"}</span>
+                  <span className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
