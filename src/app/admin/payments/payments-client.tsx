@@ -58,7 +58,7 @@ export function PaymentsClient({ initialMethods }: PaymentsClientProps) {
 
         <Link href="/admin/payments/logs">
           <Button variant="outline" size="sm" className="text-xs shrink-0">
-            View Payment Logs &rarr;
+            Payment Verification &rarr;
           </Button>
         </Link>
       </div>

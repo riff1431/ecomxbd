@@ -106,7 +106,7 @@ export const adminNavItems = [
       { title: "Stripe", href: "/admin/payments/stripe" },
       { title: "PayPal", href: "/admin/payments/paypal" },
       { title: "Custom Payments", href: "/admin/payments/custom" },
-      { title: "Payment Logs", href: "/admin/payments/logs" },
+      { title: "Payment Verification", href: "/admin/payments/logs" },
     ],
   },
   {

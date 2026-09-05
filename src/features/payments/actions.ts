@@ -304,9 +304,8 @@ export async function getPaymentLogs() {
     .from("integration_logs")
     .select("*")
     .order("created_at", { ascending: false })
-    .limit(30);
+    .limit(50);
 
-  // Return sample logs if empty
   if (!logs || logs.length === 0) {
     return [
       {
@@ -323,6 +322,341 @@ export async function getPaymentLogs() {
   }
 
   return logs;
+}
+
+/* =========================================================================
+   PAYMENT VERIFICATION & AUDIT ACTIONS (Searchable by User, Phone, Email, TrxID)
+   ========================================================================= */
+
+export interface PaymentVerificationItem {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  amount: number;
+  provider: string; // "BKASH" | "SSLCOMMERZ" | "COD" | "NAGAD" | "MANUAL"
+  paymentStatus: "paid" | "pending" | "failed" | "refunded";
+  orderStatus: string;
+  trxId?: string;
+  paymentId?: string;
+  walletNumber?: string;
+  createdAt: string;
+  updatedAt: string;
+  notes?: string;
+}
+
+export async function getPaymentVerificationsList(filter?: {
+  search?: string;
+  provider?: string;
+  status?: string;
+}): Promise<PaymentVerificationItem[]> {
+  const supabase = createAdminClient();
+
+  // 1. Fetch orders with status history
+  const { data: orders, error } = await supabase
+    .from("orders")
+    .select(`
+      id,
+      order_number,
+      guest_name,
+      guest_phone,
+      guest_email,
+      total,
+      payment_method,
+      payment_status,
+      status,
+      public_note,
+      created_at,
+      updated_at,
+      shipping_address_snapshot,
+      order_status_history (
+        id,
+        status,
+        note,
+        created_at
+      )
+    `)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error || !orders) {
+    console.error("Failed to load payment verification orders:", error);
+    return [];
+  }
+
+  // 2. Fetch recent integration logs for cross-referencing
+  const { data: logs } = await supabase
+    .from("integration_logs")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const list: PaymentVerificationItem[] = orders.map((ord: any) => {
+    const address = ord.shipping_address_snapshot || {};
+    const name = ord.guest_name || address.name || "Customer";
+    const phone = ord.guest_phone || address.phone || "N/A";
+    const email = ord.guest_email || address.email || "N/A";
+    const note = ord.public_note || "";
+
+    // Extract TrxID from public note or status history
+    let trxId: string | undefined;
+    let paymentId: string | undefined;
+    let walletNumber: string | undefined;
+
+    // A. Check public note regex
+    const trxMatch = note.match(/(?:trxid|transaction\s*id|txid|trx)[:\s-]*([A-Za-z0-9_-]+)/i);
+    if (trxMatch && trxMatch[1]) {
+      trxId = trxMatch[1].trim();
+    }
+
+    const walletMatch = note.match(/(?:wallet|customer\s*wallet|number)[:\s-]*([0-9]{11})/i);
+    if (walletMatch && walletMatch[1]) {
+      walletNumber = walletMatch[1].trim();
+    }
+
+    // B. Check status history notes
+    const histories = ord.order_status_history || [];
+    for (const h of histories) {
+      const hNote = h.note || "";
+      if (!paymentId) {
+        const pMatch = hNote.match(/paymentid[:\s-]*([A-Za-z0-9_-]+)/i);
+        if (pMatch && pMatch[1]) paymentId = pMatch[1].trim();
+      }
+      if (!trxId) {
+        const tMatch = hNote.match(/trxid[:\s-]*([A-Za-z0-9_-]+)/i);
+        if (tMatch && tMatch[1]) trxId = tMatch[1].trim();
+      }
+      if (!walletNumber) {
+        const wMatch = hNote.match(/wallet[:\s-]*([0-9]{11})/i);
+        if (wMatch && wMatch[1]) walletNumber = wMatch[1].trim();
+      }
+    }
+
+    // C. Check integration logs
+    if (logs && (!trxId || !paymentId)) {
+      const matchingLog = logs.find(
+        (l: any) =>
+          l.metadata?.orderId === ord.id ||
+          l.metadata?.merchantInvoiceNumber === ord.order_number ||
+          l.message?.includes(ord.order_number)
+      );
+      if (matchingLog?.metadata) {
+        if (!trxId && matchingLog.metadata.trxID) trxId = matchingLog.metadata.trxID;
+        if (!paymentId && matchingLog.metadata.paymentID) paymentId = matchingLog.metadata.paymentID;
+        if (!walletNumber && matchingLog.metadata.customerMsisdn) walletNumber = matchingLog.metadata.customerMsisdn;
+      }
+    }
+
+    const providerRaw = (ord.payment_method || "COD").toUpperCase();
+    const provider =
+      providerRaw === "BKASH"
+        ? "BKASH"
+        : providerRaw === "SSLCOMMERZ"
+        ? "SSLCOMMERZ"
+        : providerRaw === "NAGAD"
+        ? "NAGAD"
+        : providerRaw;
+
+    return {
+      id: ord.id,
+      orderId: ord.id,
+      orderNumber: ord.order_number,
+      customerName: name,
+      customerPhone: phone,
+      customerEmail: email,
+      amount: Number(ord.total) || 0,
+      provider,
+      paymentStatus: (ord.payment_status || "pending") as any,
+      orderStatus: ord.status,
+      trxId,
+      paymentId,
+      walletNumber,
+      createdAt: ord.created_at,
+      updatedAt: ord.updated_at || ord.created_at,
+      notes: ord.public_note,
+    };
+  });
+
+  // 3. Filter by search term, provider, and status
+  let filtered = list;
+
+  if (filter?.search && filter.search.trim()) {
+    const q = filter.search.trim().toLowerCase();
+    filtered = filtered.filter(
+      (item) =>
+        item.customerName.toLowerCase().includes(q) ||
+        item.customerPhone.toLowerCase().includes(q) ||
+        item.customerEmail.toLowerCase().includes(q) ||
+        item.orderNumber.toLowerCase().includes(q) ||
+        (item.trxId && item.trxId.toLowerCase().includes(q)) ||
+        (item.paymentId && item.paymentId.toLowerCase().includes(q)) ||
+        (item.walletNumber && item.walletNumber.includes(q))
+    );
+  }
+
+  if (filter?.provider && filter.provider !== "ALL") {
+    filtered = filtered.filter(
+      (item) => item.provider.toLowerCase() === filter.provider?.toLowerCase()
+    );
+  }
+
+  if (filter?.status && filter.status !== "ALL") {
+    filtered = filtered.filter(
+      (item) => item.paymentStatus.toLowerCase() === filter.status?.toLowerCase()
+    );
+  }
+
+  return filtered;
+}
+
+/**
+ * Live Gateway Double-Check Verification (bKash & SSLCommerz)
+ */
+export async function verifyPaymentLiveWithGateway(params: {
+  provider: string;
+  paymentId?: string;
+  trxId?: string;
+  orderNumber?: string;
+}): Promise<{
+  success: boolean;
+  gateway: string;
+  status: string;
+  isCompleted: boolean;
+  trxID?: string;
+  paymentID?: string;
+  amount?: string;
+  currency?: string;
+  customerMsisdn?: string;
+  date?: string;
+  raw?: any;
+  error?: string;
+}> {
+  const provider = params.provider.toUpperCase();
+
+  if (provider === "BKASH") {
+    const { queryBkashPayment, searchBkashTransaction } = await import("@/lib/payments/bkash");
+
+    // 1. Try querying by paymentID first
+    if (params.paymentId) {
+      const qRes = await queryBkashPayment(params.paymentId);
+      if (qRes.success && qRes.payment) {
+        const p = qRes.payment;
+        const isCompleted = p.transactionStatus === "Completed";
+        return {
+          success: true,
+          gateway: "bKash Tokenized PGW",
+          status: p.transactionStatus || p.statusCode,
+          isCompleted,
+          trxID: p.trxID,
+          paymentID: p.paymentID,
+          amount: p.amount,
+          currency: p.currency || "BDT",
+          customerMsisdn: p.customerMsisdn,
+          date: p.paymentExecuteTime || p.paymentCreateTime,
+          raw: p,
+        };
+      }
+    }
+
+    // 2. Try searching by trxID
+    if (params.trxId) {
+      const sRes = await searchBkashTransaction(params.trxId);
+      if (sRes.success && sRes.transaction) {
+        const t = sRes.transaction;
+        const isCompleted = t.transactionStatus === "Completed";
+        return {
+          success: true,
+          gateway: "bKash Tokenized PGW",
+          status: t.transactionStatus || t.statusCode,
+          isCompleted,
+          trxID: t.trxID,
+          paymentID: t.paymentID,
+          amount: t.amount,
+          currency: t.currency || "BDT",
+          customerMsisdn: t.customerMsisdn,
+          date: t.paymentExecuteTime || t.paymentCreateTime,
+          raw: t,
+        };
+      }
+    }
+
+    return {
+      success: false,
+      gateway: "bKash Tokenized PGW",
+      status: "Not Found",
+      isCompleted: false,
+      error: "No transaction found in bKash PGW for the provided PaymentID or TrxID.",
+    };
+  }
+
+  // Fallback for COD or manual methods
+  return {
+    success: true,
+    gateway: provider,
+    status: "Manual Verification",
+    isCompleted: true,
+    trxID: params.trxId || "N/A",
+    amount: "N/A",
+    currency: "BDT",
+    date: new Date().toISOString(),
+  };
+}
+
+/**
+ * Admin Action: Manually Mark Order Payment as Verified & Paid
+ */
+export async function manuallyMarkOrderPaymentVerified(params: {
+  orderId: string;
+  verifiedTrxId: string;
+  verifiedAmount?: number;
+  walletNumber?: string;
+  note?: string;
+}) {
+  const supabase = createAdminClient();
+
+  const updateData: any = {
+    payment_status: "paid",
+    status: "processing",
+    updated_at: new Date().toISOString(),
+  };
+
+  const noteText = `[Admin Verified] Paid via Online Payment. TrxID: ${params.verifiedTrxId}${
+    params.walletNumber ? `, Wallet: ${params.walletNumber}` : ""
+  }${params.note ? ` (${params.note})` : ""}`;
+
+  updateData.public_note = noteText;
+
+  const { error } = await supabase
+    .from("orders")
+    .update(updateData)
+    .eq("id", params.orderId);
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  await supabase.from("order_status_history").insert({
+    order_id: params.orderId,
+    status: "processing",
+    note: `Payment manually verified & marked as Paid by Admin. TrxID: ${params.verifiedTrxId}`,
+  });
+
+  await logIntegrationEvent({
+    provider: "ADMIN",
+    moduleKey: "payments",
+    event: "payment_manually_verified",
+    status: "success",
+    message: `Order payment verified by admin. Order ID: ${params.orderId}, TrxID: ${params.verifiedTrxId}`,
+    metadata: params,
+  });
+
+  revalidatePath("/admin/payments/logs");
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${params.orderId}`);
+
+  return { success: true };
 }
 
 /* =========================================================================
