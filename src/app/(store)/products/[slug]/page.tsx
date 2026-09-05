@@ -112,7 +112,12 @@ export default async function ProductDetailPage({
         brandName={product.brands?.name}
         price={Number(product.regular_price || 0)}
         salePrice={product.sale_price ? Number(product.sale_price) : undefined}
-        availability={product.status === "published" ? "InStock" : "OutOfStock"}
+        availability={
+          ((product.inventory as Array<{ available: number }> || []).some((i) => i.available > 0) || (product.inventory as any)?.available > 0) &&
+          (product.status === "active" || product.status === "published")
+            ? "InStock"
+            : "OutOfStock"
+        }
         url={productUrl}
         ratingValue={product.average_rating ? Number(product.average_rating) : 5.0}
         reviewCount={product.total_reviews ? Number(product.total_reviews) : 1}

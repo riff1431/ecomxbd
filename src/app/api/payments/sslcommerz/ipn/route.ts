@@ -17,11 +17,24 @@ export async function POST(req: NextRequest) {
 
     const { val_id, tran_id, status, amount, card_type } = data;
 
+    // Automatically update order payment status to 'paid' when validated
+    if (tran_id && (status === "VALID" || status === "VALIDATED")) {
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const supabase = createAdminClient();
+      await supabase
+        .from("orders")
+        .update({
+          payment_status: "paid",
+          updated_at: new Date().toISOString(),
+        })
+        .or(`order_number.eq.${tran_id},id.eq.${tran_id}`);
+    }
+
     await logIntegrationEvent({
       provider: "SSLCOMMERZ",
       moduleKey: "sslcommerz",
       event: "ipn_notification",
-      status: status === "VALID" ? "success" : "error",
+      status: status === "VALID" || status === "VALIDATED" ? "success" : "error",
       message: `SSLCommerz IPN Notification: TranID: ${tran_id || "N/A"}, ValID: ${val_id || "N/A"}, Status: ${status || "PENDING"}, Card: ${card_type || "N/A"}`,
       metadata: data,
     });

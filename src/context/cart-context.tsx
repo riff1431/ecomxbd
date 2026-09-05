@@ -153,6 +153,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return { success: false, message: "Invalid or expired coupon code." };
     }
 
+    const now = new Date();
+    if (found.expires_at && new Date(found.expires_at) < now) {
+      return { success: false, message: "This coupon code has expired." };
+    }
+
+    if (found.starts_at && new Date(found.starts_at) > now) {
+      return { success: false, message: "This coupon code is not active yet." };
+    }
+
+    if (found.usage_limit && (found.usage_count || 0) >= found.usage_limit) {
+      return { success: false, message: "This coupon has reached its maximum usage limit." };
+    }
+
     if (found.min_cart_amount && subtotal < found.min_cart_amount) {
       return {
         success: false,

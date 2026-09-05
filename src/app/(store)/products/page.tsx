@@ -83,7 +83,11 @@ export default async function ProductsListingPage({
 
       if (productIds && productIds.length > 0) {
         query = query.in("id", productIds.map((p) => p.product_id));
+      } else {
+        query = query.eq("id", "00000000-0000-0000-0000-000000000000");
       }
+    } else {
+      query = query.eq("id", "00000000-0000-0000-0000-000000000000");
     }
   }
 

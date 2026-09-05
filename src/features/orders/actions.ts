@@ -183,7 +183,12 @@ export async function createOrder(input: CreateOrderInput) {
         .eq("status", "active")
         .maybeSingle();
 
-      if (coupon && (!coupon.min_cart_amount || subtotal >= coupon.min_cart_amount)) {
+      const now = new Date();
+      const isExpired = coupon?.expires_at && new Date(coupon.expires_at) < now;
+      const notStarted = coupon?.starts_at && new Date(coupon.starts_at) > now;
+      const limitReached = coupon?.usage_limit && (coupon.usage_count || 0) >= coupon.usage_limit;
+
+      if (coupon && !isExpired && !notStarted && !limitReached && (!coupon.min_cart_amount || subtotal >= coupon.min_cart_amount)) {
         appliedCoupon = coupon;
         if (coupon.type === "percentage") {
           const raw = (subtotal * coupon.value) / 100;
