@@ -27,7 +27,7 @@ export function CategoriesClient() {
         { name: language === "bn" ? "সিরাম ও অ্যাম্পুল" : "Serums & Ampoules", slug: "skin-care?type=serum" },
         { name: language === "bn" ? "ময়েশ্চারাইজার ও ক্রিম" : "Moisturizers & Creams", slug: "skin-care?type=moisturizer" },
         { name: language === "bn" ? "সানস্ক্রিন ও সানব্লক" : "Sunscreen & SPF 50", slug: "skin-care?type=sunscreen" },
-        { name: language === "bn" ? "আই ও লিপ কেয়ার" : "Eye & Lip Treatments", slug: "skin-care?type=eye-lip" },
+        { name: language === "bn" ? "আই ও লিপ কেয়ার" : "Eye & Lip Care", slug: "skin-care?type=eye-lip" },
       ],
     },
     {
@@ -40,7 +40,7 @@ export function CategoriesClient() {
         { name: language === "bn" ? "শ্যাম্পু ও ক্লিনজার" : "Shampoos & Cleansers", slug: "hair-care?type=shampoo" },
         { name: language === "bn" ? "কন্ডিশনার ও হেয়ার মাস্ক" : "Conditioners & Hair Masks", slug: "hair-care?type=conditioner" },
         { name: language === "bn" ? "হেয়ার অয়েল ও সিরাম" : "Hair Oils & Serums", slug: "hair-care?type=oil" },
-        { name: language === "bn" ? "অ্যান্টি-ড্যান্ড্রাফ চিকিৎসা" : "Anti-Dandruff Treatments", slug: "hair-care?type=treatment" },
+        { name: language === "bn" ? "অ্যান্টি-ড্যান্ড্রাফ কেয়ার" : "Anti-Dandruff & Scalp Care", slug: "hair-care?type=scalp" },
       ],
     },
     {

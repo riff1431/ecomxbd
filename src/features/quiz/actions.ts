@@ -136,8 +136,8 @@ export async function getMatchedQuizRoutine(
         sale_price: chosenTreatment.sale_price,
         image_url: chosenTreatment.og_image_url || null,
         brand_name: (chosenTreatment.brands as any)?.name || null,
-        step_label: "Step 2: Targeted Active Treatment",
-        step_description: `Clinically potent formulation addressing ${concern} for ${skinType} skin in Bangladesh climate.`,
+        step_label: "Step 2: Targeted Essence & Serum",
+        step_description: `High-performance beauty formulation addressing ${concern} for ${skinType} skin in Bangladesh climate.`,
         country: chosenTreatment.country || "Korea / UK",
       });
     }
@@ -152,14 +152,14 @@ export async function getMatchedQuizRoutine(
         image_url: chosenProtect.og_image_url || null,
         brand_name: (chosenProtect.brands as any)?.name || null,
         step_label: "Step 3: Moisture Seal & Defense",
-        step_description: "Non-greasy lightweight shield preventing transepidermal water loss and UV-induced melanin hyperpigmentation.",
+        step_description: "Non-greasy lightweight daily cream protecting skin moisture and defending against environmental stress.",
         country: chosenProtect.country || "Korea / UK",
       });
     }
 
     return {
-      routineTitle: `Custom ${capitalize(skinType)} & ${capitalize(concern)} Skin Routine`,
-      routineSubtitle: `Dermatologically tailored for Bangladesh humidity to balance moisture, strengthen the barrier, and accelerate active skin renewal.`,
+      routineTitle: `Curated ${capitalize(skinType)} & ${capitalize(concern)} Skin Routine`,
+      routineSubtitle: `Specially curated for Bangladesh humidity to balance moisture, strengthen skin wellness, and enhance natural glow.`,
       products: matchedList,
     };
   } catch (err) {
@@ -175,8 +175,8 @@ function capitalize(s: string) {
 
 function getFallbackRoutine(skinType: string, concern: string) {
   return {
-    routineTitle: `Personalized ${capitalize(skinType)} Skin Protocol`,
-    routineSubtitle: `Custom 2-step clinical regimen formulated to target ${concern} while maintaining lipid barrier equilibrium.`,
+    routineTitle: `Personalized ${capitalize(skinType)} Beauty Routine`,
+    routineSubtitle: `Curated 2-step daily skincare routine designed for ${concern} to maintain healthy and glowing skin.`,
     products: [
       {
         id: "prod-cerave-cleanser",
@@ -198,7 +198,7 @@ function getFallbackRoutine(skinType: string, concern: string) {
         sale_price: 1365,
         image_url: "/product_placeholder.svg",
         brand_name: "COSRX",
-        step_label: "Step 2: Core Treatment",
+        step_label: "Step 2: Core Essence",
         step_description: "96.3% snail secretion filtrate provides deep cellular hydration and restores soothing bounce to sensitized skin.",
         country: "South Korea",
       },

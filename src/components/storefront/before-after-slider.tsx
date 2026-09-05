@@ -45,7 +45,7 @@ export function BeforeAfterSlider({
   const { language, toBn } = useLanguage();
 
   const isBn = language === "bn";
-  const displayEyebrow = eyebrowBadge || (isBn ? "ক্লিনিক্যালি প্রমাণিত ফর্মুলা" : "CLINICALLY FORMULATED");
+  const displayEyebrow = eyebrowBadge || (isBn ? "সার্টিফাইড স্কিন-ফ্রেন্ডলি ফর্মুলা" : "CERTIFIED SKIN-FRIENDLY");
   const displayTitle = title || (isBn ? "ত্বকের সত্যিকারের পরিবর্তন দেখুন" : "SEE REAL SKIN RESULTS");
   const displaySubtitle = subtitle || (isBn ? "৭ দিনের স্কিনকেয়ার ট্রান্সফর্মেশন ফলাফল" : "Interactive 7-Day Skincare Transformation");
   const displayHeading = heading || (isBn ? "৭ দিনে স্কিন ব্যারিয়ার পুনরুদ্ধার করুন" : "Restore Skin Barrier in 7 Days");
@@ -215,7 +215,7 @@ export function BeforeAfterSlider({
             >
               <img
                 src={beforeImage}
-                alt={isBn ? "ট্রিটমেন্টের পূর্বে" : "Before Treatment"}
+                alt={isBn ? "রুটিনের পূর্বে" : "Before Routine"}
                 className={`absolute inset-0 h-full w-full ${fitClass} filter grayscale-20 contrast-95`}
                 draggable={false}
               />
